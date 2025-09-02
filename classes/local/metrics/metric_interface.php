@@ -44,11 +44,31 @@ use core\lang_string;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface metric_interface {
+    /**
+     * Actually compute the value.
+     *
+     * @return float|int
+     */
     public static function calculate(): float|int;
 
+    /**
+     * Description of this metric.
+     *
+     * @return lang_string
+     */
     public static function get_description(): lang_string;
 
+    /**
+     * The name of this metric. Should be close to the class name.
+     *
+     * @return string
+     */
     public static function get_name(): string;
 
+    /**
+     * Type of the metric.
+     *
+     * @return metric_type
+     */
     public static function get_type(): metric_type;
 }

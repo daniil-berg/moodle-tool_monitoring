@@ -6,13 +6,13 @@ namespace tool_monitoring\hook;
 #[\core\attribute\tags('metric')]
 final class gather_metrics {
 
-    private array $names = [];
+    private array $metrics = [];
 
-    public function add_metric(string $name) {
-        $this->names[] = $name;
+    public function add_metric($metric) {
+        $this->metrics[] = $metric;
     }
 
-    public function getNames() {
-        return $this->names;
+    public function get_metrics() {
+        return $this->metrics;
     }
 }

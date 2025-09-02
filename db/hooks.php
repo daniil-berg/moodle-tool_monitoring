@@ -7,11 +7,11 @@ $callbacks = [
             'callback',
         ],
     ],
-    [
-        'hook' => tool_monitoring\hook\gather_metrics::class,
-        'callback' => [
-            \tool_monitoring\local\hooks\register_metrics::class,
-            'callback2',
-        ],
-    ],
+    // [
+    //     'hook' => tool_monitoring\hook\gather_metrics::class,
+    //     'callback' => [
+    //         \tool_monitoring\local\hooks\register_metrics::class,
+    //         'callback2',
+    //     ],
+    // ],
 ];

@@ -31,3 +31,4 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Monitoring';
+$string['user_count_description'] = 'Number of total registered users';

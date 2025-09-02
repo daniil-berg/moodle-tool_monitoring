@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_interface}.
+ * Definition of the {@see metric_type} enum.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,9 +27,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring;
-
-use core\lang_string;
+namespace tool_monitoring\local\metrics;
 
 /**
  * Describes any available metric.
@@ -43,12 +41,7 @@ use core\lang_string;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-interface metric_interface {
-    public static function calculate(): float|int;
-
-    public static function get_description(): lang_string;
-
-    public static function get_name(): string;
-
-    public static function get_type(): metric_type;
+enum metric_type {
+    case COUNTER;
+    case GAUGE;
 }

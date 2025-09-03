@@ -37,6 +37,10 @@ class prometheus {
         string                 $tag,
     ): ResponseInterface {
         $token = $request->getQueryParams()['token'] ?? null;
+        $expectedtoken = get_config('monitoringexporter_prometheus', 'prometheus_token');
+        if ($expectedtoken && $token !== $expectedtoken) {
+            return $response->withStatus(403);
+        }
 
         $response = $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
         $manager = new metrics_manager();

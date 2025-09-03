@@ -29,7 +29,7 @@
 
 namespace tool_monitoring;
 
-use tool_monitoring\local\metrics\metric_interface;
+use tool_monitoring\local\metrics\metric;
 
 /**
  * Metrics manager to gather all available metrics and operations.
@@ -37,7 +37,7 @@ use tool_monitoring\local\metrics\metric_interface;
 class metrics_manager {
     /**
      * All available metrics in the system.
-     * @var class-string<metric_interface>[]
+     * @var class-string<metric>[]
      */
     protected $allmetrics = [];
 
@@ -54,7 +54,7 @@ class metrics_manager {
     /**
      * Get all available metrics.
      *
-     * @return class-string<metric_interface>[]
+     * @return class-string<metric>[]
      */
     public function get_all_metrics(): array {
         return $this->allmetrics;
@@ -71,7 +71,9 @@ class metrics_manager {
         $metricvalues = [];
 
         foreach ($this->allmetrics as $metric) {
-            $metricvalues[$metric::get_name()] = $metric::calculate();
+            $instance = new $metric();
+            $instance->calculate();
+            $metricvalues[$metric::get_name()] = $instance->get_value();
         }
 
         return $metricvalues;

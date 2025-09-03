@@ -1,4 +1,6 @@
 <?php
+
+use tool_monitoring\local\metrics\num_course_count;
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -36,14 +38,13 @@ $PAGE->set_context(context_system::instance());
 $PAGE->set_title('monitoring test');
 $PAGE->set_heading('monitoring test');
 
-$hook = new \tool_monitoring\hook\gather_metrics();
-\core\di::get(\core\hook\manager::class)->dispatch($hook);
-
-$metrics = $hook->get_metrics();
+$metric = new num_course_count();
+$metric->calculate();
 
 echo $OUTPUT->header();
 
-$manager = new \tool_monitoring\metrics_manager();
-var_dump($manager->calculate_needed_metrics(''));
+echo "<pre>";
+var_dump($metric->get_values());
+echo "</pre>";
 
 echo $OUTPUT->footer();

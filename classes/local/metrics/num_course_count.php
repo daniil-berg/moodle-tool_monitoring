@@ -30,11 +30,12 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use tool_monitoring\local\metrics\metric;
 
 /**
  * Implements the num_course_count metric.
  */
-class num_course_count implements metric_interface {
+class num_course_count extends metric {
 
     /**
      * {@inheritDoc}
@@ -62,14 +63,24 @@ class num_course_count implements metric_interface {
         return new lang_string('num_course_count_description', 'tool_monitoring');
     }
 
+    public static function get_labels(): array {
+        return ['time', 'category'];
+    }
+
     /**
      * {@inheritDoc}
      *
-     * @return int
+     * @return void
      */
-    public static function calculate(): int {
+    public function calculate(): void {
         global $DB;
 
-        return $DB->count_records('course');
+        $this->set_value(12, [100, 1]);
+        $this->set_value(6, [100, 3]);
+        $this->set_value(3, [100, 4]);
+        $this->set_value(17, [100, 6]);
+
+        $this->set_value(6, [10, 1]);
+        $this->set_value(17, [10, 2]);
     }
 }

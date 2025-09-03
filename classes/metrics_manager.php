@@ -29,13 +29,15 @@
 
 namespace tool_monitoring;
 
+use tool_monitoring\local\metrics\metric_interface;
+
 /**
  * Metrics manager to gather all available metrics and operations.
  */
 class metrics_manager {
     /**
      * All available metrics in the system.
-     * @var string[]
+     * @var class-string<metric_interface>[]
      */
     protected $allmetrics = [];
 
@@ -52,7 +54,7 @@ class metrics_manager {
     /**
      * Get all available metrics.
      *
-     * @return string[]
+     * @return class-string<metric_interface>[]
      */
     public function get_all_metrics(): array {
         return $this->allmetrics;

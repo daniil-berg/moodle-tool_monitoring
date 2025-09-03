@@ -32,9 +32,9 @@ require_login();
 
 
 $PAGE->set_url('/admin/tool/monitoring/test.php');
+$PAGE->set_context(context_system::instance());
 $PAGE->set_title('monitoring test');
 $PAGE->set_heading('monitoring test');
-$PAGE->set_context(context_system::instance());
 
 $hook = new \tool_monitoring\hook\gather_metrics();
 \core\di::get(\core\hook\manager::class)->dispatch($hook);

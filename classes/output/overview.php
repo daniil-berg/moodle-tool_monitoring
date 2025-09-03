@@ -14,8 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace tool_monitoring\output;
+
+use core\output\renderable;
+use core\output\templatable;
+
 /**
- * List of all metrics.
+ * Class overview
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -26,18 +31,26 @@
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class overview implements renderable, templatable {
 
-require_once(__DIR__ . '/../../../config.php');
-require_login();
+    /**
+     * {@inheritDoc}
+     */
+    public function export_for_template(\core\output\renderer_base $output) {
+        $hook = new \tool_monitoring\hook\gather_metrics();
+        \core\di::get(\core\hook\manager::class)->dispatch($hook);
 
-
-$PAGE->set_url('/admin/tool/monitoring/');
-$PAGE->set_context(context_system::instance());
-$PAGE->set_title('Monitoring Metrics');
-$PAGE->set_heading('Monitoring Metrics');
-
-$overview = new tool_monitoring\output\overview();
-
-echo $OUTPUT->header();
-echo $OUTPUT->render($overview);
-echo $OUTPUT->footer();
+        $metrics = $hook->get_metrics();
+        $lines = [];
+        foreach ($metrics as $metric) {
+            $lines[] = [
+                'name' => $metric::get_name(),
+                'type' => $metric::get_type()->value,
+                'description' => $metric::get_description()->out(),
+            ];
+        }
+        return [
+            'metrics' => $lines,
+        ];
+    }
+}

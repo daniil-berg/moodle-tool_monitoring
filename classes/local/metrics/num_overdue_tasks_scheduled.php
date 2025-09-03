@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_users}.
+ * Definition of the {@see num_overdue_tasks_scheduled}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -31,10 +31,10 @@ namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
 
-class num_users implements metric_interface {
+class num_overdue_tasks_scheduled implements metric_interface {
 
     public static function get_name(): string {
-        return 'user_count';
+        return 'num_overdue_tasks_scheduled';
     }
 
     public static function get_type(): metric_type {
@@ -42,12 +42,17 @@ class num_users implements metric_interface {
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('user_count_description', 'tool_monitoring');
+        return new lang_string('num_overdue_tasks_scheduled', 'tool_monitoring');
     }
 
-    public static function calculate(): int {
+    public static function calculate(bool|null $disabled = null): int {
         global $DB;
-
-        return $DB->count_records('user');
+        $where = 'nextruntime <= :next_runtime';
+        $params = ['next_runtime' => time()];
+        if (!is_null($disabled)) {
+            $where .= ' AND disabled = :disabled';
+            $params['disabled'] = $disabled;
+        }
+        return $DB->count_records_select('task_scheduled', $where, $params);
     }
 }

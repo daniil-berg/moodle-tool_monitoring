@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_users}.
+ * Definition of the {@see num_tasks_spawned_scheduled}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -30,24 +30,46 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use core\exception\coding_exception;
 
-class num_users implements metric_interface {
+class num_tasks_spawned_scheduled implements metric_interface {
 
     public static function get_name(): string {
-        return 'user_count';
+        return 'num_tasks_spawned_scheduled';
     }
 
     public static function get_type(): metric_type {
-        return metric_type::GAUGE;
+        return metric_type::COUNTER;
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('user_count_description', 'tool_monitoring');
+        return new lang_string('num_tasks_spawned_scheduled', 'tool_monitoring');
     }
 
     public static function calculate(): int {
-        global $DB;
+        global $CFG;
+        return self::sum_last_sequence_value("{$CFG->prefix}task_scheduled_id_seq");
+    }
 
-        return $DB->count_records('user');
+        /**
+     * Returns the `last_value` from the specified PostgreSQL sequence.
+     *
+     * @param string ...$sequences Name of the sequence of interest. If multiple names are passed, the **sum** of their last values
+     *                             will be returned.
+     * @return int Last sequence value
+     * @throws coding_exception DB used is not PostgreSQL.
+     * @throws dml_exception
+     */
+    protected static function sum_last_sequence_value(string ...$sequences): int {
+        global $DB;
+        if ($DB->get_dbfamily() !== 'postgres') {
+            // TODO: Use custom exception class.
+            throw new coding_exception('DB family is not supported');
+        }
+        [$insql, $inparams] = $DB->get_in_or_equal($sequences);
+        $sql = "SELECT SUM(last_value)
+                  FROM pg_sequences
+                 WHERE sequencename $insql";
+        return $DB->get_field_sql($sql, $inparams);
     }
 }

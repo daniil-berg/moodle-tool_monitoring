@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_users}.
+ * Definition of the {@see num_overdue_tasks_adhoc}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -31,10 +31,22 @@ namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
 
-class num_users implements metric_interface {
+/**
+ * Number of overdue AdHoc-Tasgs Metric
+ *
+ * @package     tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class num_overdue_tasks_adhoc implements metric_interface {
 
     public static function get_name(): string {
-        return 'user_count';
+        return 'num_overdue_tasks_adhoc';
     }
 
     public static function get_type(): metric_type {
@@ -42,12 +54,13 @@ class num_users implements metric_interface {
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('user_count_description', 'tool_monitoring');
+        return new lang_string('num_overdue_tasks_adhoc', 'tool_monitoring');
     }
 
     public static function calculate(): int {
         global $DB;
-
-        return $DB->count_records('user');
+        $where = 'nextruntime <= :next_runtime';
+        $params = ['next_runtime' => time()];
+        return $DB->count_records_select('task_adhoc', $where, $params);
     }
 }

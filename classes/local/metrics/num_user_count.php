@@ -59,7 +59,7 @@ class num_user_count implements metric_interface {
      * @return \core\lang_string
      */
     public static function get_description(): lang_string {
-        return new lang_string('num_user_count_description_description', 'tool_monitoring');
+        return new lang_string('num_user_count_description', 'tool_monitoring');
     }
 
     /**

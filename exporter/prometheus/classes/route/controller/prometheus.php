@@ -1,6 +1,6 @@
 <?php
 
-namespace monitorinexporter_prometheus\route\controller;
+namespace monitoringexporter_prometheus\route\controller;
 
 use core\router\route;
 use core\router\route_controller;
@@ -40,7 +40,7 @@ class prometheus {
         $response = $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
         $manager = new metrics_manager();
         $response->getBody()->write(
-            \monitorinexporter_prometheus\exporter::export($manager->calculate_needed_metrics($tag))
+            \monitoringexporter_prometheus\exporter::export($manager->calculate_needed_metrics($tag))
         );
 
         return $response;

@@ -33,11 +33,11 @@ use core\lang_string;
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    $settings = new admin_settingpage('tool_monitoring_settings', new lang_string('pluginname', 'monitorinexporter_prometheus'));
+    $settings = new admin_settingpage('tool_monitoring_settings', new lang_string('pluginname', 'exporter_prometheus'));
 
     $settings->add(new admin_setting_configpasswordunmask('tool_monitoring/prometheus_token',
-            get_string('setting_token', 'monitorinexporter_prometheus'),
-            get_string('setting_token_desc', 'monitorinexporter_prometheus'),
+            get_string('setting_token', 'exporter_prometheus'),
+            get_string('setting_token_desc', 'exporter_prometheus'),
             ''));
 
     $ADMIN->add('tools', $settings);

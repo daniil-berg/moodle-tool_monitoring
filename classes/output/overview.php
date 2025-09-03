@@ -18,6 +18,7 @@ namespace tool_monitoring\output;
 
 use core\output\renderable;
 use core\output\templatable;
+use tool_monitoring\metrics_manager;
 
 /**
  * Class overview
@@ -37,10 +38,8 @@ class overview implements renderable, templatable {
      * {@inheritDoc}
      */
     public function export_for_template(\core\output\renderer_base $output) {
-        $hook = new \tool_monitoring\hook\gather_metrics();
-        \core\di::get(\core\hook\manager::class)->dispatch($hook);
-
-        $metrics = $hook->get_metrics();
+        $manager = new metrics_manager();
+        $metrics = $manager->get_all_metrics();
         $lines = [];
         foreach ($metrics as $metric) {
             $lines[] = [

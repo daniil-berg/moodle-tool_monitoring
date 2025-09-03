@@ -1,8 +1,8 @@
 {
   "subplugintypes": {
-    "exporter": "exporter"
+    "monitoringexporter": "exporter"
   },
   "plugintypes": {
-    "exporter": "admin/tool/monitoring/exporter"
+    "monitoringexporter": "admin/tool/monitoring/exporter"
   }
 }

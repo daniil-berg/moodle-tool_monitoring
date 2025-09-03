@@ -27,7 +27,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace exporter_prometheus;
+namespace monitoringexporter_prometheus;
 
 use tool_monitoring\local\metrics\metric_interface;
 

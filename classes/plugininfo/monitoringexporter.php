@@ -28,6 +28,6 @@ namespace tool_monitoring\plugininfo;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class exporter extends \core\plugininfo\base {
+class monitoringexporter extends \core\plugininfo\base {
     
 }

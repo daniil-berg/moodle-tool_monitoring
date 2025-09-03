@@ -17,7 +17,7 @@
 /**
  * Plugin version and other meta-data are defined here.
  *
- * @package    exporter_prometheus
+ * @package    monitoringexporter_prometheus
  * @subpackage tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
@@ -30,7 +30,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2025090304;      // The current plugin version (Date: YYYYMMDDXX).
-$plugin->component = 'exporter_prometheus'; // Full name of the plugin (used for diagnostics).
+$plugin->version   = 2025090305;      // The current plugin version (Date: YYYYMMDDXX).
+$plugin->component = 'monitoringexporter_prometheus'; // Full name of the plugin (used for diagnostics).
 $plugin->requires  = 2025041400; // Moodle 5.0.
 $plugin->maturity  = MATURITY_ALPHA;

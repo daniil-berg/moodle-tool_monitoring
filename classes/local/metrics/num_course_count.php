@@ -63,7 +63,12 @@ class num_course_count extends metric {
         return new lang_string('num_course_count_description', 'tool_monitoring');
     }
 
-    public static function get_labels(): array {
+    /**
+     * {@inheritDoc}
+     *
+     * @return string[]
+     */
+    public static function get_allowed_label_names(): array {
         return ['time', 'category'];
     }
 
@@ -75,12 +80,12 @@ class num_course_count extends metric {
     public function calculate(): void {
         global $DB;
 
-        $this->set_value(12, [100, 1]);
-        $this->set_value(6, [100, 3]);
-        $this->set_value(3, [100, 4]);
-        $this->set_value(17, [100, 6]);
+        $this->set_value(12, ['time' => 100, 'catgory' => 1]);
+        $this->set_value(6, ['time' => 100, 'catgory' => 3]);
+        $this->set_value(3, ['time' => 100, 'catgory' => 4]);
+        $this->set_value(17, ['time' => 100, 'catgory' => 6]);
 
-        $this->set_value(6, [10, 1]);
-        $this->set_value(17, [10, 2]);
+        $this->set_value(6, ['time' => 10, 'catgory' => 1]);
+        $this->set_value(17, ['time' => 10, 'catgory' => 2]);
     }
 }

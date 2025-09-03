@@ -56,6 +56,7 @@ abstract class metric {
      * @return void
      */
     protected function set_value($value, $labels = []): void {
+        // TODO: Update to new set_value with associative array
         if (count(static::get_labels()) !== count($labels)) {
             throw new coding_exception('Wrong number of labels');
         }
@@ -75,6 +76,7 @@ abstract class metric {
      * @return array<array|mixed>[]
      */
     private function extract_values($array): array {
+        // TODO: Update to new set_value with associative array
         $result = [];
         foreach ($array as $key => $value) {
             if (is_array($value)) {
@@ -94,16 +96,19 @@ abstract class metric {
      * @return array
      */
     public function get_values(): array {
+        // TODO: Update to new set_value with associative array
         return $this->extract_values($this->values);
     }
 
     /**
-     * Return the label names used by this metric.
+     * Override this method if you want to specify a list of label names
+     * that must be specified with every value. If you leave the default
+     * implementation you can specify any label name when setting the values.
      *
-     * @return string[]
+     * @return string[]|null
      */
-    public static function get_labels(): array {
-        return [];
+    public static function get_allowed_label_names(): ?array {
+        return null;
     }
 
     /**

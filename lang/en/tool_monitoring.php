@@ -30,6 +30,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['metricsoverview'] = 'Overview of Available Metrics';
 $string['monitoring:list_metrics'] = 'List metrics';
 $string['pluginname'] = 'Monitoring';
 $string['num_user_count_description'] = 'Number of total registered users';

@@ -31,8 +31,11 @@ require_once(__DIR__ . '/../../../config.php');
 require_login();
 
 
+$context = context_system::instance();
+require_capability('tool/monitoring:list_metrics', $context);
+
 $PAGE->set_url('/admin/tool/monitoring/');
-$PAGE->set_context(context_system::instance());
+$PAGE->set_context($context);
 $PAGE->set_title('Monitoring Metrics');
 $PAGE->set_heading('Monitoring Metrics');
 

@@ -42,6 +42,15 @@ $ADMIN->add(
         visiblename: new lang_string('pluginname', 'tool_monitoring'),
     ),
 );
+
+$overviewlink = new admin_externalpage(
+    'monitoringmetricsoverviewlink',
+    get_string('metricsoverview', 'tool_monitoring'),
+    new moodle_url('/admin/tool/monitoring'),
+    'tool/monitoring:list_metrics',
+);
+$ADMIN->add('monitoringcategory', $overviewlink);
+
 foreach (core_plugin_manager::instance()->get_plugins_of_type('monitoringexporter') as $subplugin) {
     /** @var monitoringexporter $subplugin */
     $settings = new admin_settingpage(

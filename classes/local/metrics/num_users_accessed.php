@@ -67,7 +67,7 @@ class num_users_accessed implements metric_interface {
      *
      * @return int
      */
-    public static function calculate(int $max_seconds_ago = 300, int $min_seconds_ago = 0): int {
+    public static function calculate(int $max_seconds_ago = 30, int $min_seconds_ago = 0): int {
         global $DB;
         $now = time();
         $where = 'username <> :excl_user AND lastaccess BETWEEN :earliest AND :latest';

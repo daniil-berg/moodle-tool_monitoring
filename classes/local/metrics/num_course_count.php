@@ -59,7 +59,7 @@ class num_course_count implements metric_interface {
      * @return \core\lang_string
      */
     public static function get_description(): lang_string {
-        return new lang_string('num_course_count', 'tool_monitoring');
+        return new lang_string('num_course_count_description', 'tool_monitoring');
     }
 
     /**

@@ -61,7 +61,7 @@ class num_tasks_spawned_adhoc implements metric_interface {
      * @return \core\lang_string
      */
     public static function get_description(): lang_string {
-        return new lang_string('num_tasks_spawned_adhoc', 'tool_monitoring');
+        return new lang_string('num_tasks_spawned_adhoc_description', 'tool_monitoring');
     }
 
     /**

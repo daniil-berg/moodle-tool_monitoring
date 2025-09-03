@@ -59,7 +59,7 @@ class num_overdue_tasks_scheduled implements metric_interface {
      * @return \core\lang_string
      */
     public static function get_description(): lang_string {
-        return new lang_string('num_overdue_tasks_scheduled', 'tool_monitoring');
+        return new lang_string('num_overdue_tasks_scheduled_description', 'tool_monitoring');
     }
 
     /**

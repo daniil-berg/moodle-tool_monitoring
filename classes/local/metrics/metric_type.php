@@ -41,7 +41,7 @@ namespace tool_monitoring\local\metrics;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-enum metric_type {
-    case COUNTER;
-    case GAUGE;
+enum metric_type: string {
+    case COUNTER = 'counter';
+    case GAUGE = 'gauge';
 }

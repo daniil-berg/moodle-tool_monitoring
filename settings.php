@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin administration pages are defined here.
+ * Plugin settings.
  *
  * @package     tool_monitoring
  * @category    admin
@@ -28,15 +28,29 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+use tool_monitoring\plugininfo\monitoringexporter;
 
-if ($hassiteconfig) {
-    $settings->add(
-        new admin_setting_configpasswordunmask(
-            name: 'monitoringexporter_prometheus/prometheus_token',
-            visiblename: get_string('setting_token', 'monitoringexporter_prometheus'),
-            description: get_string('setting_token_desc', 'monitoringexporter_prometheus'),
-            defaultsetting: '',
-        )
+defined('MOODLE_INTERNAL') || die;
+
+global $ADMIN, $CFG;
+require_once("$CFG->dirroot/mod/assign/adminlib.php");
+
+$ADMIN->add(
+    'tools',
+    new admin_category(
+        name: 'monitoringcategory',
+        visiblename: new lang_string('pluginname', 'tool_monitoring'),
+    ),
+);
+foreach (core_plugin_manager::instance()->get_plugins_of_type('monitoringexporter') as $subplugin) {
+    /** @var monitoringexporter $subplugin */
+    $settings = new admin_settingpage(
+        name: $subplugin->type . '_' . $subplugin->name,
+        visiblename: $subplugin->displayname,
+        req_capability: 'moodle/site:config',
     );
+    if ($ADMIN->fulltree) {
+        include($subplugin->full_path('settings.php'));
+    }
+    $ADMIN->add('monitoringcategory', $settings);
 }

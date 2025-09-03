@@ -34,4 +34,8 @@ $callbacks = [
         'hook' => tool_monitoring\hook\gather_metrics::class,
         'callback' => [\tool_monitoring\local\hooks\register_metrics::class, 'callback'],
     ],
+    [
+        'hook' => tool_monitoring\hook\gather_metrics::class,
+        'callback' => [\tool_monitoring\local\metrics\num_user_count::class, 'gather_metrics_callback'],
+    ],
 ];

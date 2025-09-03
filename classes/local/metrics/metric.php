@@ -131,4 +131,13 @@ abstract class metric {
      * @return metric_type
      */
     abstract public static function get_type(): metric_type;
+
+    /**
+     * Callback for the {@see gather_metrics} hook.
+     * 
+     * @return void
+     */
+    public static function gather_metrics_callback(\tool_monitoring\hook\gather_metrics $hook): void {
+        $hook->add_metric(self::class);
+    }
 }

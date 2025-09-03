@@ -43,10 +43,7 @@ $metrics = $hook->get_metrics();
 
 echo $OUTPUT->header();
 
-var_dump($metrics);
-
-foreach ($metrics as $metric) {
-    var_dump($metric::calculate());
-}
+$manager = new \tool_monitoring\metrics_manager();
+var_dump($manager->calculate_needed_metrics(''));
 
 echo $OUTPUT->footer();

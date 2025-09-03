@@ -40,3 +40,5 @@ $string['num_tasks_spawned_adhoc'] = 'Total number of ad-hoc tasks ever created'
 $string['num_tasks_spawned_scheduled'] = 'Total number of scheduled tasks ever created';
 $string['num_users_awaiting_quiz'] = 'Number users currently being rate-limited while waiting to start a quiz (minus 1)';
 $string['page_load_time'] = 'Amount of time a page takes to load';
+$string['setting_token'] = 'Token';
+$string['setting_token_desc'] = 'The token which has to be passed when the endpoint is called.';

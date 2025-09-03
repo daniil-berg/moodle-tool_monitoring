@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_monitoring\local\hooks;
-
 /**
- * Implementing callbacks for the gather_metrics hook.
+ * Implements the num_user_count metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,24 +27,49 @@ namespace tool_monitoring\local\hooks;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace tool_monitoring\local\metrics;
+
+use core\lang_string;
+
 /**
- * Implementing callbacks for the gather_metrics hook.
+ * Implements the num_user_count metric.
  */
-class register_metrics {
+class num_user_count implements metric_interface {
 
     /**
-     * Register our metrics.
+     * {@inheritDoc}
      *
-     * @param \tool_monitoring\hook\gather_metrics $hook
-     * @return void
+     * @return string
      */
-    public static function callback(\tool_monitoring\hook\gather_metrics $hook): void {
-        $hook->add_metric(\tool_monitoring\local\metrics\num_user_count::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_overdue_tasks_adhoc::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_overdue_tasks_scheduled::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_quiz_attempts_in_progress::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_adhoc::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_scheduled::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_users_accessed::class);
+    public static function get_name(): string {
+        return 'user_count';
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return metric_type
+     */
+    public static function get_type(): metric_type {
+        return metric_type::GAUGE;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @return \core\lang_string
+     */
+    public static function get_description(): lang_string {
+        return new lang_string('user_count_description', 'tool_monitoring');
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return int
+     */
+    public static function calculate(): int {
+        global $DB;
+
+        return $DB->count_records('user');
     }
 }

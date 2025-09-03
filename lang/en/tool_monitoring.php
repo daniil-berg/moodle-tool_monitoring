@@ -32,5 +32,13 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Monitoring';
 $string['user_count_description'] = 'Number of total registered users';
+$string['num_users_accessed'] = 'Number of users that have recently accessed the site';
+$string['num_quiz_attempts_in_progress'] = 'Number of ongoing quiz attempts';
+$string['num_overdue_tasks_adhoc'] = 'Number of overdue ad-hoc tasks';
+$string['num_overdue_tasks_scheduled'] = 'Number of overdue scheduled tasks';
+$string['num_tasks_spawned_adhoc'] = 'Total number of ad-hoc tasks ever created';
+$string['num_tasks_spawned_scheduled'] = 'Total number of scheduled tasks ever created';
+$string['num_users_awaiting_quiz'] = 'Number users currently being rate-limited while waiting to start a quiz (minus 1)';
+$string['page_load_time'] = 'Amount of time a page takes to load';
 $string['setting_token'] = 'Token';
 $string['setting_token_desc'] = 'The token which has to be passed when the endpoint is called.';

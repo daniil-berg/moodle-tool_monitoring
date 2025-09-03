@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the user_count metric.
+ * Definition of the {@see num_quiz_attempts_in_progress}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,47 +29,35 @@
 
 namespace tool_monitoring\local\metrics;
 
-use lang_string;
+use core\lang_string;
 
-/**
- * Implements the user_count metric.
- */
-class user_count implements metric_interface {
+class num_quiz_attempts_in_progress implements metric_interface {
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public static function get_name(): string {
-        return 'user_count';
+        return 'num_quiz_attempts_in_progress';
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return metric_type
-     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
     public static function get_description(): lang_string {
-        return new lang_string('user_count_description', 'tool_monitoring');
+        return new lang_string('num_quiz_attempts_in_progress', 'tool_monitoring');
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(): int {
+    public static function calculate(int|null $max_seconds_ago = null, int|null $max_seconds_to_end = null): int {
         global $DB;
-
-        return $DB->count_records('user');
+        $now = time();
+        $where = 'state = :state';
+        $params = ['state' => 'inprogress'];
+        if (!is_null($max_seconds_ago)) {
+            $where .= ' AND timemodified >= :time_modified';
+            $params['time_modified'] = $now - $max_seconds_ago;
+        }
+        if (!is_null($max_seconds_to_end)) {
+            $where .=' " AND timecheckstate <= :time_check_state"';
+            $params['time_check_state'] = $now + $max_seconds_to_end;
+        }
+        return $DB->count_records_select('quiz_attempts', $where, $params);
     }
 }

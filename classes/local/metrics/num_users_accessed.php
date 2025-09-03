@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_monitoring\local\hooks;
-
 /**
- * Implementing callbacks for the gather_metrics hook.
+ * Definition of the {@see num_users_accessed}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,24 +27,33 @@ namespace tool_monitoring\local\hooks;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
- * Implementing callbacks for the gather_metrics hook.
- */
-class register_metrics {
+namespace tool_monitoring\local\metrics;
 
-    /**
-     * Register our metrics.
-     *
-     * @param \tool_monitoring\hook\gather_metrics $hook
-     * @return void
-     */
-    public static function callback(\tool_monitoring\hook\gather_metrics $hook): void {
-        $hook->add_metric(\tool_monitoring\local\metrics\num_user_count::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_overdue_tasks_adhoc::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_overdue_tasks_scheduled::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_quiz_attempts_in_progress::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_adhoc::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_scheduled::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_users_accessed::class);
+use core\lang_string;
+
+class num_users_accessed implements metric_interface {
+    
+    public static function get_name(): string {
+        return 'num_users_accessed';
+    }
+
+    public static function get_type(): metric_type {
+        return metric_type::GAUGE;
+    }
+
+    public static function get_description(): lang_string {
+        return new lang_string('num_users_accessed', 'tool_monitoring');
+    }
+
+    public static function calculate(int $max_seconds_ago = 5, int $min_seconds_ago = 0): int {
+        global $DB;
+        $now = time();
+        $where = 'username <> :excl_user AND lastaccess BETWEEN :earliest AND :latest';
+        $params = [
+            'excl_user' => 'guest',
+            'earliest'  => $now - $max_seconds_ago,
+            'latest'    => $now - $min_seconds_ago,
+        ];
+        return $DB->count_records_select('user', $where, $params);
     }
 }

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_users}.
+ * Implements the num_user_count metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -31,20 +31,42 @@ namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
 
-class num_users implements metric_interface {
+/**
+ * Implements the num_user_count metric.
+ */
+class num_user_count implements metric_interface {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return string
+     */
     public static function get_name(): string {
         return 'user_count';
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return metric_type
+     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
+    /**
+     * {@inheritDoc}
+     * @return \core\lang_string
+     */
     public static function get_description(): lang_string {
         return new lang_string('user_count_description', 'tool_monitoring');
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return int
+     */
     public static function calculate(): int {
         global $DB;
 

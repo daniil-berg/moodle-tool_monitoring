@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_overdue_tasks_adhoc}.
+ * Implements the num_overdue_tasks_adhoc metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -32,31 +32,41 @@ namespace tool_monitoring\local\metrics;
 use core\lang_string;
 
 /**
- * Number of overdue AdHoc-Tasgs Metric
- *
- * @package     tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauck <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Implements the num_overdue_tasks_adhoc metric.
  */
 class num_overdue_tasks_adhoc implements metric_interface {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return string
+     */
     public static function get_name(): string {
         return 'num_overdue_tasks_adhoc';
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return metric_type
+     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
+    /**
+     * {@inheritDoc}
+     * @return \core\lang_string
+     */
     public static function get_description(): lang_string {
         return new lang_string('num_overdue_tasks_adhoc', 'tool_monitoring');
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return int
+     */
     public static function calculate(): int {
         global $DB;
         $where = 'nextruntime <= :next_runtime';

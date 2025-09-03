@@ -42,7 +42,7 @@ class num_user_count implements metric_interface {
      * @return string
      */
     public static function get_name(): string {
-        return 'user_count';
+        return 'num_user_count';
     }
 
     /**

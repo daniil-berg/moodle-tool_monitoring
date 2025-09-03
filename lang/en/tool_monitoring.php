@@ -38,5 +38,4 @@ $string['num_overdue_tasks_adhoc'] = 'Number of overdue ad-hoc tasks';
 $string['num_overdue_tasks_scheduled'] = 'Number of overdue scheduled tasks';
 $string['num_tasks_spawned_adhoc'] = 'Total number of ad-hoc tasks ever created';
 $string['num_tasks_spawned_scheduled'] = 'Total number of scheduled tasks ever created';
-$string['num_users_awaiting_quiz'] = 'Number users currently being rate-limited while waiting to start a quiz (minus 1)';
-$string['page_load_time'] = 'Amount of time a page takes to load';
+$string['num_course_count'] = 'Number of total courses';

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_overdue_tasks_scheduled}.
+ * Implements the num_overdue_tasks_scheduled metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -31,20 +31,42 @@ namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
 
+/**
+ * Implements the num_overdue_tasks_scheduled metric.
+ */
 class num_overdue_tasks_scheduled implements metric_interface {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return string
+     */
     public static function get_name(): string {
         return 'num_overdue_tasks_scheduled';
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return metric_type
+     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
+    /**
+     * {@inheritDoc}
+     * @return \core\lang_string
+     */
     public static function get_description(): lang_string {
         return new lang_string('num_overdue_tasks_scheduled', 'tool_monitoring');
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return int
+     */
     public static function calculate(bool|null $disabled = null): int {
         global $DB;
         $where = 'nextruntime <= :next_runtime';

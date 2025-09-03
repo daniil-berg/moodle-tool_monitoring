@@ -48,5 +48,6 @@ class register_metrics {
         $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_adhoc::class);
         $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_scheduled::class);
         $hook->add_metric(\tool_monitoring\local\metrics\num_users_accessed::class);
+        $hook->add_metric(\tool_monitoring\local\metrics\num_course_count::class);
     }
 }

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_users_accessed metric.
+ * Implements the num_course_count metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -32,17 +32,17 @@ namespace tool_monitoring\local\metrics;
 use core\lang_string;
 
 /**
- * Implements the num_users_accessed metric.
+ * Implements the num_course_count metric.
  */
-class num_users_accessed implements metric_interface {
-    
+class num_course_count implements metric_interface {
+
     /**
      * {@inheritDoc}
      *
      * @return string
      */
     public static function get_name(): string {
-        return 'num_users_accessed';
+        return 'num_course_count';
     }
 
     /**
@@ -59,7 +59,7 @@ class num_users_accessed implements metric_interface {
      * @return \core\lang_string
      */
     public static function get_description(): lang_string {
-        return new lang_string('num_users_accessed', 'tool_monitoring');
+        return new lang_string('num_course_count', 'tool_monitoring');
     }
 
     /**
@@ -67,15 +67,9 @@ class num_users_accessed implements metric_interface {
      *
      * @return int
      */
-    public static function calculate(int $max_seconds_ago = 5, int $min_seconds_ago = 0): int {
+    public static function calculate(): int {
         global $DB;
-        $now = time();
-        $where = 'username <> :excl_user AND lastaccess BETWEEN :earliest AND :latest';
-        $params = [
-            'excl_user' => 'guest',
-            'earliest'  => $now - $max_seconds_ago,
-            'latest'    => $now - $min_seconds_ago,
-        ];
-        return $DB->count_records_select('user', $where, $params);
+
+        return $DB->count_records('course');
     }
 }

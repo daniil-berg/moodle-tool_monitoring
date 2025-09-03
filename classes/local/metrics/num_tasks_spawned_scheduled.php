@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_tasks_spawned_scheduled}.
+ * Implements the num_tasks_spawned_scheduled metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -32,26 +32,48 @@ namespace tool_monitoring\local\metrics;
 use core\lang_string;
 use core\exception\coding_exception;
 
+/**
+ * Implements the num_tasks_spawned_scheduled metric.
+ */
 class num_tasks_spawned_scheduled implements metric_interface {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return string
+     */
     public static function get_name(): string {
         return 'num_tasks_spawned_scheduled';
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return metric_type
+     */
     public static function get_type(): metric_type {
         return metric_type::COUNTER;
     }
 
+    /**
+     * {@inheritDoc}
+     * @return \core\lang_string
+     */
     public static function get_description(): lang_string {
         return new lang_string('num_tasks_spawned_scheduled', 'tool_monitoring');
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return int
+     */
     public static function calculate(): int {
         global $CFG;
         return self::sum_last_sequence_value("{$CFG->prefix}task_scheduled_id_seq");
     }
 
-        /**
+    /**
      * Returns the `last_value` from the specified PostgreSQL sequence.
      *
      * @param string ...$sequences Name of the sequence of interest. If multiple names are passed, the **sum** of their last values

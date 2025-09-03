@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_quiz_attempts_in_progress}.
+ * Implements the num_quiz_attempts_in_progress metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -31,20 +31,42 @@ namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
 
+/**
+ * Implements the num_quiz_attempts_in_progress metric.
+ */
 class num_quiz_attempts_in_progress implements metric_interface {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return string
+     */
     public static function get_name(): string {
         return 'num_quiz_attempts_in_progress';
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return metric_type
+     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
+    /**
+     * {@inheritDoc}
+     * @return \core\lang_string
+     */
     public static function get_description(): lang_string {
         return new lang_string('num_quiz_attempts_in_progress', 'tool_monitoring');
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return int
+     */
     public static function calculate(int|null $max_seconds_ago = null, int|null $max_seconds_to_end = null): int {
         global $DB;
         $now = time();

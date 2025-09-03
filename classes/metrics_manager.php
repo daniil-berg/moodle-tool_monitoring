@@ -64,14 +64,14 @@ class metrics_manager {
      * Filter the metrics by tag and return the metric names with their values.
      *
      * @param string $tag
-     * @return array{string:float|int}
+     * @return array{string:class-string<metric_interface>}
      */
     public function calculate_needed_metrics(string $tag): array {
         // TODO: filter.
         $metricvalues = [];
 
         foreach ($this->allmetrics as $metric) {
-            $metricvalues[$metric::get_name()] = $metric::calculate();
+            $metricvalues[$metric::get_name()] = $metric;
         }
 
         return $metricvalues;

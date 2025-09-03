@@ -9,6 +9,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use core\router\schema\parameters\path_parameter;
 use core\router\schema\parameters\query_parameter;
 use core\param;
+use tool_monitoring\metrics_manager;
+use tool_monitoring\local\exporters;
 
 class prometheus {
     use route_controller;
@@ -37,7 +39,10 @@ class prometheus {
         $token = $request->getQueryParams()['token'] ?? null;
 
         $response = $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
-        $response->getBody()->write("tag {$tag} token {$token}");
+        $manager = new metrics_manager();
+        $response->getBody()->write(
+            exporters\prometheus::export($manager->calculate_needed_metrics($tag))
+        );
 
         return $response;
     }

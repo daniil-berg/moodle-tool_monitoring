@@ -32,3 +32,5 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Monitoring';
 $string['user_count_description'] = 'Number of total registered users';
+$string['setting_token'] = 'Token';
+$string['setting_token_desc'] = 'The token which has to be passed when the endpoint is called.';

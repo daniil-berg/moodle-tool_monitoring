@@ -33,8 +33,10 @@ defined('MOODLE_INTERNAL') || die();
 if ($hassiteconfig) {
     $settings = new admin_settingpage('tool_monitoring_settings', new lang_string('pluginname', 'tool_monitoring'));
 
-    // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
-    if ($ADMIN->fulltree) {
-        // TO-DO: Define actual plugin settings page and add it to the tree - {@link https://docs.moodle.org/dev/Admin_settings}.
-    }
+    $settings->add(new admin_setting_configpasswordunmask('tool_monitoring/token',
+            get_string('setting_token', 'tool_monitoring'),
+            get_string('setting_token_desc', 'tool_monitoring'),
+            ''));
+
+    $ADMIN->add('tools', $settings);
 }

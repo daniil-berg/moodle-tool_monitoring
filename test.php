@@ -30,20 +30,21 @@
 require_once(__DIR__ . '/../../../config.php');
 require_login();
 
-
 $PAGE->set_url('/admin/tool/monitoring/test.php');
 $PAGE->set_context(context_system::instance());
 $PAGE->set_title('monitoring test');
 $PAGE->set_heading('monitoring test');
 
-$hook = new \tool_monitoring\hook\gather_metrics();
-\core\di::get(\core\hook\manager::class)->dispatch($hook);
-
-$metrics = $hook->get_metrics();
+$manager = new \tool_monitoring\metrics_manager();
+$data = [];
+foreach ($manager->calculate_needed_metrics('') as $name => $metric) {
+    $data[$name] = $metric::calculate();
+}
 
 echo $OUTPUT->header();
 
-$manager = new \tool_monitoring\metrics_manager();
-var_dump($manager->calculate_needed_metrics(''));
+echo "<pre>";
+var_dump($data);
+echo "</pre>";
 
 echo $OUTPUT->footer();

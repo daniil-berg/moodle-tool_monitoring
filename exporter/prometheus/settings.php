@@ -28,14 +28,16 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\lang_string;
+
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    $settings = new admin_settingpage('tool_monitoring_settings', new lang_string('pluginname', 'tool_monitoring'));
+    $settings = new admin_settingpage('tool_monitoring_settings', new lang_string('pluginname', 'exporter_prometheus'));
 
-    $settings->add(new admin_setting_configpasswordunmask('tool_monitoring/token',
-            get_string('setting_token', 'tool_monitoring'),
-            get_string('setting_token_desc', 'tool_monitoring'),
+    $settings->add(new admin_setting_configpasswordunmask('exporter_prometheus/token',
+            get_string('setting_token', 'exporter_prometheus'),
+            get_string('setting_token_desc', 'exporter_prometheus'),
             ''));
 
     $ADMIN->add('tools', $settings);

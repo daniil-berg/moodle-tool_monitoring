@@ -27,10 +27,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\exporters;
+namespace exporter_prometheus;
 
 use tool_monitoring\local\metrics\metric_interface;
-use tool_monitoring\local\metrics\metric_type;
 
 /**
  * Exports metrics in Prometheus format.
@@ -44,7 +43,7 @@ use tool_monitoring\local\metrics\metric_type;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class prometheus {
+class export {
 
     /**
      * Exports the provided metrics in the Prometheus text format.

@@ -1,6 +1,6 @@
 <?php
 
-namespace tool_monitoring\route\controller;
+namespace exporter_prometheus\route\controller;
 
 use core\router\route;
 use core\router\route_controller;
@@ -10,7 +10,6 @@ use core\router\schema\parameters\path_parameter;
 use core\router\schema\parameters\query_parameter;
 use core\param;
 use tool_monitoring\metrics_manager;
-use tool_monitoring\local\exporters;
 
 class prometheus {
     use route_controller;
@@ -41,7 +40,7 @@ class prometheus {
         $response = $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
         $manager = new metrics_manager();
         $response->getBody()->write(
-            exporters\prometheus::export($manager->calculate_needed_metrics($tag))
+            \exporter_prometheus\export::export($manager->calculate_needed_metrics($tag))
         );
 
         return $response;

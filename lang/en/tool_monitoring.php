@@ -36,6 +36,7 @@ $string['pluginname'] = 'Monitoring';
 $string['num_user_count_description'] = 'Number of total registered users';
 $string['num_users_accessed_description'] = 'Number of users that have recently accessed the site';
 $string['num_quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts';
+$string['num_overdue_tasks_description'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
 $string['num_overdue_tasks_adhoc_description'] = 'Number of overdue ad-hoc tasks';
 $string['num_overdue_tasks_scheduled_description'] = 'Number of overdue scheduled tasks';
 $string['num_tasks_spawned_adhoc_description'] = 'Total number of ad-hoc tasks ever created';

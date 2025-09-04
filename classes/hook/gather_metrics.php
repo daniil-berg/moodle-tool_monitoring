@@ -29,7 +29,8 @@
 
 namespace tool_monitoring\hook;
 
-use tool_monitoring\local\metrics\metric_interface;
+use tool_monitoring\metric;
+use tool_monitoring\simple_metric;
 
 /**
  * Hook dispatched at the very call on the metrics api.
@@ -39,27 +40,27 @@ use tool_monitoring\local\metrics\metric_interface;
 final class gather_metrics {
 
     /**
-     * List of registered metrics class names.
+     * List of registered metrics.
      *
-     * @var class-string<metric_interface>[]
+     * @var (metric|simple_metric)[]
      */
     private array $metrics = [];
 
     /**
-     * Register a metrics class through its class name.
+     * Registers a metric.
      *
-     * @param class-string<metric_interface> $metric The reference to a class implementing {@see metric_interface}.
-     * @return void
+     * @param metric|simple_metric $metric
      */
-    public function add_metric(string $metric) {
+    public function add_metric(metric|simple_metric $metric) {
         $this->metrics[] = $metric;
     }
 
     /**
      * Get all registered metrics class names.
-     * @return class-string<metric_interface>[]
+     *
+     * @return (metric|simple_metric)[]
      */
-    public function get_metrics() {
+    public function get_metrics(): array {
         return $this->metrics;
     }
 }

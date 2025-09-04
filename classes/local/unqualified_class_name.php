@@ -15,33 +15,44 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_type} enum.
+ * Definition of the {@see unqualified_class_name} trait.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring\local;
 
 /**
- * Describes any available metric.
+ * Adds the static {@see get_name} method.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-enum metric_type: string {
-    case COUNTER = 'counter';
-    case GAUGE = 'gauge';
+trait unqualified_class_name {
+
+    /**
+     * Returns the unqualified class name.
+     *
+     * @return string
+     */
+    public static function get_name(): string {
+        $name = static::class;
+        if (($pos = strrpos($name, '\\')) === false) {
+            return $name;
+        }
+        return substr($name, $pos + 1);
+    }
 }

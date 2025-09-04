@@ -37,8 +37,9 @@ $PAGE->set_heading('monitoring test');
 
 $manager = new \tool_monitoring\metrics_manager();
 $data = [];
-foreach ($manager->calculate_needed_metrics('') as $name => $metric) {
-    $data[$name] = $metric::calculate();
+foreach ($manager->get_needed_metrics('') as $name => $metric) {
+    $metric->calculate();
+    $data[$name] = $metric->get_value();
 }
 
 echo $OUTPUT->header();

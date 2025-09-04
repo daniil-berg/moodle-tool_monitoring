@@ -41,13 +41,12 @@ class register_metrics {
      * @return void
      */
     public static function callback(\tool_monitoring\hook\gather_metrics $hook): void {
-        $hook->add_metric(\tool_monitoring\local\metrics\num_user_count::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_overdue_tasks_adhoc::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_overdue_tasks_scheduled::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_quiz_attempts_in_progress::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_adhoc::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_tasks_spawned_scheduled::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_users_accessed::class);
-        $hook->add_metric(\tool_monitoring\local\metrics\num_course_count::class);
+        $hook->add_metric(new \tool_monitoring\local\metrics\num_user_count());
+        $hook->add_metric(new \tool_monitoring\local\metrics\num_overdue_tasks());
+        $hook->add_metric(new \tool_monitoring\local\metrics\num_quiz_attempts_in_progress());
+        $hook->add_metric(new \tool_monitoring\local\metrics\num_tasks_spawned_adhoc());
+        $hook->add_metric(new \tool_monitoring\local\metrics\num_tasks_spawned_scheduled());
+        $hook->add_metric(new \tool_monitoring\local\metrics\num_users_accessed());
+        $hook->add_metric(new \tool_monitoring\local\metrics\num_course_count());
     }
 }

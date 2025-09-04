@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_overdue_tasks_scheduled metric.
+ * Definition of the {@see described_metric} interface.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,54 +27,42 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring;
 
 use core\lang_string;
 
 /**
- * Implements the num_overdue_tasks_scheduled metric.
+ * Describes any available metric.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_overdue_tasks_scheduled implements metric_interface {
+interface described_metric {
 
     /**
-     * {@inheritDoc}
+     * Returns the localized description of the metric.
+     *
+     * @return lang_string
+     */
+    public static function get_description(): lang_string;
+
+    /**
+     * Returns the name of the metric. Should be similar to the class name.
      *
      * @return string
      */
-    public static function get_name(): string {
-        return 'num_overdue_tasks_scheduled';
-    }
+    public static function get_name(): string;
 
     /**
-     * {@inheritDoc}
+     * Returns the type of the metric.
      *
      * @return metric_type
      */
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('num_overdue_tasks_scheduled_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(bool|null $disabled = null): int {
-        global $DB;
-        $where = 'nextruntime <= :next_runtime';
-        $params = ['next_runtime' => time()];
-        if (!is_null($disabled)) {
-            $where .= ' AND disabled = :disabled';
-            $params['disabled'] = $disabled;
-        }
-        return $DB->count_records_select('task_scheduled', $where, $params);
-    }
+    public static function get_type(): metric_type;
 }

@@ -29,48 +29,28 @@
 
 namespace tool_monitoring\local\metrics;
 
-use core\lang_string;
 use core\exception\coding_exception;
+use core\lang_string;
+use dml_exception;
+use tool_monitoring\metric_type;
+use tool_monitoring\simple_metric;
 
 /**
  * Implements the num_tasks_spawned_scheduled metric.
  */
-class num_tasks_spawned_scheduled implements metric_interface {
+class num_tasks_spawned_scheduled extends simple_metric {
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_tasks_spawned_scheduled';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return metric_type
-     */
     public static function get_type(): metric_type {
         return metric_type::COUNTER;
     }
 
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
     public static function get_description(): lang_string {
         return new lang_string('num_tasks_spawned_scheduled_description', 'tool_monitoring');
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(): int {
+    public function calculate(): void {
         global $CFG;
-        return self::sum_last_sequence_value("{$CFG->prefix}task_scheduled_id_seq");
+        $this->value = self::sum_last_sequence_value("{$CFG->prefix}task_scheduled_id_seq");
     }
 
     /**

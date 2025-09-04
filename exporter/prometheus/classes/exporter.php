@@ -29,10 +29,13 @@
 
 namespace monitoringexporter_prometheus;
 
-use tool_monitoring\local\metrics\metric_interface;
+use tool_monitoring\metric;
+use tool_monitoring\simple_metric;
 
 /**
  * Exports metrics in Prometheus format.
+ *
+ * @see https://prometheus.io/docs/instrumenting/exposition_formats
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -48,7 +51,7 @@ class exporter {
     /**
      * Exports the provided metrics in the Prometheus text format.
      *
-     * @param class-string<metric_interface>[] $metrics Metrics classes.
+     * @param (metric|simple_metric)[] $metrics
      * @return string Prometheus text format.
      */
     public static function export(array $metrics): string {
@@ -58,17 +61,42 @@ class exporter {
     /**
      * Exports the provided metric in the Prometheus text format including HELP and TYPE comments.
      *
-     * @param class-string<metric_interface> $metric Metrics class implementing {@see metric_interface}.
+     * @param metric|simple_metric $metric
      * @return string Prometheus text format for a single metric.
      */
-    private static function export_metric(string $metric): string {
-        $value = $metric::calculate();
+    private static function export_metric(metric|simple_metric $metric): string {
+        $metric->calculate();
         $help = $metric::get_description()->out();
         $name = $metric::get_name();
         $type = $metric::get_type();
         $output = "# HELP $name $help\n";
         $output .= "# TYPE $name $type->value\n";
-        $output .= "$name $value";
+        if ($metric instanceof simple_metric) {
+            $output .= "$name {$metric->get_value()}";
+        } else {
+            $lines = [];
+            foreach ($metric as $labels => $value) {
+                $labelsstring = self::labels_to_string($labels);
+                $lines[] = "$name{{$labelsstring}} $value";
+            }
+            $output .= implode("\n", $lines);
+        }
         return $output;
+    }
+
+    /**
+     * Generates the Prometheus metric labels string from a labels array.
+     *
+     * @see https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information
+     *
+     * @param array $labels Associative array of labels mapped to their respective values for a single metric.
+     * @return string Comma-separated name-value-pairs in the Prometheus format.
+     */
+    private static function labels_to_string(array $labels): string {
+        $pairs = [];
+        foreach ($labels as $labelname => $labelvalue) {
+            $pairs[] = "$labelname=\"$labelvalue\"";
+        }
+        return implode(', ', $pairs);
     }
 }

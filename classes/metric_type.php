@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_overdue_tasks_adhoc metric.
+ * Definition of the {@see metric_type} enum.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,50 +27,21 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
-
-use core\lang_string;
+namespace tool_monitoring;
 
 /**
- * Implements the num_overdue_tasks_adhoc metric.
+ * Describes any available metric.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_overdue_tasks_adhoc implements metric_interface {
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_overdue_tasks_adhoc';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return metric_type
-     */
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('num_overdue_tasks_adhoc_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(): int {
-        global $DB;
-        $where = 'nextruntime <= :next_runtime';
-        $params = ['next_runtime' => time()];
-        return $DB->count_records_select('task_adhoc', $where, $params);
-    }
+enum metric_type: string {
+    case COUNTER = 'counter';
+    case GAUGE = 'gauge';
 }

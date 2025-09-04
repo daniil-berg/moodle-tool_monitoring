@@ -15,12 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_interface}.
+ * Definition of the {@see num_overdue_tasks} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
@@ -30,45 +30,46 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use dml_exception;
+use tool_monitoring\metric;
+use tool_monitoring\metric_type;
 
 /**
- * Describes any available metric.
+ * Calculates the number of tasks that should have already executed but did not.
+ *
+ * The `task_type` label is used to distinguish between the number of overdue _adhoc_ tasks and overdue _scheduled_ tasks.
+ * In the latter case disabled tasks are not counted.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-interface metric_interface {
-    /**
-     * Actually compute the value.
-     *
-     * @return float|int
-     */
-    public static function calculate(): float|int;
+class num_overdue_tasks extends metric {
+    public static function get_description(): lang_string {
+        return new lang_string('num_overdue_tasks_description', 'tool_monitoring');
+    }
+
+    public static function get_type(): metric_type {
+        return metric_type::GAUGE;
+    }
 
     /**
-     * Description of this metric.
+     * Sets the metric values.
      *
-     * @return lang_string
+     * @throws dml_exception Database query failed.
      */
-    public static function get_description(): lang_string;
-
-    /**
-     * The name of this metric. Should be close to the class name.
-     *
-     * @return string
-     */
-    public static function get_name(): string;
-
-    /**
-     * Type of the metric.
-     *
-     * @return metric_type
-     */
-    public static function get_type(): metric_type;
+    public function calculate(): void {
+        global $DB;
+        $where = "nextruntime <= :next_runtime";
+        $params = ['next_runtime' => time()];
+        $this[['task_type' => 'adhoc']] = $DB->count_records_select('task_adhoc', $where, $params);
+        $where .= " AND disabled = :disabled";
+        $params['disabled'] = 0;
+        $this[['task_type' => 'scheduled']] = $DB->count_records_select('task_scheduled', $where, $params);
+    }
 }

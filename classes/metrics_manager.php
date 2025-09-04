@@ -29,17 +29,16 @@
 
 namespace tool_monitoring;
 
-use tool_monitoring\local\metrics\metric_interface;
-
 /**
  * Metrics manager to gather all available metrics and operations.
  */
 class metrics_manager {
     /**
      * All available metrics in the system.
-     * @var class-string<metric_interface>[]
+     *
+     * @var metric[]
      */
-    protected $allmetrics = [];
+    protected array $metrics = [];
 
     /**
      * Constructor that gathers all available metrics.
@@ -48,32 +47,32 @@ class metrics_manager {
         $hook = new \tool_monitoring\hook\gather_metrics();
         \core\di::get(\core\hook\manager::class)->dispatch($hook);
 
-        $this->allmetrics = $hook->get_metrics();
+        $this->metrics = $hook->get_metrics();
     }
 
     /**
      * Get all available metrics.
      *
-     * @return class-string<metric_interface>[]
+     * @return metric[]
      */
     public function get_all_metrics(): array {
-        return $this->allmetrics;
+        return $this->metrics;
     }
 
     /**
      * Filter the metrics by tag and return the metric names with their values.
      *
      * @param string $tag
-     * @return array{string:class-string<metric_interface>}
+     * @return metric[]
      */
-    public function calculate_needed_metrics(string $tag): array {
+    public function get_needed_metrics(string $tag): array {
         // TODO: filter.
-        $metricvalues = [];
+        $metrics = [];
 
-        foreach ($this->allmetrics as $metric) {
-            $metricvalues[$metric::get_name()] = $metric;
+        foreach ($this->metrics as $metric) {
+            $metrics[$metric::get_name()] = $metric;
         }
 
-        return $metricvalues;
+        return $metrics;
     }
 }

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_interface}.
+ * Definition of the {@see strict_label_names} trait.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,12 +27,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring;
 
-use core\lang_string;
+use core\exception\coding_exception;
 
 /**
- * Describes any available metric.
+ * Enforces a specific set of label names for the {@see metric} exhibiting this trait.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -43,32 +43,27 @@ use core\lang_string;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-interface metric_interface {
+trait strict_label_names {
     /**
-     * Actually compute the value.
+     * Returns the exact set of label names expected for the metric exhibiting this trait.
      *
-     * @return float|int
+     * @return string[] Array of label names; order is not relevant.
      */
-    public static function calculate(): float|int;
+    abstract static function get_label_names(): array;
 
     /**
-     * Description of this metric.
+     * Ensures the metric value has the exact label names defined by {@see get_label_names}.
      *
-     * @return lang_string
+     * @param metric_value $metricvalue Metric value instance to be validated.
+     * @return metric_value Valid metric value.
+     * @throws coding_exception Label names do not match.
      */
-    public static function get_description(): lang_string;
-
-    /**
-     * The name of this metric. Should be close to the class name.
-     *
-     * @return string
-     */
-    public static function get_name(): string;
-
-    /**
-     * Type of the metric.
-     *
-     * @return metric_type
-     */
-    public static function get_type(): metric_type;
+    protected static function validate_value(metric_value $metricvalue): metric_value {
+        $allowed = array_flip(static::get_label_names());
+        if (!empty(array_diff_key($allowed, $metricvalue->label) + array_diff_key($metricvalue->label, $allowed))) {
+            // TODO: Use custom exception class.
+            throw new coding_exception('Invalid label names: ' . json_encode($metricvalue->label));
+        }
+        return $metricvalue;
+    }
 }

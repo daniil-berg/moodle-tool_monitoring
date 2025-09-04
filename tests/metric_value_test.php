@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_overdue_tasks_adhoc metric.
+ * Definition of the {@see metric_value_test} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -25,52 +25,29 @@
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * {@noinspection PhpIllegalPsrClassPathInspection}
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring;
 
-use core\lang_string;
+use advanced_testcase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * Implements the num_overdue_tasks_adhoc metric.
- */
-class num_overdue_tasks_adhoc implements metric_interface {
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_overdue_tasks_adhoc';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return metric_type
-     */
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('num_overdue_tasks_adhoc_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(): int {
-        global $DB;
-        $where = 'nextruntime <= :next_runtime';
-        $params = ['next_runtime' => time()];
-        return $DB->count_records_select('task_adhoc', $where, $params);
+#[CoversClass(metric_value::class)]
+class metric_value_test extends advanced_testcase {
+    public function test___construct(): void {
+        $instance = new metric_value(3.14);
+        self::assertSame(3.14, $instance->value);
+        self::assertSame([], $instance->label);
+        $instance = new metric_value(0, ['a' => 'b']);
+        self::assertSame(0, $instance->value);
+        self::assertSame(['a' => 'b'], $instance->label);
+        $instance = new metric_value(
+            value: 420,
+            label: ['foo' => 'bar', 'spam' => 'eggs'],
+        );
+        self::assertSame(420, $instance->value);
+        self::assertSame(['foo' => 'bar', 'spam' => 'eggs'], $instance->label);
     }
 }

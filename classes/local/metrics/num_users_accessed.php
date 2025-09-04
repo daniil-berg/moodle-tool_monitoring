@@ -30,44 +30,24 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use tool_monitoring\metric_type;
+use tool_monitoring\metric;
+use tool_monitoring\metric_value;
 
 /**
  * Implements the num_users_accessed metric.
  */
-class num_users_accessed implements metric_interface {
-    
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_users_accessed';
-    }
+class num_users_accessed extends metric {
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return metric_type
-     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
     public static function get_description(): lang_string {
         return new lang_string('num_users_accessed_description', 'tool_monitoring');
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(int $max_seconds_ago = 30, int $min_seconds_ago = 0): int {
+    protected function calculate(int $max_seconds_ago = 30, int $min_seconds_ago = 0): metric_value {
         global $DB;
         $now = time();
         $where = 'username <> :excl_user AND lastaccess BETWEEN :earliest AND :latest';
@@ -76,6 +56,6 @@ class num_users_accessed implements metric_interface {
             'earliest'  => $now - $max_seconds_ago,
             'latest'    => $now - $min_seconds_ago,
         ];
-        return $DB->count_records_select('user', $where, $params);
+        return new metric_value($DB->count_records_select('user', $where, $params));
     }
 }

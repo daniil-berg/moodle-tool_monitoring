@@ -58,17 +58,32 @@ class exporter {
     /**
      * Exports the provided metric in the Prometheus text format including HELP and TYPE comments.
      *
-     * @param class-string<metric_interface> $metric Metrics class implementing {@see metric_interface}.
+     * @param class-string<metric_base> $metric Metrics class implementing {@see metric_interface}.
      * @return string Prometheus text format for a single metric.
      */
     private static function export_metric(string $metric): string {
-        $value = $metric::calculate();
+        $metric_values = $metric::calculate();
         $help = $metric::get_description()->out();
         $name = $metric::get_name();
         $type = $metric::get_type();
         $output = "# HELP $name $help\n";
-        $output .= "# TYPE $name $type->value\n";
-        $output .= "$name $value";
+        $output .= "# TYPE $name $type->value";
+        foreach ($metric_values as $metric_value) {
+            $output .= "\n";
+            $value = $metric_value->get_value();
+            $label = $metric_value->get_label();
+            if (count($label) > 0) {
+                $labelAttributes = array_map(function($label_value, $label_key) {
+                    return $label_key.'="'.$label_value.'"';
+                }, array_values($label), array_keys($label));
+                $labelAttributes = implode(', ', $labelAttributes);
+                $output .= "$name"."{"."$labelAttributes"."}". " $value";
+            } else {
+                $output .= "$name $value";
+            }
+        }
+        
         return $output;
     }
+
 }

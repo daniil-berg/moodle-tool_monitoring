@@ -30,20 +30,12 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use tool_monitoring\local\metrics\metric_value;
 
 /**
  * Implements the num_users_accessed metric.
  */
-class num_users_accessed implements metric_interface {
-    
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_users_accessed';
-    }
+class num_users_accessed extends metric_base {
 
     /**
      * {@inheritDoc}
@@ -67,15 +59,23 @@ class num_users_accessed implements metric_interface {
      *
      * @return int
      */
-    public static function calculate(int $max_seconds_ago = 30, int $min_seconds_ago = 0): int {
+    public static function calculate(int $max_seconds_ago = 30, int $min_seconds_ago = 0): array {
         global $DB;
         $now = time();
+        $metrics = [];
         $where = 'username <> :excl_user AND lastaccess BETWEEN :earliest AND :latest';
         $params = [
             'excl_user' => 'guest',
             'earliest'  => $now - $max_seconds_ago,
             'latest'    => $now - $min_seconds_ago,
         ];
-        return $DB->count_records_select('user', $where, $params);
+        $value = $DB->count_records_select('user', $where, $params);
+        $metric_value = new metric_value($value, ['time' => 30, 'test' => 2]);
+        array_push($metrics, $metric_value);
+
+        $metric_value2 = new metric_value(2, ['time' => 15, 'test' => 2]);
+        array_push($metrics, $metric_value2);
+
+        return $metrics;
     }
 }

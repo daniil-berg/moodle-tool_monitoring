@@ -30,20 +30,12 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use tool_monitoring\local\metrics\metric_value;
 
 /**
  * Implements the num_user_count metric.
  */
-class num_user_count implements metric_interface {
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_user_count';
-    }
+class num_user_count extends metric_base {
 
     /**
      * {@inheritDoc}
@@ -67,9 +59,8 @@ class num_user_count implements metric_interface {
      *
      * @return int
      */
-    public static function calculate(): int {
+    public static function calculate(): array {
         global $DB;
-
-        return $DB->count_records('user');
+        return [new metric_value($DB->count_records('user'))]; 
     }
 }

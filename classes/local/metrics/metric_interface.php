@@ -49,7 +49,7 @@ interface metric_interface {
      *
      * @return float|int
      */
-    public static function calculate(): float|int;
+    public static function calculate(): array;
 
     /**
      * Description of this metric.

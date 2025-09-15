@@ -22,7 +22,7 @@ namespace tool_monitoring\plugininfo;
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>

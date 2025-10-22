@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Test the metrics calculation.
+ * Definition of the {@see metric_value} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,24 +27,23 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(__DIR__ . '/../../../config.php');
-require_login();
+namespace tool_monitoring;
 
-$PAGE->set_url('/admin/tool/monitoring/test.php');
-$PAGE->set_context(context_system::instance());
-$PAGE->set_title('monitoring test');
-$PAGE->set_heading('monitoring test');
-
-$manager = new \tool_monitoring\metrics_manager();
-$data = [];
-foreach ($manager->calculate_needed_metrics('') as $name => $metric) {
-    $data[$name] = $metric::calculate();
+/**
+ * Encapsulates a single value of a {@see metric} with an optional associated label.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+final readonly class metric_value {
+    public function __construct(
+        public float|int $value,
+        public array $label = [],
+    ) {}
 }
-
-echo $OUTPUT->header();
-
-echo "<pre>";
-var_dump($data);
-echo "</pre>";
-
-echo $OUTPUT->footer();

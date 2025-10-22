@@ -30,46 +30,25 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use tool_monitoring\metric_type;
+use tool_monitoring\metric;
+use tool_monitoring\metric_value;
 
 /**
  * Implements the num_user_count metric.
  */
-class num_user_count implements metric_interface {
+class num_user_count extends metric {
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_user_count';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return metric_type
-     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
     public static function get_description(): lang_string {
         return new lang_string('num_user_count_description', 'tool_monitoring');
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(): int {
+    protected function calculate(): metric_value {
         global $DB;
-
-        return $DB->count_records('user');
+        return new metric_value($DB->count_records('user'));
     }
 }

@@ -30,44 +30,24 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use tool_monitoring\metric_type;
+use tool_monitoring\metric;
+use tool_monitoring\metric_value;
 
 /**
  * Implements the num_quiz_attempts_in_progress metric.
  */
-class num_quiz_attempts_in_progress implements metric_interface {
+class num_quiz_attempts_in_progress extends metric {
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public static function get_name(): string {
-        return 'num_quiz_attempts_in_progress';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return metric_type
-     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
-    /**
-     * {@inheritDoc}
-     * @return \core\lang_string
-     */
     public static function get_description(): lang_string {
         return new lang_string('num_quiz_attempts_in_progress_description', 'tool_monitoring');
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return int
-     */
-    public static function calculate(int|null $max_seconds_ago = null, int|null $max_seconds_to_end = null): int {
+    protected function calculate(int|null $max_seconds_ago = null, int|null $max_seconds_to_end = null): metric_value {
         global $DB;
         $now = time();
         $where = 'state = :state';
@@ -80,6 +60,6 @@ class num_quiz_attempts_in_progress implements metric_interface {
             $where .=' " AND timecheckstate <= :time_check_state"';
             $params['time_check_state'] = $now + $max_seconds_to_end;
         }
-        return $DB->count_records_select('quiz_attempts', $where, $params);
+        return new metric_value($DB->count_records_select('quiz_attempts', $where, $params));
     }
 }

@@ -29,35 +29,46 @@
 
 namespace tool_monitoring\hook;
 
+use core\attribute\label;
+use core\attribute\tags;
 use tool_monitoring\metric;
 
 /**
- * Hook dispatched at the very call on the metrics api.
+ * Linchpin of the monitoring API.
+ *
+ * Hook callbacks can register metrics via the {@see add_metric} method.
+ * Registered metrics can be retrieved with the {@see get_metrics} method.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[\core\attribute\label('Hook dispatched at the very call on the metrics api.')]
-#[\core\attribute\tags('metric')]
+#[label('Provides the ability to register custom metrics.')]
+#[tags('metric', 'monitoring', 'tool_monitoring')]
 final class gather_metrics {
 
-    /**
-     * List of registered metrics.
-     *
-     * @var metric[]
-     */
+    /** @var metric[] All registered metrics indexed by name. */
     private array $metrics = [];
 
     /**
-     * Registers a metric.
+     * Registers the provided metric.
      *
      * @param metric $metric
      */
-    public function add_metric(metric $metric) {
-        $this->metrics[] = $metric;
+    public function add_metric(metric $metric): void {
+        // TODO: Ensure unique names?
+        $this->metrics[$metric::get_name()] = $metric;
     }
 
     /**
-     * Get all registered metrics class names.
+     * Returns all registered metrics.
      *
-     * @return metric[]
+     * @return metric[] Metrics indexed by name.
      */
     public function get_metrics(): array {
         return $this->metrics;

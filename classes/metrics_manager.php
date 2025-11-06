@@ -29,50 +29,52 @@
 
 namespace tool_monitoring;
 
+use core\di;
+use core\hook\manager;
+use tool_monitoring\hook\gather_metrics;
+
 /**
  * Metrics manager to gather all available metrics and operations.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metrics_manager {
-    /**
-     * All available metrics in the system.
-     *
-     * @var metric[]
-     */
+final class metrics_manager {
+
+    /** @var metric[] All available metrics in the system indexed by name. */
     protected array $metrics = [];
 
     /**
-     * Constructor that gathers all available metrics.
+     * Dispatches the {@see gather_metrics} hook and then stores all available metrics.
      */
     public function __construct() {
-        $hook = new \tool_monitoring\hook\gather_metrics();
-        \core\di::get(\core\hook\manager::class)->dispatch($hook);
-
+        $hook = new gather_metrics();
+        di::get(manager::class)->dispatch($hook);
         $this->metrics = $hook->get_metrics();
     }
 
     /**
-     * Get all available metrics.
+     * Returns the registered metrics.
      *
-     * @return metric[]
-     */
-    public function get_all_metrics(): array {
-        return $this->metrics;
-    }
-
-    /**
-     * Filter the metrics by tag and return the metric names with their values.
+     * Optionally filters the metrics by tag.
      *
-     * @param string $tag
-     * @return metric[]
+     * @param string|null $tag If provided, only metrics with that tag will be returned.
+     * @return metric[] Metrics indexed by their name.
      */
-    public function get_needed_metrics(string $tag): array {
-        // TODO: filter.
-        $metrics = [];
-
-        foreach ($this->metrics as $metric) {
-            $metrics[$metric::get_name()] = $metric;
+    public function get_metrics(string|null $tag = null): array {
+        if (is_null($tag)) {
+            return $this->metrics;
         }
-
-        return $metrics;
+        // TODO: Implement configurable tags for metrics via settings and filter the metrics accordingly here.
+        return array_filter(
+            $this->metrics,
+            fn (metric $metric): bool => true,
+        );
     }
 }

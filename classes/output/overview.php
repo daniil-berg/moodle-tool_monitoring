@@ -39,7 +39,7 @@ class overview implements renderable, templatable {
      */
     public function export_for_template(\core\output\renderer_base $output) {
         $manager = new metrics_manager();
-        $metrics = $manager->get_all_metrics();
+        $metrics = $manager->get_metrics();
         $lines = [];
         foreach ($metrics as $metric) {
             $lines[] = [

@@ -29,6 +29,7 @@
 
 namespace tool_monitoring;
 
+use core\component;
 use core\lang_string;
 use IteratorAggregate;
 use Traversable;
@@ -83,7 +84,7 @@ abstract class metric implements IteratorAggregate {
      * Returns the name of the metric to be used as an identifier.
      *
      * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the Moodle instance.
+     * the defining component, see get_component.
      * Defaults to the unqualified class name.
      *
      * @return string Unique metric name/identifier.
@@ -94,6 +95,18 @@ abstract class metric implements IteratorAggregate {
             return $name; // @codeCoverageIgnore
         }
         return substr($name, $pos + 1);
+    }
+
+    /**
+     * Returns the name of the Moodle component, i.e. the plugin or core component, which defines this metric.
+     *
+     * Subclasses may override this for special cases. The default implementation is the component name extracted
+     * from the metric class' namespace.
+     *
+     * @return string Moodle component name.
+     */
+    public static function get_component(): string {
+        return component::get_component_from_classname(static::class);
     }
 
     /**

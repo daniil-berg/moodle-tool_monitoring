@@ -84,7 +84,7 @@ abstract class metric implements IteratorAggregate {
      * Returns the name of the metric to be used as an identifier.
      *
      * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the defining component as returned by {@see get_component}.
+     * the defining component as returned by {@see get_component}; it _must_ be a maximum of 100 characters long.
      * Defaults to the unqualified class name.
      *
      * @return string Unique metric name/identifier.
@@ -101,7 +101,7 @@ abstract class metric implements IteratorAggregate {
      * Returns the name of the Moodle component, i.e. the plugin or core component, which defines this metric.
      *
      * Subclasses may override this for special cases. The default implementation is the component name extracted
-     * from the metric class' namespace.
+     * from the metric class' namespace. It _must_ be a maximum of 100 characters long.
      *
      * @return string Moodle component name.
      */

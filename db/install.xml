@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="admin/tool/monitoring/db" VERSION="20251118" COMMENT="XMLDB file for Moodle admin/tool/monitoring/db"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+    <TABLES>
+        <TABLE NAME="tool_monitoring_settings" COMMENT="table to store metric's settings">
+            <FIELDS>
+                <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="component" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The component of this metric."/>
+                <FIELD NAME="metric" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The name of this metric."/>
+                <FIELD NAME="enabled" SEQUENCE="false" TYPE="int" LENGTH="1" NOTNULL="true" COMMENT="0 if this metric is disabled, i.e. not included in any export, or 1 if enabled."/>
+                <FIELD NAME="settings" SEQUENCE="false" TYPE="text" NOTNULL="true" COMMENT="JSON encoded settings of this metric. The settings are specific to a metric and may be used to customise the metric's behaviour."/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The unix timestamp this setting was first created."/>
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The unix timestamp this setting was last updated."/>
+                <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The userid of the person who last modified this setting."/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="usermodified" TYPE="foreign" FIELDS="usermodified" REFTABLE="user" REFFIELDS="id"/>
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="component" UNIQUE="false" FIELDS="component"/>
+                <INDEX NAME="metric" UNIQUE="false" FIELDS="metric"/>
+            </INDEXES>
+        </TABLE>
+    </TABLES>
+</XMLDB>

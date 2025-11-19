@@ -15,52 +15,60 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see gather_metrics} hook.
+ * Definition of the {@see metric_interface}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Martin Gauck <martin.gauk@tu-berlin.de>
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\hook;
+namespace tool_monitoring;
 
-use tool_monitoring\metric;
+use core\lang_string;
 
 /**
- * Hook dispatched at the very call on the metrics api.
+ * Describes any available metric.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauck <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[\core\attribute\label('Hook dispatched at the very call on the metrics api.')]
-#[\core\attribute\tags('metric')]
-final class gather_metrics {
+interface metric_interface {
+    /**
+     * Actually compute the value.
+     *
+     * @return float|int
+     */
+    public static function calculate(): array;
 
     /**
-     * List of registered metrics.
+     * Description of this metric.
      *
-     * @var metric[]
+     * @return lang_string
      */
-    private array $metrics = [];
+    public static function get_description(): lang_string;
 
     /**
-     * Register a metrics class through its class name.
+     * The name of this metric. Should be close to the class name.
      *
-     * @param class-string<metric_interface> $metric The reference to a class implementing {@see metric_interface}.
-     * @return void
+     * @return string
      */
-    public function add_metric(string $metric) {
-        $this->metrics[] = $metric;
-    }
+    public static function get_name(): string;
 
     /**
-     * Get all registered metrics class names.
+     * Type of the metric.
      *
-     * @return metric[]
+     * @return metric_type
      */
-    public function get_metrics(): array {
-        return $this->metrics;
-    }
+    public static function get_type(): metric_type;
 }

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see gather_metrics} hook.
+ * Implementing callbacks for the gather_metrics hook.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,40 +27,27 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\hook;
+namespace tool_monitoring;
 
-use tool_monitoring\metric;
+use core\lang_string;
 
-/**
- * Hook dispatched at the very call on the metrics api.
- */
-#[\core\attribute\label('Hook dispatched at the very call on the metrics api.')]
-#[\core\attribute\tags('metric')]
-final class gather_metrics {
+abstract class metric_base implements metric_interface {
 
-    /**
-     * List of registered metrics.
-     *
-     * @var metric[]
-     */
-    private array $metrics = [];
+    abstract public static function calculate(): array;
 
-    /**
-     * Register a metrics class through its class name.
-     *
-     * @param class-string<metric_interface> $metric The reference to a class implementing {@see metric_interface}.
-     * @return void
-     */
-    public function add_metric(string $metric) {
-        $this->metrics[] = $metric;
+    abstract public static function get_description(): lang_string;
+
+    abstract public static function get_type(): metric_type;
+
+    public static function get_name(): string {
+        return get_called_class();
     }
 
-    /**
-     * Get all registered metrics class names.
-     *
-     * @return metric[]
-     */
-    public function get_metrics(): array {
-        return $this->metrics;
+    public static function gather_metrics_callback(\tool_monitoring\hook\gather_metrics $hook): void {
+        $hook->add_metric(static::class);
+    }
+
+    public static function get_allowed_label_names(): ?array {
+        return null;
     }
 }

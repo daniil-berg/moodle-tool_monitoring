@@ -84,7 +84,7 @@ abstract class metric implements IteratorAggregate {
      * Returns the name of the metric to be used as an identifier.
      *
      * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the defining component, see get_component.
+     * the defining component as returned by {@see get_component}.
      * Defaults to the unqualified class name.
      *
      * @return string Unique metric name/identifier.

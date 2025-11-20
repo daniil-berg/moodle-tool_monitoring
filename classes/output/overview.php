@@ -19,6 +19,7 @@ namespace tool_monitoring\output;
 use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
+use core_tag_tag;
 use moodle_url;
 use tool_monitoring\metrics_manager;
 
@@ -61,7 +62,7 @@ class overview implements renderable, templatable {
                     'timemodified' => time(),
                     'usermodified' => $USER->id,
                 ];
-                $record['id'] = $DB->insert_record('tool_monitoring_settings', $record);
+                $record->id = $DB->insert_record('tool_monitoring_settings', $record);
             }
             $this->entries[] = [
                 'record' => $record,
@@ -75,9 +76,15 @@ class overview implements renderable, templatable {
      * {@inheritDoc}
      */
     public function export_for_template(renderer_base $output) {
+        global $OUTPUT;
         $lines = [];
         foreach ($this->entries as $entry) {
             ['record' => $record, 'metric' => $metric] = $entry;
+            $tagshtml = $OUTPUT->tag_list(
+                core_tag_tag::get_item_tags(
+                    'tool_monitoring',
+                    'metrics',
+                    $record->id));
             $edit = new moodle_url('/admin/tool/monitoring/configure.php', ['id' => $record->id]);
             $lines[] = [
                 'component' => $metric::get_component(),
@@ -85,6 +92,7 @@ class overview implements renderable, templatable {
                 'type' => $metric::get_type()->value,
                 'description' => $metric::get_description()->out(),
                 'edit' => $edit->out(false),
+                'tagshtml' => $tagshtml,
             ];
         }
         return [

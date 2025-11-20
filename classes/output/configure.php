@@ -16,9 +16,11 @@
 
 namespace tool_monitoring\output;
 
+use context_system;
 use core\exception\coding_exception;
 use core\output\renderable;
 use core\output\templatable;
+use core_tag_tag;
 use moodle_url;
 use stdClass;
 use tool_monitoring\form\config;
@@ -62,6 +64,7 @@ class configure implements renderable, templatable {
         } else {
             $data = [
                 'id' => $this->record->id,
+                'tags' => core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $this->record->id),
             ];
             $this->form->set_data($data);
         }
@@ -96,5 +99,12 @@ class configure implements renderable, templatable {
 
     private function process_data(stdClass $data) {
         // TODO save data
+        core_tag_tag::set_item_tags(
+            'tool_monitoring',
+            'metrics',
+            $this->record->id,
+            context_system::instance(),
+            $data->tags
+        );
     }
 }

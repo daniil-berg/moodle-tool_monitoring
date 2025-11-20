@@ -49,6 +49,16 @@ class config extends moodleform {
         $mform->addElement('static', 'type', get_string('type', 'tool_monitoring'), $metric::get_type()->value);
         $mform->addElement('static', 'description', get_string('description', 'tool_monitoring'), $metric::get_description());
 
+        $mform->addElement(
+            'tags',
+            'tags',
+            get_string('tags'),
+            [
+                'itemtype' => 'metrics',
+                'component' => 'tool_monitoring',
+            ]
+        );
+
         $this->add_action_buttons();
     }
 }

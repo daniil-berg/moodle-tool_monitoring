@@ -49,4 +49,8 @@ $string['num_overdue_tasks_scheduled_description'] = 'Number of overdue schedule
 $string['num_tasks_spawned_adhoc_description'] = 'Total number of ad-hoc tasks ever created';
 $string['num_tasks_spawned_scheduled_description'] = 'Total number of scheduled tasks ever created';
 $string['num_course_count_description'] = 'Number of total courses';
-$string['subplugintype_monitoringexporter_plural'] = 'Exporter types';$string['type'] = 'Type';
+$string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
+$string['tagarea_metrics'] = 'Metrics';
+$string['tagcollection_monitoring'] = 'Monitoring';
+$string['tags'] = 'Tags';
+$string['type'] = 'Type';

@@ -10,7 +10,6 @@
                 <FIELD NAME="component" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The component of this metric."/>
                 <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The name of this metric."/>
                 <FIELD NAME="enabled" SEQUENCE="false" TYPE="int" LENGTH="1" NOTNULL="true" COMMENT="0 if this metric is disabled, i.e. not included in any export, or 1 if enabled."/>
-                <FIELD NAME="tags" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="Comma separated list of this metric's tags. Every tag must be PARAM_ALPHAEXT. Exports can be requested to include only metrics having certain tags."/>
                 <FIELD NAME="settings" SEQUENCE="false" TYPE="text" NOTNULL="true" COMMENT="JSON encoded settings of this metric. The settings are specific to a metric and may be used to customise the metric's behaviour."/>
                 <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The unix timestamp this setting was first created."/>
                 <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The unix timestamp this setting was last updated."/>
@@ -23,7 +22,6 @@
             <INDEXES>
                 <INDEX NAME="component" UNIQUE="false" FIELDS="component"/>
                 <INDEX NAME="name" UNIQUE="false" FIELDS="name"/>
-                <INDEX NAME="tags" UNIQUE="false" FIELDS="tags"/>
                 <INDEX NAME="component_name" UNIQUE="true" FIELDS="component,name"/>
             </INDEXES>
         </TABLE>

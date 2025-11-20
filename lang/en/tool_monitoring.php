@@ -30,8 +30,15 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['actions'] = 'Actions';
+$string['component'] = 'Component';
+$string['configure_metric'] = 'Configure Metric';
+$string['description'] = 'Description';
+$string['edit'] = 'Edit';
 $string['metricsoverview'] = 'Overview of Available Metrics';
+$string['monitoring:configure_metrics'] = 'Configure the settings of monitoring metrics';
 $string['monitoring:list_metrics'] = 'List metrics';
+$string['name'] = 'Name';
 $string['pluginname'] = 'Monitoring';
 $string['num_user_count_description'] = 'Number of total registered users';
 $string['num_users_accessed_description'] = 'Number of users that have recently accessed the site';
@@ -42,4 +49,4 @@ $string['num_overdue_tasks_scheduled_description'] = 'Number of overdue schedule
 $string['num_tasks_spawned_adhoc_description'] = 'Total number of ad-hoc tasks ever created';
 $string['num_tasks_spawned_scheduled_description'] = 'Total number of scheduled tasks ever created';
 $string['num_course_count_description'] = 'Number of total courses';
-$string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
+$string['subplugintype_monitoringexporter_plural'] = 'Exporter types';$string['type'] = 'Type';

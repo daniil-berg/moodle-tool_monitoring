@@ -14,13 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace tool_monitoring\form;
+
+global $CFG;
+
+use moodleform;
+
+require_once("$CFG->libdir/formslib.php");
+
 /**
- * Capability definitions for Monitoring
- *
- * Documentation: {@link https://moodledev.io/docs/apis/subsystems/access}
+ * Configuration form for a metric
  *
  * @package    tool_monitoring
- * @category   access
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -29,23 +34,21 @@
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class config extends moodleform {
 
-defined('MOODLE_INTERNAL') || die();
+    protected function definition() {
+        $mform = $this->_form;
 
-$capabilities = [
-    'tool/monitoring:list_metrics' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-    'tool/monitoring:configure_metrics' => [
-        'captype' => 'write',
-        'riskbitmask' => RISK_CONFIG,
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-];
+        $metric = $this->_customdata['metric'];
+
+        $mform->addElement('hidden', 'id');
+        $mform->setType('id', PARAM_INT);
+
+        $mform->addElement('static', 'component', get_string('component', 'tool_monitoring'), $metric::get_component());
+        $mform->addElement('static', 'name', get_string('name', 'tool_monitoring'), $metric::get_name());
+        $mform->addElement('static', 'type', get_string('type', 'tool_monitoring'), $metric::get_type()->value);
+        $mform->addElement('static', 'description', get_string('description', 'tool_monitoring'), $metric::get_description());
+
+        $this->add_action_buttons();
+    }
+}

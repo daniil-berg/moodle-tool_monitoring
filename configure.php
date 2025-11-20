@@ -15,12 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Capability definitions for Monitoring
- *
- * Documentation: {@link https://moodledev.io/docs/apis/subsystems/access}
+ * Edit a metric's settings.
  *
  * @package    tool_monitoring
- * @category   access
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -30,22 +27,26 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/../../../config.php');
 
-$capabilities = [
-    'tool/monitoring:list_metrics' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-    'tool/monitoring:configure_metrics' => [
-        'captype' => 'write',
-        'riskbitmask' => RISK_CONFIG,
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-];
+global $PAGE, $OUTPUT;
+
+require_login();
+
+$context = context_system::instance();
+require_capability('tool/monitoring:configure_metrics', $context);
+
+$id = required_param('id', PARAM_INT);
+
+
+$PAGE->set_url('/admin/tool/monitoring/configure.php', ['id' => $id]);
+$PAGE->set_context($context);
+$PAGE->set_title(get_string('configure_metric', 'tool_monitoring'));
+$PAGE->set_heading(get_string('configure_metric', 'tool_monitoring'));
+$PAGE->add_body_class('limitedwidth');
+
+$configure = new tool_monitoring\output\configure($id);
+
+echo $OUTPUT->header();
+echo $OUTPUT->render($configure);
+echo $OUTPUT->footer();

@@ -36,10 +36,11 @@
 <table class="table table-sm table-hover">
   <thead>
     <tr>
-      <th scope="col">Component</th>
-      <th scope="col">Name</th>
-      <th scope="col">Type</th>
-      <th scope="col">Description</th>
+      <th scope="col">{{#str}} component, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} name, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} type, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} description, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} actions, tool_monitoring {{/str}}</th>
     </tr>
   </thead>
   <tbody>
@@ -49,6 +50,7 @@
         <td>{{name}}</td>
         <td>{{type}}</td>
         <td>{{description}}</td>
+        <td><a href="{{{edit}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
       </tr>
     {{/metrics}}
   </tbody>

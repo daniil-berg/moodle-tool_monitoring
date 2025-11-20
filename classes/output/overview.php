@@ -17,7 +17,9 @@
 namespace tool_monitoring\output;
 
 use core\output\renderable;
+use core\output\renderer_base;
 use core\output\templatable;
+use moodle_url;
 use tool_monitoring\metrics_manager;
 
 /**
@@ -34,19 +36,55 @@ use tool_monitoring\metrics_manager;
  */
 class overview implements renderable, templatable {
 
+    private array $entries = [];
+
+    public function __construct() {
+        $this->synchronise_database();
+    }
+
+    private function synchronise_database() {
+        global $DB, $USER;
+        $manager = new metrics_manager();
+        $metrics = $manager->get_metrics();
+        foreach ($metrics as $metric) {
+            $component = $metric::get_component();
+            $name = $metric::get_name();
+            $record = $DB->get_record('tool_monitoring_settings', ['component' => $component, 'name' => $name]);
+            if (!$record) {
+                $record = (object) [
+                    'component' => $component,
+                    'name' => $name,
+                    'enabled' => 0,
+                    'tags' => '',
+                    'settings' => '{}',
+                    'timecreated' => time(),
+                    'timemodified' => time(),
+                    'usermodified' => $USER->id,
+                ];
+                $record['id'] = $DB->insert_record('tool_monitoring_settings', $record);
+            }
+            $this->entries[] = [
+                'record' => $record,
+                'metric' => $metric,
+            ];
+        }
+        // TODO Add records left over in database but missing in $metrics.
+    }
+
     /**
      * {@inheritDoc}
      */
-    public function export_for_template(\core\output\renderer_base $output) {
-        $manager = new metrics_manager();
-        $metrics = $manager->get_metrics();
+    public function export_for_template(renderer_base $output) {
         $lines = [];
-        foreach ($metrics as $metric) {
+        foreach ($this->entries as $entry) {
+            ['record' => $record, 'metric' => $metric] = $entry;
+            $edit = new moodle_url('/admin/tool/monitoring/configure.php', ['id' => $record->id]);
             $lines[] = [
                 'component' => $metric::get_component(),
                 'name' => $metric::get_name(),
                 'type' => $metric::get_type()->value,
                 'description' => $metric::get_description()->out(),
+                'edit' => $edit->out(false),
             ];
         }
         return [

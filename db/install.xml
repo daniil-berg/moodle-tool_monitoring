@@ -22,6 +22,7 @@
             <INDEXES>
                 <INDEX NAME="component" UNIQUE="false" FIELDS="component"/>
                 <INDEX NAME="metric" UNIQUE="false" FIELDS="metric"/>
+                <INDEX NAME="component_metric" UNIQUE="true" FIELDS="component,metric"/>
             </INDEXES>
         </TABLE>
     </TABLES>

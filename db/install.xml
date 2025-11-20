@@ -8,7 +8,7 @@
             <FIELDS>
                 <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
                 <FIELD NAME="component" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The component of this metric."/>
-                <FIELD NAME="metric" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The name of this metric."/>
+                <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The name of this metric."/>
                 <FIELD NAME="enabled" SEQUENCE="false" TYPE="int" LENGTH="1" NOTNULL="true" COMMENT="0 if this metric is disabled, i.e. not included in any export, or 1 if enabled."/>
                 <FIELD NAME="settings" SEQUENCE="false" TYPE="text" NOTNULL="true" COMMENT="JSON encoded settings of this metric. The settings are specific to a metric and may be used to customise the metric's behaviour."/>
                 <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The unix timestamp this setting was first created."/>
@@ -21,8 +21,8 @@
             </KEYS>
             <INDEXES>
                 <INDEX NAME="component" UNIQUE="false" FIELDS="component"/>
-                <INDEX NAME="metric" UNIQUE="false" FIELDS="metric"/>
-                <INDEX NAME="component_metric" UNIQUE="true" FIELDS="component,metric"/>
+                <INDEX NAME="name" UNIQUE="false" FIELDS="name"/>
+                <INDEX NAME="component_name" UNIQUE="true" FIELDS="component,name"/>
             </INDEXES>
         </TABLE>
     </TABLES>

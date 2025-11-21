@@ -67,7 +67,7 @@ class exporter {
      * @return string Prometheus text format for a single metric.
      */
     private static function export_metric(metric $metric): string {
-        $name = $metric::get_name();
+        $name = $metric::get_component() . "_" . $metric::get_name();
         $output = "# HELP $name {$metric::get_description()->out()}\n";
         $output .= "# TYPE $name {$metric::get_type()->value}";
         foreach ($metric as $metricvalue) {

@@ -43,6 +43,7 @@ class overview implements renderable, templatable {
         $lines = [];
         foreach ($metrics as $metric) {
             $lines[] = [
+                'component' => $metric::get_component(),
                 'name' => $metric::get_name(),
                 'type' => $metric::get_type()->value,
                 'description' => $metric::get_description()->out(),

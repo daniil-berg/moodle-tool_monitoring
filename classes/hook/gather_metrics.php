@@ -52,7 +52,7 @@ use tool_monitoring\metric;
 #[tags('metric', 'monitoring', 'tool_monitoring')]
 final class gather_metrics {
 
-    /** @var metric[] All registered metrics indexed by name. */
+    /** @var metric[] All registered metrics indexed by unique name. */
     private array $metrics = [];
 
     /**
@@ -61,14 +61,13 @@ final class gather_metrics {
      * @param metric $metric
      */
     public function add_metric(metric $metric): void {
-        // TODO: Ensure unique names?
-        $this->metrics[$metric::get_name()] = $metric;
+        $this->metrics[$metric::get_unique_name()] = $metric;
     }
 
     /**
      * Returns all registered metrics.
      *
-     * @return metric[] Metrics indexed by name.
+     * @return metric[] Metrics indexed by unique name.
      */
     public function get_metrics(): array {
         return $this->metrics;

@@ -109,6 +109,10 @@ abstract class metric implements IteratorAggregate {
         return component::get_component_from_classname(static::class);
     }
 
+    public static function get_unique_name(): string {
+        return static::get_component() . '_' . static::get_name();
+    }
+
     /**
      * Ensures that the provided metric value is valid.
      *

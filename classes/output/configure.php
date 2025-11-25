@@ -48,7 +48,7 @@ class configure implements renderable, templatable {
 
     public function __construct(int $id){
         global $DB;
-        $this->record = $DB->get_record('tool_monitoring_settings', ['id' => $id], '*', MUST_EXIST);
+        $this->record = $DB->get_record('tool_monitoring_config', ['id' => $id], '*', MUST_EXIST);
         $this->metric = $this->get_metric();
         $customdata = [
             'metric' => $this->metric,

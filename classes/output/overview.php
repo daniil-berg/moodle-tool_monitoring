@@ -49,18 +49,18 @@ class overview implements renderable, templatable {
         foreach ($metrics as $metric) {
             $component = $metric::get_component();
             $name = $metric::get_name();
-            $record = $DB->get_record('tool_monitoring_settings', ['component' => $component, 'name' => $name]);
+            $record = $DB->get_record('tool_monitoring_config', ['component' => $component, 'name' => $name]);
             if (!$record) {
                 $record = (object) [
                     'component' => $component,
                     'name' => $name,
                     'enabled' => 0,
-                    'settings' => '{}',
+                    'data' => '{}',
                     'timecreated' => time(),
                     'timemodified' => time(),
                     'usermodified' => $USER->id,
                 ];
-                $record['id'] = $DB->insert_record('tool_monitoring_settings', $record);
+                $record['id'] = $DB->insert_record('tool_monitoring_config', $record);
             }
             $this->entries[] = [
                 'record' => $record,

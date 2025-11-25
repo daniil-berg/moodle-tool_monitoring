@@ -43,9 +43,9 @@ class prometheus {
         }
 
         $response = $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
-        $manager = new metrics_manager();
+        $manager = metrics_manager::load_all_metrics();
         $response->getBody()->write(
-            monitoringexporter_prometheus\exporter::export($manager->get_metrics($tag))
+            monitoringexporter_prometheus\exporter::export($manager->get_metrics_for_export())
         );
 
         return $response;

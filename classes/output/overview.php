@@ -45,8 +45,7 @@ class overview implements renderable, templatable {
 
     private function synchronise_database() {
         global $DB, $USER;
-        $manager = new metrics_manager();
-        $metrics = $manager->get_metrics();
+        $metrics = metrics_manager::gather_all_metrics();
         foreach ($metrics as $metric) {
             $component = $metric::get_component();
             $name = $metric::get_name();

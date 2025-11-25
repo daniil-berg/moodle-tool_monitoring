@@ -30,14 +30,17 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use tool_monitoring\configurable_metric;
+use tool_monitoring\form\config;
 use tool_monitoring\metric_type;
-use tool_monitoring\metric;
 use tool_monitoring\metric_value;
 
 /**
  * Implements the num_users_accessed metric.
+ *
+ * @property array{timewindow: int} $config
  */
-class num_users_accessed extends metric {
+class num_users_accessed extends configurable_metric {
 
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
@@ -47,15 +50,31 @@ class num_users_accessed extends metric {
         return new lang_string('num_users_accessed_description', 'tool_monitoring');
     }
 
-    protected function calculate(int $max_seconds_ago = 30, int $min_seconds_ago = 0): metric_value {
+    protected function calculate(): metric_value {
         global $DB;
-        $now = time();
-        $where = 'username <> :excl_user AND lastaccess BETWEEN :earliest AND :latest';
+        $where = 'username <> :excl_user AND lastaccess >= :earliest';
         $params = [
             'excl_user' => 'guest',
-            'earliest'  => $now - $max_seconds_ago,
-            'latest'    => $now - $min_seconds_ago,
+            'earliest'  => time() - $this->config['timewindow'],
         ];
         return new metric_value($DB->count_records_select('user', $where, $params));
+    }
+
+    public static function get_config_form(...$args): config {
+        return new class(...$args) extends config {
+            protected function definition() {
+                parent::definition();
+                $mform = $this->_form;
+                $mform->addElement('text', 'timewindow', 'Users online in the last seconds');
+                // TODO: Localize and allow to set multiple values.
+                $mform->setType('timewindow', PARAM_INT);
+            }
+        };
+    }
+
+    public static function get_config_default(): array {
+        return [
+            'timewindow' => 300,
+        ];
     }
 }

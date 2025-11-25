@@ -46,7 +46,7 @@ function tool_monitoring_get_tagged_metrics($tag, $exclusivemode = false, $fromc
 
     // Build the SQL query.
     $query = "SELECT m.id, m.name, m.component
-                FROM {tool_monitoring_settings} m
+                FROM {tool_monitoring_config} m
                 JOIN {tag_instance} tt ON m.id = tt.itemid
                WHERE tt.itemtype = :itemtype AND tt.tagid = :tagid AND tt.component = :component
                  AND m.id %ITEMFILTER%

@@ -16,13 +16,10 @@
 
 namespace tool_monitoring\output;
 
-use core\exception\coding_exception;
 use core\output\renderable;
 use core\output\templatable;
 use moodle_url;
-use stdClass;
 use tool_monitoring\form\config;
-use tool_monitoring\metric;
 use tool_monitoring\metrics_manager;
 
 /**
@@ -38,46 +35,20 @@ use tool_monitoring\metrics_manager;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class configure implements renderable, templatable {
+    /** @var metrics_manager  */
+    private metrics_manager $manager;
 
-    /**
-     * @var stdClass
-     */
-    private stdClass $record;
-    private metric $metric;
     private config $form;
 
-    public function __construct(int $id){
-        global $DB;
-        $this->record = $DB->get_record('tool_monitoring_config', ['id' => $id], '*', MUST_EXIST);
-        $this->metric = $this->get_metric();
-        $customdata = [
-            'metric' => $this->metric,
-        ];
-        $this->form = new config(null, $customdata);
+    public function __construct(int $id) {
+        $this->manager = metrics_manager::load_metric($id);
+        $this->form = $this->manager->get_metric_config_form($id);
         if ($this->form->is_cancelled()) {
             redirect(new moodle_url('/admin/tool/monitoring/'));
         } else if ($data = $this->form->get_data()) {
-            $this->process_data($data);
+            $this->manager->save_metric_config($id, $data);
             redirect(new moodle_url('/admin/tool/monitoring/'));
-        } else {
-            $data = [
-                'id' => $this->record->id,
-            ];
-            $this->form->set_data($data);
         }
-    }
-
-    private function get_metric() {
-        $manager = new metrics_manager();
-        $metrics = $manager->get_metrics();
-        $component = $this->record->component;
-        $name = $this->record->name;
-        foreach ($metrics as $metric) {
-            if ($metric::get_component() === $component && $metric::get_name() === $name) {
-                return $metric;
-            }
-        }
-        throw new coding_exception("metric {$component}/{$name} not found");
     }
 
     /**
@@ -90,11 +61,5 @@ class configure implements renderable, templatable {
         return [
             'form' => $html,
         ];
-    }
-
-
-
-    private function process_data(stdClass $data) {
-        // TODO save data
     }
 }

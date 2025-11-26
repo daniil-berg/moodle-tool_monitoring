@@ -35,6 +35,7 @@ $string['component'] = 'Component';
 $string['configure_metric'] = 'Configure Metric';
 $string['description'] = 'Description';
 $string['edit'] = 'Edit';
+$string['metricconfigupdated'] = 'Metric configuration updated';
 $string['metricenabled'] = 'Metric enabled';
 $string['metricsoverview'] = 'Overview of Available Metrics';
 $string['monitoring:configure_metrics'] = 'Configure the settings of monitoring metrics';

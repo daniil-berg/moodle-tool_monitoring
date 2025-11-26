@@ -172,14 +172,12 @@ final class metrics_manager {
         }
 
         $metric = $this->metrics[$this->namebyid[$metricid]];
+        $context = system::instance();
         $transaction = $DB->start_delegated_transaction();
 
         $enabled = $data->enabled ?? false;
 
         if ($metric instanceof configurable_metric) {
-            // Give metric the chance to store config values at other places.
-            $metric->save_additional_config($metricid, $data);
-
             // Manager only stores config values that are actually defined in the metric.
             $data = array_intersect_key((array)$data, $metric::get_config_default());
         } else {
@@ -191,6 +189,17 @@ final class metrics_manager {
             'enabled' => $enabled,
             'data' => json_encode($data),
         ]);
+
+        // Log this action.
+        $eventparms = [
+            'context' => $context,
+            'objectid' => $metricid,
+            'other' => [
+                'metric' => $this->namebyid[$metricid],
+            ],
+        ];
+        $event = event\metric_config_updated::create($eventparms);
+        $event->trigger();
 
         $transaction->allow_commit();
     }

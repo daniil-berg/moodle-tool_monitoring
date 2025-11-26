@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the abstract {@see configurable_metric} class.
+ * Definition of the {@see metric_config_updated} event class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,12 +27,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring;
+namespace tool_monitoring\event;
 
 /**
- * Base class for all metrics that allow configuration.
- *
- * This allows creating metrics that can be configured in the admin area by defining a form and default values.
+ * Definition of the {@see metric_config_updated} event class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -43,35 +41,49 @@ namespace tool_monitoring;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class configurable_metric extends metric {
-    /** @var array The configuration of the metric. */
-    protected array $config = [];
+class metric_config_updated extends \core\event\base {
+    /**
+     * Initialise event parameters.
+     */
+    protected function init() {
+        $this->data['objecttable'] = 'tool_monitoring_config';
+        $this->data['crud'] = 'u';
+        $this->data['edulevel'] = self::LEVEL_OTHER;
+    }
 
     /**
-     * Form definition for the metric configuration.
+     * Returns localised event name.
      *
-     * Please make sure to call {@see form\config::definition()} in your definition.
-     *
-     * @param mixed ...$args arguments that have to be passed to the moodleform constructor
+     * @return string
      */
-    abstract public static function get_config_form(...$args): form\config;
+    public static function get_name() {
+        return get_string('metricconfigupdated', 'tool_monitoring');
+    }
 
     /**
-     * Default values for the metric configuration.
+     * Returns non-localised event description with id's for admin use only.
      *
-     * @return array
+     * @return string
      */
-    abstract public static function get_config_default(): array;
+    public function get_description() {
+        return "The user with id '$this->userid' updated the metric configuration for '{$this->other['metric']}'.";
+    }
 
     /**
-     * Sets the metric configuration.
+     * Returns relevant URL.
      *
-     * Must be called before {@see calculate()}.
-     *
-     * @param array $config
-     * @return void
+     * @return \moodle_url
      */
-    public function set_config(array $config): void {
-        $this->config = $config;
+    public function get_url() {
+        return new \moodle_url('/admin/tool/monitoring/configure.php', ['id' => $this->objectid]);
+    }
+
+    /**
+     * Validate our custom data.
+     */
+    public function validate_data() {
+        if (!isset($this->other['metric'])) {
+            throw new \coding_exception('Metric name is required.');
+        }
     }
 }

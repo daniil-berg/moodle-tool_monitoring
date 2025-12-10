@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Edit a metric's settings.
+ * Displays the configuration form for a single metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -25,28 +25,29 @@
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * {@noinspection PhpUnhandledExceptionInspection}
  */
+
+use tool_monitoring\output\configure;
 
 require_once(__DIR__ . '/../../../config.php');
 
-global $PAGE, $OUTPUT;
+global $OUTPUT, $PAGE;
 
 require_login();
 
 $context = context_system::instance();
 require_capability('tool/monitoring:configure_metrics', $context);
 
-$id = required_param('id', PARAM_INT);
+$qualifiedname = required_param('metric', PARAM_ALPHAEXT);
 
-
-$PAGE->set_url('/admin/tool/monitoring/configure.php', ['id' => $id]);
+$PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('configure_metric', 'tool_monitoring'));
 $PAGE->set_heading(get_string('configure_metric', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
 
-$configure = new tool_monitoring\output\configure($id);
-
 echo $OUTPUT->header();
-echo $OUTPUT->render($configure);
+echo $OUTPUT->render(new configure($qualifiedname));
 echo $OUTPUT->footer();

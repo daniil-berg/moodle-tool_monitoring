@@ -30,17 +30,15 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
-use tool_monitoring\configurable_metric;
+use tool_monitoring\metric;
 use tool_monitoring\form\config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
 /**
  * Implements the num_users_accessed metric.
- *
- * @property array{timewindow: int} $config
  */
-class num_users_accessed extends configurable_metric {
+class num_users_accessed extends metric {
 
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
@@ -55,14 +53,14 @@ class num_users_accessed extends configurable_metric {
         $where = 'username <> :excl_user AND lastaccess >= :earliest';
         $params = [
             'excl_user' => 'guest',
-            'earliest'  => time() - $this->config['timewindow'],
+            'earliest'  => time() - $this->config->data->timewindow,
         ];
         return new metric_value($DB->count_records_select('user', $where, $params));
     }
 
     public static function get_config_form(...$args): config {
         return new class(...$args) extends config {
-            protected function definition() {
+            protected function definition(): void {
                 parent::definition();
                 $mform = $this->_form;
                 $mform->addElement('text', 'timewindow', 'Users online in the last seconds');
@@ -72,7 +70,7 @@ class num_users_accessed extends configurable_metric {
         };
     }
 
-    public static function get_config_default(): array {
+    public static function get_default_config_data(): array {
         return [
             'timewindow' => 300,
         ];

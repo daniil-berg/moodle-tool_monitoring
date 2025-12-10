@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * List of all metrics.
+ * Displays a table of all available/registered metrics.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -25,7 +25,11 @@
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * {@noinspection PhpUnhandledExceptionInspection}
  */
+
+use tool_monitoring\output\overview;
 
 require_once(__DIR__ . '/../../../config.php');
 
@@ -42,8 +46,6 @@ $PAGE->set_title('Monitoring Metrics');
 $PAGE->set_heading('Monitoring Metrics');
 $PAGE->add_body_class('limitedwidth');
 
-$overview = new tool_monitoring\output\overview();
-
 echo $OUTPUT->header();
-echo $OUTPUT->render($overview);
+echo $OUTPUT->render(new overview());
 echo $OUTPUT->footer();

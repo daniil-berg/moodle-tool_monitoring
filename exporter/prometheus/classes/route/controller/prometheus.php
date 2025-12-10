@@ -101,8 +101,7 @@ class prometheus {
         if ($expectedtoken && $params['token'] !== $expectedtoken) {
             return $response->withStatus(403);
         }
-        $manager = metrics_manager::load_all_metrics();
-        $metrics = $manager->get_metrics_for_export();
+        $metrics = metrics_manager::instance()->get_metrics($params['tag']);
         $body = Utils::streamFor(prometheus_exporter::export($metrics));
         return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }

@@ -75,7 +75,7 @@ class metric_config_updated extends \core\event\base {
      * @return \moodle_url
      */
     public function get_url() {
-        return new \moodle_url('/admin/tool/monitoring/configure.php', ['id' => $this->objectid]);
+        return new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $this->other['metric']::get_qualified_name()]);
     }
 
     /**

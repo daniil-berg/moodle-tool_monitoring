@@ -14,16 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Definition of the renderable {@see overview} class.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_monitoring\output;
 
+use core\exception\moodle_exception;
 use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
+use JsonException;
 use moodle_url;
 use tool_monitoring\metrics_manager;
 
 /**
- * Class overview
+ * Provides information about all available metrics and links to their configuration pages.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -36,57 +51,24 @@ use tool_monitoring\metrics_manager;
  */
 class overview implements renderable, templatable {
 
-    private array $entries = [];
-
-    public function __construct() {
-        $this->synchronise_database();
-    }
-
-    private function synchronise_database() {
-        global $DB, $USER;
-        $metrics = metrics_manager::gather_all_metrics();
-        foreach ($metrics as $metric) {
-            $component = $metric::get_component();
-            $name = $metric::get_name();
-            $record = $DB->get_record('tool_monitoring_config', ['component' => $component, 'name' => $name]);
-            if (!$record) {
-                $record = (object) [
-                    'component' => $component,
-                    'name' => $name,
-                    'enabled' => 0,
-                    'data' => '{}',
-                    'timecreated' => time(),
-                    'timemodified' => time(),
-                    'usermodified' => $USER->id,
-                ];
-                $record['id'] = $DB->insert_record('tool_monitoring_config', $record);
-            }
-            $this->entries[] = [
-                'record' => $record,
-                'metric' => $metric,
-            ];
-        }
-        // TODO Add records left over in database but missing in $metrics.
-    }
-
     /**
-     * {@inheritDoc}
+     * @throws moodle_exception Should never happen.
+     * @throws JsonException Should never happen.
      */
-    public function export_for_template(renderer_base $output) {
+    public function export_for_template(renderer_base $output): array {
         $lines = [];
-        foreach ($this->entries as $entry) {
-            ['record' => $record, 'metric' => $metric] = $entry;
-            $edit = new moodle_url('/admin/tool/monitoring/configure.php', ['id' => $record->id]);
+        $metrics = metrics_manager::instance()->get_metrics(refreshconfigs: false);
+        foreach ($metrics as $qualifiedname => $metric) {
+            $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
             $lines[] = [
-                'component' => $metric::get_component(),
-                'name' => $metric::get_name(),
-                'type' => $metric::get_type()->value,
+                'component'   => $metric::get_component(),
+                'name'        => $metric::get_name(),
+                'type'        => $metric::get_type()->value,
                 'description' => $metric::get_description()->out(),
-                'edit' => $edit->out(false),
+                'configurl'   => $configurl->out(false),
             ];
         }
-        return [
-            'metrics' => $lines,
-        ];
+        // TODO: Add records left over in database, but not registered by the manager.
+        return ['metrics' => $lines];
     }
 }

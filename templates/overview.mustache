@@ -23,9 +23,11 @@
     {
         "metrics": [
             {
+                "component": "local_plugin",
                 "name": "foo",
                 "type": "gauge",
-                "description": "counting foos"
+                "description": "number of foos",
+                "configurl": "/admin/tool/monitoring/configure.php?metric=local_plugin_foo"
             }
         ]
     }
@@ -50,7 +52,7 @@
         <td>{{name}}</td>
         <td>{{type}}</td>
         <td>{{description}}</td>
-        <td><a href="{{{edit}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
+        <td><a href="{{{configurl}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
       </tr>
     {{/metrics}}
   </tbody>

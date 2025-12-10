@@ -30,8 +30,11 @@
 namespace tool_monitoring;
 
 use core\component;
+use core\exception\coding_exception;
 use core\lang_string;
+use dml_exception;
 use IteratorAggregate;
+use JsonException;
 use Traversable;
 
 /**
@@ -39,8 +42,16 @@ use Traversable;
  *
  * Metric values can be retrieved by iterating over an instance of this class.
  *
- * Inheriting classes may override the {@see get_name} method to provide a custom identifier and the {@see validate_value} method to
- * perform simple checks on the {@see metric_value} objects yielded by an instance during iteration.
+ * Concrete subclasses only **need** to implement the {@see calculate}, {@see get_description} and {@see get_type} methods.
+ *
+ * Inheriting classes _may_ also override the {@see get_name} method to provide a custom identifier and the {@see validate_value}
+ * method to perform simple checks on the {@see metric_value} objects yielded by an instance during iteration.
+ *
+ * For advanced use cases, if the metric should allow specific custom configuration via the admin panel, the {@see get_config_form}
+ * and {@see get_default_config_data} methods should also be overridden (in a compatible way).
+ *
+ * @property-read metric_config $config Cached configuration of the metric; loaded from the database on first read access;
+ *                                      to ensure it is up to date, call {@see load_config}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -52,6 +63,9 @@ use Traversable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class metric implements IteratorAggregate {
+
+    /** @var metric_config Configuration of the metric; guaranteed to be set before {@see calculate} is called. */
+    private metric_config $config;
 
     /**
      * Produces the current metric value(s).
@@ -100,16 +114,18 @@ abstract class metric implements IteratorAggregate {
     /**
      * Returns the name of the Moodle component, i.e. the plugin or core component, which defines this metric.
      *
-     * Subclasses may override this for special cases. The default implementation is the component name extracted
-     * from the metric class' namespace. It _must_ be a maximum of 100 characters long.
-     *
      * @return string Moodle component name.
      */
-    public static function get_component(): string {
+    final public static function get_component(): string {
         return component::get_component_from_classname(static::class);
     }
 
-    public static function get_unique_name(): string {
+    /**
+     * Returns the qualified name of the metric as a composite of its name and component.
+     *
+     * @return string Fully qualified metric name.
+     */
+    final public static function get_qualified_name(): string {
         return static::get_component() . '_' . static::get_name();
     }
 
@@ -136,7 +152,7 @@ abstract class metric implements IteratorAggregate {
      *
      * @return Traversable<metric_value> Values of the metric.
      */
-    public function getIterator(): Traversable {
+    final public function getIterator(): Traversable {
         $values = $this->calculate();
         if ($values instanceof metric_value) {
             $values = [$values];
@@ -144,5 +160,73 @@ abstract class metric implements IteratorAggregate {
         foreach ($values as $metricvalue) {
             yield static::validate_value($metricvalue);
         }
+    }
+
+    /**
+     * Fetches the current metric configuration from the database and saves it in the {@see self::$config} property.
+     *
+     * If no config for the metric is found in the database, a default config object is constructed and saved. In that case
+     * the {@see get_default_config_data} method is called to set any optional metric-specific configuration values.
+     *
+     * @return metric_config The newly loaded config object.
+     * @throws coding_exception Should not happen.
+     * @throws dml_exception Unexpected error in the database query.
+     * @throws JsonException Failed to (de-)serialize the config `data` value.
+     */
+    final public function load_config(): metric_config {
+        $this->config = metric_config::for_metric($this);
+        return $this->config;
+    }
+
+    /**
+     * Special case for read access to the protected {@see config} property.
+     *
+     * TODO Remove once we can finally depend on PHP 8.4+ and use asymmetric visibility and a nice property `get`-hook.
+     *
+     * @param string $name Property name.
+     * @return mixed Property value.
+     * @throws coding_exception Should not happen.
+     * @throws dml_exception Unexpected error in the database query.
+     * @throws JsonException Failed to (de-)serialize the config `data` value.
+     */
+    final public function __get(string $name): mixed {
+        if ($name === 'config') {
+            if (!isset($this->config)) {
+                $this->load_config();
+            }
+            return $this->config;
+        }
+        return $this->$name;
+    }
+
+    /**
+     * Form definition for the metric configuration.
+     *
+     * If the metric requires custom configuration, this method should be overridden and an appropriately defined form object that
+     * inherits from {@see form\config} should be returned. Any additional fields in the form's definition **must** be compatible
+     * with the default config data returned by the {@see get_default_config_data} method. This means the keys of the returned array
+     * must correspond exactly to the added form field names.
+     * The parent {@see form\config::definition} method **must** be called in the form's `definition` method.
+     *
+     * By default, this does nothing more than instantiating a {@see form\config} object with the provided constructor arguments.
+     *
+     * @param mixed ...$args Arguments that have to be passed to the form constructor.
+     */
+    public static function get_config_form(...$args): form\config {
+        return new form\config(...$args);
+    }
+
+    /**
+     * Returns the default config data to be set for the {@see metric_config::data} of the metric.
+     *
+     * If the metric requires custom configuration, this method should be overridden and an associative array of configuration
+     * field-value-pairs should be returned. These **must** be compatible with the metric-specific config form fields defined via
+     * the {@see get_config_form} method, i.e. the keys of the returned array must correspond exactly to the added form field names.
+     * By default, returns `null`.
+     *
+     * @return array<string, mixed>|null Default config data for the metric or `null` if no specific config is available.
+     */
+    public static function get_default_config_data(): array|null {
+        return null;
     }
 }

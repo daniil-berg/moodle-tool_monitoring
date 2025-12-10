@@ -14,16 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Definition of the renderable {@see configure} class.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_monitoring\output;
 
+use core\exception\moodle_exception;
 use core\output\renderable;
+use core\output\renderer_base;
 use core\output\templatable;
+use JsonException;
 use moodle_url;
 use tool_monitoring\form\config;
 use tool_monitoring\metrics_manager;
 
 /**
- * Render configuration form for a metric
+ * Provides a configuration form for a specified metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -35,31 +51,36 @@ use tool_monitoring\metrics_manager;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class configure implements renderable, templatable {
-    /** @var metrics_manager  */
-    private metrics_manager $manager;
 
+    /** @var config Metric config form to be rendered. */
     private config $form;
 
-    public function __construct(int $id) {
-        $this->manager = metrics_manager::load_metric($id);
-        $this->form = $this->manager->get_metric_config_form($id);
+    /**
+     * Instantiates the underlying {@see config} form for the specified metric.
+     *
+     * @param string $qualifiedname Qualified name of the metric for which to render the config form.
+     * @throws JsonException Metric-specific config data could not be (de-)serialized.
+     * @throws moodle_exception
+     */
+    public function __construct(string $qualifiedname) {
+        $metric = metrics_manager::instance()->get_metric($qualifiedname);
+        if (is_null($metric)) {
+            // TODO: Respond more elegantly.
+            http_response_code(404);
+        }
+        $this->form = config::for_metric($metric);
         if ($this->form->is_cancelled()) {
             redirect(new moodle_url('/admin/tool/monitoring/'));
-        } else if ($data = $this->form->get_data()) {
-            $this->manager->save_metric_config($id, $data);
+        } else if ($this->form->is_submitted() && $this->form->is_validated()) {
+            $this->form->save($metric);
             redirect(new moodle_url('/admin/tool/monitoring/'));
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function export_for_template(\core\output\renderer_base $output) {
+    public function export_for_template(renderer_base $output): array {
         ob_start();
         $this->form->display();
         $html = ob_get_clean();
-        return [
-            'form' => $html,
-        ];
+        return ['form' => $html];
     }
 }

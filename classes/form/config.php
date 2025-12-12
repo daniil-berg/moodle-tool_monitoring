@@ -18,7 +18,6 @@ namespace tool_monitoring\form;
 
 global $CFG;
 
-use core\context\system;
 use core\exception\coding_exception;
 use dml_exception;
 use JsonException;
@@ -98,15 +97,7 @@ class config extends moodleform {
         }
         $metric->config->data = (object) $data;
         $metric->config->update();
-        $eventparms = [
-            'context' => system::instance(),
-            'objectid' => $metric->config->id,
-            'other' => [
-                'metric' => $metric,
-            ],
-        ];
-        $event = metric_config_updated::create($eventparms);
-        $event->trigger();
+        metric_config_updated::for_metric($metric)->trigger();
         $transaction->allow_commit();
     }
 }

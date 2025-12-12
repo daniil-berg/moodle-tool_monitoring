@@ -29,8 +29,18 @@
 
 namespace tool_monitoring\event;
 
+use coding_exception;
+use core\context\system;
+use core\event\base;
+use core\exception\moodle_exception;
+use core\lang_string;
+use dml_exception;
+use moodle_url;
+use tool_monitoring\metric;
+use tool_monitoring\metric_config;
+
 /**
- * Definition of the {@see metric_config_updated} event class.
+ * Triggered when the configuration for a metric is updated.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -41,12 +51,19 @@ namespace tool_monitoring\event;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_config_updated extends \core\event\base {
+class metric_config_updated extends base {
+
+    /** @var metric Metric that the event refers to. */
+    private metric $metric;
+
     /**
-     * Initialise event parameters.
+     * Initialises event properties.
+     *
+     * @throws dml_exception
      */
-    protected function init() {
-        $this->data['objecttable'] = 'tool_monitoring_config';
+    protected function init(): void {
+        $this->context = system::instance();
+        $this->data['objecttable'] = metric_config::TABLE;
         $this->data['crud'] = 'u';
         $this->data['edulevel'] = self::LEVEL_OTHER;
     }
@@ -54,36 +71,55 @@ class metric_config_updated extends \core\event\base {
     /**
      * Returns localised event name.
      *
-     * @return string
+     * @return lang_string Name of the event as a lazy string.
      */
-    public static function get_name() {
-        return get_string('metricconfigupdated', 'tool_monitoring');
+    public static function get_name(): lang_string {
+        return new lang_string('metricconfigupdated', 'tool_monitoring');
     }
 
     /**
-     * Returns non-localised event description with id's for admin use only.
+     * Returns non-localised event description with IDs for admin use only.
      *
-     * @return string
+     * @return string Short description.
      */
-    public function get_description() {
-        return "The user with id '$this->userid' updated the metric configuration for '{$this->other['metric']}'.";
+    public function get_description(): string {
+        return "The user with ID '$this->userid' updated the metric configuration for '{$this->metric::get_qualified_name()}'.";
     }
 
     /**
-     * Returns relevant URL.
+     * Returns URL to the config page for the metric that was updated.
      *
-     * @return \moodle_url
+     * @return moodle_url URL to the config page.
+     * @throws moodle_exception
      */
-    public function get_url() {
-        return new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $this->other['metric']::get_qualified_name()]);
+    public function get_url(): moodle_url {
+        return new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $this->metric::get_qualified_name()]);
     }
 
     /**
-     * Validate our custom data.
+     * Validates that a {@see metric} instance was passed via the `other` data during construction.
+     *
+     * @throws coding_exception No `metric` key in the `other` array or value not a {@see metric} object.
      */
-    public function validate_data() {
-        if (!isset($this->other['metric'])) {
-            throw new \coding_exception('Metric name is required.');
+    public function validate_data(): void {
+        $metric = $this->data['other']['metric'] ?? null;
+        if (!($metric instanceof metric)) {
+            throw new coding_exception('No metric passed to `metric_config_updated` event.');
         }
+        $this->metric = $metric;
+    }
+
+    /**
+     * Constructs a new instance of the event for the given metric.
+     *
+     * @param metric $metric Metric for which the config was just updated.
+     * @returns static New event object.
+     * @throws coding_exception
+     */
+    public static function for_metric(metric $metric): static {
+        return static::create([
+            'objectid' => $metric->config->id,
+            'other'    => ['metric' => $metric],
+        ]);
     }
 }

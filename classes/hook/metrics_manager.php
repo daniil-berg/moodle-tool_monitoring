@@ -27,19 +27,22 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring;
+namespace tool_monitoring\hook;
 
+use core\attribute\label;
+use core\attribute\tags;
 use core\di;
-use core\exception\coding_exception;
 use core\hook\manager as hook_manager;
-use dml_exception;
-use JsonException;
-use tool_monitoring\hook\gather_metrics;
+use tool_monitoring\metric;
 
 /**
- * Manager for accessing all registered metrics.
+ * Linchpin of the monitoring API.
  *
- * Implemented as a singleton, accessed via the {@see metrics_manager::instance} method.
+ * Registered metrics can be retrieved with the {@see get_metrics} and {@see get_metric} methods.
+ * This class also represents a hook in the sense of the {@link https://moodledev.io/docs/apis/core/hooks Moodle Hooks API} that
+ * allows callbacks to register metrics via the {@see add_metric} method.
+ *
+ * Implemented as a singleton, accessed via the {@see instance} method.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -50,19 +53,21 @@ use tool_monitoring\hook\gather_metrics;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+#[label('Provides the ability to register custom metrics.')]
+#[tags('metric', 'monitoring', 'tool_monitoring')]
 final class metrics_manager {
-    /** @var metrics_manager Singleton object */
+    /** @var self Singleton object */
     private static self $instance;
 
-    /** @var array<string, metric> All registered metrics in the system indexed by their qualified name. */
-    private array $metrics;
+    /** @var array<string, metric> All registered metrics indexed by their qualified name. */
+    private array $metrics = [];
 
     /**
-     * Returns the metrics manager singleton, constructing one on the first call.
+     * Returns the singleton object, constructing one on the first call.
      *
-     * When called for the first time, dispatches the {@see gather_metrics} hook and stores all registered metrics.
+     * When called for the first time, dispatches the hook allowing callbacks to register metrics.
      *
-     * @return self Singleton metrics manager object.
+     * @return self Singleton object.
      */
     public static function instance(): self {
         if (!isset(self::$instance)) {
@@ -72,30 +77,33 @@ final class metrics_manager {
     }
 
     /**
-     * Dispatches the {@see gather_metrics} hook and stores all registered metrics.
+     * Dispatches the hook allowing callbacks to register metrics.
      */
     private function __construct() {
-        $hook = new gather_metrics();
-        di::get(hook_manager::class)->dispatch($hook);
-        $this->metrics = $hook->get_metrics();
+        di::get(hook_manager::class)->dispatch($this);
+    }
+
+    /**
+     * Registers the provided metric.
+     *
+     * @param metric $metric
+     */
+    public function add_metric(metric $metric): void {
+        $key = $metric::get_qualified_name();
+        if (array_key_exists($key, $this->metrics)) {
+            trigger_error("Metric named '$key' is already registered", E_USER_WARNING);
+            return;
+        }
+        $this->metrics[$key] = $metric;
     }
 
     /**
      * Returns the registered metrics, optionally filtering by tag.
      *
      * @param string|null $tag If provided, only metrics with that tag will be returned.
-     * @param bool $refreshconfigs If `true` (default), the {@see metric::load_config} method is called on each instance first.
      * @return metric[] Metrics indexed by their qualified name.
-     * @throws coding_exception Should not happen.
-     * @throws dml_exception Unexpected error in a database query; only possible if configs are refreshed.
-     * @throws JsonException Failed to (de-)serialize a config `data` value; only possible if configs are refreshed.
      */
-    public function get_metrics(string|null $tag = null, bool $refreshconfigs = true): array {
-        if ($refreshconfigs) {
-            foreach ($this->metrics as $metric) {
-                $metric->load_config();
-            }
-        }
+    public function get_metrics(string|null $tag = null): array {
         if (is_null($tag)) {
             return $this->metrics;
         }
@@ -110,17 +118,9 @@ final class metrics_manager {
      * Returns the metric with the specified name or `null` if no such metric is registered.
      *
      * @param string $qualifiedname Qualified name of the desired metric.
-     * @param bool $refreshconfig If `true` (default), the metric's {@see metric::load_config} method is called first.
      * @return metric|null The desired metric or `null` if it was not found.
-     * @throws coding_exception Should not happen.
-     * @throws dml_exception Unexpected error in a database query; only possible if config is refreshed.
-     * @throws JsonException Failed to (de-)serialize a config `data` value; only possible if config is refreshed.
      */
-    public function get_metric(string $qualifiedname, bool $refreshconfig = true): metric|null {
-        $metric = $this->metrics[$qualifiedname] ?? null;
-        if (!is_null($metric) && $refreshconfig) {
-            $metric->load_config();
-        }
-        return $metric;
+    public function get_metric(string $qualifiedname): metric|null {
+        return $this->metrics[$qualifiedname] ?? null;
     }
 }

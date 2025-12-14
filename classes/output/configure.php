@@ -36,7 +36,7 @@ use core\output\templatable;
 use JsonException;
 use moodle_url;
 use tool_monitoring\form\config;
-use tool_monitoring\metrics_manager;
+use tool_monitoring\hook\metrics_manager;
 
 /**
  * Provides a configuration form for a specified metric.

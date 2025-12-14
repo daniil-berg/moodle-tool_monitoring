@@ -47,6 +47,7 @@ class metric_test extends advanced_testcase {
      * @return metric Anonymous class instance.
      */
     private static function get_test_metric(iterable|metric_value $testvalues): metric {
+        // TODO: Fix construction.
         return new class($testvalues) extends metric {
 
             /**

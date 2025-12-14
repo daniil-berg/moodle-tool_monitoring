@@ -37,7 +37,6 @@ use core\lang_string;
 use dml_exception;
 use moodle_url;
 use tool_monitoring\metric;
-use tool_monitoring\metric_config;
 
 /**
  * Triggered when the configuration for a metric is updated.
@@ -63,7 +62,7 @@ class metric_config_updated extends base {
      */
     protected function init(): void {
         $this->context = system::instance();
-        $this->data['objecttable'] = metric_config::TABLE;
+        $this->data['objecttable'] = metric::TABLE;
         $this->data['crud'] = 'u';
         $this->data['edulevel'] = self::LEVEL_OTHER;
     }
@@ -83,7 +82,7 @@ class metric_config_updated extends base {
      * @return string Short description.
      */
     public function get_description(): string {
-        return "The user with ID '$this->userid' updated the metric configuration for '{$this->metric::get_qualified_name()}'.";
+        return "User with ID '$this->userid' updated the metric config for '{$this->metric::get_qualified_name()}'.";
     }
 
     /**
@@ -118,7 +117,7 @@ class metric_config_updated extends base {
      */
     public static function for_metric(metric $metric): static {
         return static::create([
-            'objectid' => $metric->config->id,
+            'objectid' => $metric->id,
             'other'    => ['metric' => $metric],
         ]);
     }

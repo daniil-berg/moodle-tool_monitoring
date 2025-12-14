@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Hook callbacks for Monitoring
+ * Registration of metrics via the Hooks API.
+ *
+ * @link https://moodledev.io/docs/apis/core/hooks#registering-of-hook-callbacks
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,11 +29,17 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use tool_monitoring\hook\metrics_manager;
+use tool_monitoring\local\metrics;
+
 defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [
-    [
-        'hook' => tool_monitoring\hook\gather_metrics::class,
-        'callback' => [\tool_monitoring\local\hooks\register_metrics::class, 'callback'],
-    ],
+    ['hook' => metrics_manager::class, 'callback' => [metrics\num_course_count::class, 'register']],
+    ['hook' => metrics_manager::class, 'callback' => [metrics\num_overdue_tasks::class, 'register']],
+    ['hook' => metrics_manager::class, 'callback' => [metrics\num_quiz_attempts_in_progress::class, 'register']],
+    ['hook' => metrics_manager::class, 'callback' => [metrics\num_tasks_spawned_adhoc::class, 'register']],
+    ['hook' => metrics_manager::class, 'callback' => [metrics\num_tasks_spawned_scheduled::class, 'register']],
+    ['hook' => metrics_manager::class, 'callback' => [metrics\num_user_count::class, 'register']],
+    ['hook' => metrics_manager::class, 'callback' => [metrics\num_users_accessed::class, 'register']],
 ];

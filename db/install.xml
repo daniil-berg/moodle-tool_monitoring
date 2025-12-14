@@ -4,16 +4,16 @@
        xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
 >
     <TABLES>
-        <TABLE NAME="tool_monitoring_config" COMMENT="table to store metric's config">
+        <TABLE NAME="tool_monitoring_metrics" COMMENT="All registered metrics and their configuration.">
             <FIELDS>
                 <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
-                <FIELD NAME="component" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The component of this metric."/>
-                <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="The name of this metric."/>
-                <FIELD NAME="enabled" SEQUENCE="false" TYPE="int" LENGTH="1" NOTNULL="true" COMMENT="0 if this metric is disabled, i.e. not included in any export, or 1 if enabled."/>
-                <FIELD NAME="data" SEQUENCE="false" TYPE="text" NOTNULL="true" COMMENT="JSON encoded config of this metric. The config is specific to a metric and may be used to customise the metric's behaviour."/>
-                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The unix timestamp this config was first created."/>
-                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The unix timestamp this config was last updated."/>
-                <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The userid of the person who last modified this config."/>
+                <FIELD NAME="component" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="Moodle component defining the metric."/>
+                <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="100" NOTNULL="true" COMMENT="Name of the metric."/>
+                <FIELD NAME="enabled" SEQUENCE="false" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="0 if the metric is disabled, i.e. not included in any export."/>
+                <FIELD NAME="config" SEQUENCE="false" TYPE="text" NOTNULL="true" DEFAULT="{}" COMMENT="JSON encoded metric-specific config, if defined by the metric."/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp from when the entry was created."/>
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp from when the entry was last updated."/>
+                <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID of the user who last modified the entry."/>
             </FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

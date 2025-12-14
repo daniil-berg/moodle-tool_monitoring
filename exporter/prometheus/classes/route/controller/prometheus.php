@@ -38,7 +38,7 @@ use GuzzleHttp\Psr7\Utils;
 use monitoringexporter_prometheus\exporter as prometheus_exporter;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use tool_monitoring\metrics_manager;
+use tool_monitoring\hook\metrics_manager;
 
 /**
  * Defines the route for Prometheus to pull the current metrics.

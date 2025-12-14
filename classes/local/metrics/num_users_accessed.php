@@ -37,6 +37,8 @@ use tool_monitoring\metric_value;
 
 /**
  * Implements the num_users_accessed metric.
+ *
+ * @extends metric<object{timewindow: int}>
  */
 class num_users_accessed extends metric {
 
@@ -53,7 +55,7 @@ class num_users_accessed extends metric {
         $where = 'username <> :excl_user AND lastaccess >= :earliest';
         $params = [
             'excl_user' => 'guest',
-            'earliest'  => time() - $this->config->data->timewindow,
+            'earliest'  => time() - $this->config->timewindow,
         ];
         return new metric_value($DB->count_records_select('user', $where, $params));
     }

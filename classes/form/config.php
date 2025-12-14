@@ -22,9 +22,7 @@ use core\exception\coding_exception;
 use dml_exception;
 use JsonException;
 use moodleform;
-use tool_monitoring\event\metric_config_updated;
 use tool_monitoring\metric;
-use tool_monitoring\metric_config;
 
 require_once("$CFG->libdir/formslib.php");
 
@@ -63,16 +61,15 @@ class config extends moodleform {
      * @return self New config form instance.
      */
     public static function for_metric(metric $metric): self {
-        $customdata = ['metric' => $metric];
-        $form = $metric::get_config_form(customdata: $customdata);
-        $formdata = (array) $metric->config->data;
-        $formdata['enabled'] = $metric->config->enabled;
+        $form = $metric::get_config_form(customdata: ['metric' => $metric]);
+        $formdata = (array) $metric->config;
+        $formdata['enabled'] = $metric->enabled;
         $form->set_data($formdata);
         return $form;
     }
 
     /**
-     * Updates the {@see metric_config} of the specified metric with the submitted form data.
+     * Updates the {@see metric} config in the DB with the submitted form data.
      *
      * If no form data is present, or it did not pass validation, this method does nothing.
      *
@@ -82,22 +79,18 @@ class config extends moodleform {
      * @throws JsonException The metric-specific config data could not be serialized.
      */
     public function save(metric $metric): void {
-        global $DB;
         if (is_null($formdata = $this->get_data())) {
             return;
         }
-        $transaction = $DB->start_delegated_transaction();
-        $metric->config->enabled = $formdata->enabled ?? false;
+        $metric->enabled = $formdata->enabled ?? false;
         // Only store metric-specific config in the `data` field.
         $data = [];
-        foreach (array_keys($metric::get_default_config_data()) as $field) {
+        foreach (array_keys($metric::get_default_config_data() ?? []) as $field) {
             if (property_exists($formdata, $field)) {
                 $data[$field] = $formdata->$field;
             }
         }
-        $metric->config->data = (object) $data;
-        $metric->config->update();
-        metric_config_updated::for_metric($metric)->trigger();
-        $transaction->allow_commit();
+        $metric->config = (object) $data;
+        $metric->save_config();
     }
 }

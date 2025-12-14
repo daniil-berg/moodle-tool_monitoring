@@ -48,6 +48,7 @@ class strict_label_names_test extends advanced_testcase {
      * @return metric Anonymous class instance.
      */
     private static function get_test_metric(array $testlabelnames, array $testvalues): metric {
+        // TODO: Fix construction.
         return new class($testlabelnames, $testvalues) extends metric {
             use strict_label_names;
 

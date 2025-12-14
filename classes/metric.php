@@ -33,8 +33,14 @@ use core\component;
 use core\exception\coding_exception;
 use core\lang_string;
 use dml_exception;
+use dml_missing_record_exception;
+use Exception;
 use IteratorAggregate;
 use JsonException;
+use stdClass;
+use tool_monitoring\event\metric_config_updated;
+use tool_monitoring\hook\metrics_manager;
+use tool_monitoring\local\metric_orm;
 use Traversable;
 
 /**
@@ -49,9 +55,9 @@ use Traversable;
  *
  * For advanced use cases, if the metric should allow specific custom configuration via the admin panel, the {@see get_config_form}
  * and {@see get_default_config_data} methods should also be overridden (in a compatible way).
+ * For these use cases, this base class is generic in terms of the {@see config} type, which can be narrowed in an `extends` tag.
  *
- * @property-read metric_config $config Cached configuration of the metric; loaded from the database on first read access;
- *                                      to ensure it is up to date, call {@see load_config}.
+ * @template ConfT of object = stdClass
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -63,9 +69,50 @@ use Traversable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class metric implements IteratorAggregate {
+    /** @use metric_orm<ConfT> */
+    use metric_orm;
 
-    /** @var metric_config Configuration of the metric; guaranteed to be set before {@see calculate} is called. */
-    private metric_config $config;
+    /**
+     * Registers the metric.
+     *
+     * This is the callback for the {@see metrics_manager} hook.
+     *
+     * Constructs a new instance of the metric and passes it to {@see metrics_manager::add_metric}.
+     * If no entry in the database table exists (yet) for the metric, it is created first, before the hook method is called.
+     *
+     * @param metrics_manager $hook Hook picking up the metric.
+     * @return static
+     * @throws coding_exception Should not happen.
+     * @throws dml_exception
+     * @throws JsonException Failed to (de-)serialize the {@see config} value.
+     */
+    public static function register(metrics_manager $hook): static {
+        global $DB;
+        // Either fetch the existing DB entry or create a new one for the metric with this component & name.
+        $conditions = ['component' => static::get_component(), 'name' => static::get_name()];
+        try {
+            $transaction = $DB->start_delegated_transaction();
+            try {
+                // Assume we already have a DB entry and construct the metric object from it.
+                $metric = static::get($conditions);
+            } catch (dml_missing_record_exception) {
+                // There is no entry yet; construct the metric object first and then creat the DB entry for it.
+                // Set the default config as defined in the subclass.
+                $defaultdata = static::get_default_config_data();
+                $conditions['config'] = $defaultdata ? (object) $defaultdata : new stdClass();
+                $metric = static::from_untyped_object($conditions)->create();
+            }
+            $transaction->allow_commit();
+        } catch (Exception $e) {
+            if (!empty($transaction) && !$transaction->is_disposed()) {
+                $transaction->rollback($e);
+            }
+            throw $e;
+        }
+        // Store the metric object in our manager.
+        $hook->add_metric($metric);
+        return $metric;
+    }
 
     /**
      * Produces the current metric value(s).
@@ -163,43 +210,6 @@ abstract class metric implements IteratorAggregate {
     }
 
     /**
-     * Fetches the current metric configuration from the database and saves it in the {@see self::$config} property.
-     *
-     * If no config for the metric is found in the database, a default config object is constructed and saved. In that case
-     * the {@see get_default_config_data} method is called to set any optional metric-specific configuration values.
-     *
-     * @return metric_config The newly loaded config object.
-     * @throws coding_exception Should not happen.
-     * @throws dml_exception Unexpected error in the database query.
-     * @throws JsonException Failed to (de-)serialize the config `data` value.
-     */
-    final public function load_config(): metric_config {
-        $this->config = metric_config::for_metric($this);
-        return $this->config;
-    }
-
-    /**
-     * Special case for read access to the protected {@see config} property.
-     *
-     * TODO Remove once we can finally depend on PHP 8.4+ and use asymmetric visibility and a nice property `get`-hook.
-     *
-     * @param string $name Property name.
-     * @return mixed Property value.
-     * @throws coding_exception Should not happen.
-     * @throws dml_exception Unexpected error in the database query.
-     * @throws JsonException Failed to (de-)serialize the config `data` value.
-     */
-    final public function __get(string $name): mixed {
-        if ($name === 'config') {
-            if (!isset($this->config)) {
-                $this->load_config();
-            }
-            return $this->config;
-        }
-        return $this->$name;
-    }
-
-    /**
      * Form definition for the metric configuration.
      *
      * If the metric requires custom configuration, this method should be overridden and an appropriately defined form object that
@@ -211,13 +221,14 @@ abstract class metric implements IteratorAggregate {
      * By default, this does nothing more than instantiating a {@see form\config} object with the provided constructor arguments.
      *
      * @param mixed ...$args Arguments that have to be passed to the form constructor.
+     * @return form\config Instance of the config form for the metric.
      */
     public static function get_config_form(...$args): form\config {
         return new form\config(...$args);
     }
 
     /**
-     * Returns the default config data to be set for the {@see metric_config::data} of the metric.
+     * Returns the default {@see config} for the metric.
      *
      * If the metric requires custom configuration, this method should be overridden and an associative array of configuration
      * field-value-pairs should be returned. These **must** be compatible with the metric-specific config form fields defined via
@@ -228,5 +239,20 @@ abstract class metric implements IteratorAggregate {
      */
     public static function get_default_config_data(): array|null {
         return null;
+    }
+
+    /**
+     * Saves the metric's current {@see config} and {@see enabled} values to the database.
+     *
+     * @throws coding_exception Should never happen.
+     * @throws dml_exception
+     * @throws JsonException The {@see config} object could not be serialized.
+     */
+    public function save_config(): void {
+        global $DB;
+        $transaction = $DB->start_delegated_transaction();
+        $this->update(['enabled', 'config', 'timemodified', 'usermodified']);
+        metric_config_updated::for_metric($this)->trigger();
+        $transaction->allow_commit();
     }
 }

@@ -39,6 +39,8 @@ use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\event\metric_config_updated;
+use tool_monitoring\event\metric_disabled;
+use tool_monitoring\event\metric_enabled;
 use tool_monitoring\hook\metrics_manager;
 use tool_monitoring\local\metric_orm;
 use tool_monitoring\local\metrics\num_overdue_tasks;
@@ -354,6 +356,7 @@ class metric_test extends advanced_testcase {
         foreach ($expectedproperties as $name => $value) {
             self::assertEquals($value, $record->$name);
         }
+        $eventsink = $this->redirectEvents();
 
         // This should do nothing.
         $metric->disable();
@@ -362,6 +365,8 @@ class metric_test extends advanced_testcase {
         foreach ($expectedproperties as $name => $value) {
             self::assertEquals($value, $record->$name);
         }
+        // Check that the event was triggered as expected.
+        self::assertSame([], $eventsink->get_events());
 
         $metric->enable();
         // User should now be the current one.
@@ -375,6 +380,14 @@ class metric_test extends advanced_testcase {
         }
         // Time modified should have been updated as well.
         self::assertGreaterThan($creationtime, $record->timemodified);
+        $events = $eventsink->get_events();
+        self::assertCount(1, $events);
+        $event = $events[0];
+        self::assertInstanceOf(metric_enabled::class, $event);
+        self::assertArrayHasKey('metric', $event->other);
+        self::assertSame($metric, $event->other['metric']);
+        $eventsink->clear();
+
         // This should do nothing.
         $metric->enable();
         // Check that nothing changed.
@@ -382,6 +395,7 @@ class metric_test extends advanced_testcase {
         foreach ($expectedproperties as $name => $value) {
             self::assertEquals($value, $record->$name);
         }
+        self::assertSame([], $eventsink->get_events());
 
         $metric->disable();
         $expectedproperties['enabled'] = false;
@@ -390,5 +404,13 @@ class metric_test extends advanced_testcase {
         foreach ($expectedproperties as $name => $value) {
             self::assertEquals($value, $record->$name);
         }
+        $events = $eventsink->get_events();
+        self::assertCount(1, $events);
+        $event = $events[0];
+        self::assertInstanceOf(metric_disabled::class, $event);
+        self::assertArrayHasKey('metric', $event->other);
+        self::assertSame($metric, $event->other['metric']);
+        $eventsink->clear();
+        $eventsink->close();
     }
 }

@@ -38,7 +38,6 @@ use Exception;
 use IteratorAggregate;
 use JsonException;
 use MoodleQuickForm;
-use tool_monitoring\event\metric_config_updated;
 use tool_monitoring\hook\metrics_manager;
 use tool_monitoring\local\metric_orm;
 use Traversable;
@@ -273,7 +272,7 @@ abstract class metric implements IteratorAggregate {
         global $DB;
         $transaction = $DB->start_delegated_transaction();
         $this->update(['config', 'timemodified', 'usermodified']);
-        metric_config_updated::for_metric($this)->trigger();
+        event\metric_config_updated::for_metric($this)->trigger();
         $transaction->allow_commit();
     }
 
@@ -287,12 +286,15 @@ abstract class metric implements IteratorAggregate {
      * @throws JsonException Should never happen.
      */
     public function enable(): void {
+        global $DB;
         if ($this->enabled) {
             return;
         }
+        $transaction = $DB->start_delegated_transaction();
         $this->enabled = true;
         $this->update(['enabled', 'timemodified', 'usermodified']);
-        // TODO: Implement `metric_enabled` event and trigger it here in a transaction.
+        event\metric_enabled::for_metric($this)->trigger();
+        $transaction->allow_commit();
     }
 
     /**
@@ -305,11 +307,14 @@ abstract class metric implements IteratorAggregate {
      * @throws JsonException Should never happen.
      */
     public function disable(): void {
+        global $DB;
         if (!$this->enabled) {
             return;
         }
+        $transaction = $DB->start_delegated_transaction();
         $this->enabled = false;
         $this->update(['enabled', 'timemodified', 'usermodified']);
-        // TODO: Implement `metric_disabled` event and trigger it here in a transaction.
+        event\metric_disabled::for_metric($this)->trigger();
+        $transaction->allow_commit();
     }
 }

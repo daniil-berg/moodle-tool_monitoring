@@ -38,7 +38,7 @@ global $PAGE, $OUTPUT;
 require_login();
 
 $context = context_system::instance();
-require_capability('tool/monitoring:list_metrics', $context);
+require_capability('tool/monitoring:manage_metrics', $context);
 
 $PAGE->set_url('/admin/tool/monitoring/');
 $PAGE->set_context($context);

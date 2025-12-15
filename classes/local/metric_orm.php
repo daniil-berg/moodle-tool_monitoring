@@ -82,7 +82,7 @@ trait metric_orm {
      * @param int|null $usermodified ID of the user that last modified the DB table entry; `null` if not (yet) saved.
      * @param int|null $id Primary key of the corresponding DB table row; `null` if not (yet) saved.
      */
-    final private function __construct(
+    final protected function __construct(
         public string   $component,
         public string   $name,
         public bool     $enabled      = false,

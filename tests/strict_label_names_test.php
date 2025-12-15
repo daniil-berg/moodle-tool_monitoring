@@ -33,58 +33,12 @@ namespace tool_monitoring;
 
 use advanced_testcase;
 use coding_exception;
-use core\lang_string;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\local\testing\metric_strict_label_names;
 
 #[CoversClass(strict_label_names::class)]
 class strict_label_names_test extends advanced_testcase {
-
-    /**
-     * Returns an instance of a class that extends {@see metric} for testing purposes.
-     *
-     * @param string[] $testlabelnames Set of expected label names for the test metric.
-     * @param metric_value[] $testvalues Metric values to be produced by the test metric.
-     * @return metric Anonymous class instance.
-     */
-    private static function get_test_metric(array $testlabelnames, array $testvalues): metric {
-        // TODO: Fix construction.
-        return new class($testlabelnames, $testvalues) extends metric {
-            use strict_label_names;
-
-            private static array $labelnames = [];
-
-            /**
-             * Sets up the test metric instance.
-             *
-             * @param string[] $labelnames Set of expected label names for the metric.
-             * @param metric_value[] $values Metric values to be produced by the metric.
-             */
-            public function __construct(
-                array $labelnames,
-                private readonly array $values,
-            ) {
-                self::$labelnames = $labelnames;
-            }
-
-            protected function calculate(): array {
-                return $this->values;
-            }
-
-            protected static function get_label_names(): array {
-                return self::$labelnames;
-            }
-
-            public static function get_description(): lang_string {
-                // Just an arbitrary existing language string.
-                return new lang_string('tested');
-            }
-
-            public static function get_type(): metric_type {
-                return metric_type::COUNTER;
-            }
-        };
-    }
 
     /**
      * @param string[] $labelnames Set of expected label names for the test metric.
@@ -93,7 +47,7 @@ class strict_label_names_test extends advanced_testcase {
      */
     #[DataProvider('test_validate_value_provider')]
     public function test_validate_value(array $labelnames, array $values, string|null $exception = null): void {
-        $metric = self::get_test_metric($labelnames, $values);
+        $metric = metric_strict_label_names::with_label_names_and_values($labelnames, $values);
         if (!is_null($exception)) {
             $this->expectException($exception);
         }

@@ -33,45 +33,75 @@ namespace tool_monitoring;
 
 use advanced_testcase;
 use ArrayIterator;
-use core\lang_string;
+use core\exception\coding_exception;
+use dml_exception;
+use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\event\metric_config_updated;
+use tool_monitoring\hook\metrics_manager;
+use tool_monitoring\local\metric_orm;
+use tool_monitoring\local\metrics\num_overdue_tasks;
+use tool_monitoring\local\metrics\num_users_accessed;
+use tool_monitoring\local\testing\metric_strict_label_names;
+use tool_monitoring\local\testing\simple_metric;
 
 #[CoversClass(metric::class)]
+#[CoversClass(metric_orm::class)]
 class metric_test extends advanced_testcase {
 
     /**
-     * Returns an instance of a class that extends {@see metric} for testing purposes.
-     *
-     * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
-     * @return metric Anonymous class instance.
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException
      */
-    private static function get_test_metric(iterable|metric_value $testvalues): metric {
-        // TODO: Fix construction.
-        return new class($testvalues) extends metric {
-
-            /**
-             * Sets up the test metric instance.
-             *
-             * @param iterable<metric_value>|metric_value $values Metric values to be produced by the metric.
-             */
-            public function __construct(
-                private readonly iterable|metric_value $values,
-            ) {}
-
-            protected function calculate(): iterable|metric_value {
-                return $this->values;
-            }
-
-            public static function get_description(): lang_string {
-                // Just an arbitrary existing language string.
-                return new lang_string('tested');
-            }
-
-            public static function get_type(): metric_type {
-                return metric_type::COUNTER;
-            }
-        };
+    public function test_register(): void {
+        global $DB;
+        $this->resetAfterTest();
+        self::assertSame(0, $DB->count_records(metric::TABLE));
+        $manager = metrics_manager::instance();
+        // The manager should not yet have the test metric.
+        $qname = 'tool_monitoring_simple_metric';
+        self::assertArrayNotHasKey($qname, $manager->get_metrics());
+        // This should insert a DB record for the test metric.
+        $metric = simple_metric::register($manager);
+        self::assertNotNull($metric->id);
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id], strictness: MUST_EXIST);
+        $expectedproperties = [
+            'id'           => $metric->id,
+            'component'    => 'tool_monitoring',
+            'name'         => 'simple_metric',
+            'enabled'      => false,
+            'config'       => '{}',
+            'timecreated'  => $metric->timecreated,
+            'timemodified' => $metric->timemodified,
+            'usermodified' => 0,
+        ];
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
+        // Now the manager should have the test metric.
+        self::assertArrayHasKey($qname, $manager->get_metrics());
+        self::assertSame($metric, $manager->get_metrics()[$qname]);
+        // Another `register` call should not insert anything new into the DB table.
+        $metricscount = $DB->count_records(metric::TABLE);
+        // Intercept the manager's warning.
+        $warning = null;
+        set_error_handler(
+            static function (int $errno, string $errstr) use (&$warning): void {
+                restore_error_handler();
+                $warning = $errstr;
+            },
+        );
+        $metric2 = simple_metric::register($manager);
+        self::assertNotNull($warning);
+        // Check that the number of DB records is still the same.
+        self::assertSame($metricscount, $DB->count_records(metric::TABLE));
+        // The ID should also be the same.
+        self::assertSame($metric->id, $metric2->id);
+        // The object should be a new one though.
+        self::assertNotSame($metric, $metric2);
+        self::assertSame($metric, $manager->get_metrics()[$qname]);
     }
 
     /**
@@ -79,7 +109,7 @@ class metric_test extends advanced_testcase {
      */
     #[DataProvider('test_iterator_provider')]
     public function test_iterator(iterable|metric_value $testvalues): void {
-        $metric = self::get_test_metric($testvalues);
+        $metric = simple_metric::with_values($testvalues);
         // Consume the metric iterator.
         $metricvalues = iterator_to_array($metric);
         if ($testvalues instanceof metric_value) {
@@ -110,9 +140,186 @@ class metric_test extends advanced_testcase {
         ];
     }
 
-    public function test_get_name(): void {
-        $metric = self::get_test_metric([]);
-        $expected = preg_replace('/^tool_monitoring\\\metric@/', 'metric@', $metric::class);
-        self::assertSame($expected, $metric::get_name());
+    /**
+     * @param class-string<metric> $class Metric class name.
+     * @param string $expected Expected return value name.
+     */
+    #[DataProvider('test_get_name_provider')]
+    public function test_get_name(string $class, string $expected): void {
+        self::assertSame($expected, $class::get_name());
+    }
+
+    /**
+     * Provides test data for the {@see test_get_name} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function test_get_name_provider(): array {
+        return [
+            [
+                'class'    => simple_metric::class,
+                'expected' => 'simple_metric',
+            ],
+            [
+                'class'    => metric_strict_label_names::class,
+                'expected' => 'metric_strict_label_names',
+            ],
+            [
+                'class'    => num_overdue_tasks::class,
+                'expected' => 'num_overdue_tasks',
+            ],
+            [
+                'class'    => num_users_accessed::class,
+                'expected' => 'num_users_accessed',
+            ],
+        ];
+    }
+
+    /**
+     * @param class-string<metric> $class Metric class name.
+     * @param string $expected Expected return value name.
+     */
+    #[DataProvider('test_get_component_provider')]
+    public function test_get_component(string $class, string $expected): void {
+        self::assertSame($expected, $class::get_component());
+    }
+
+    /**
+     * Provides test data for the {@see test_get_component} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function test_get_component_provider(): array {
+        return [
+            [
+                'class'    => simple_metric::class,
+                'expected' => 'tool_monitoring',
+            ],
+            [
+                'class'    => metric_strict_label_names::class,
+                'expected' => 'tool_monitoring',
+            ],
+            [
+                'class'    => num_overdue_tasks::class,
+                'expected' => 'tool_monitoring',
+            ],
+            [
+                'class'    => num_users_accessed::class,
+                'expected' => 'tool_monitoring',
+            ],
+        ];
+    }
+
+    /**
+     * @param class-string<metric> $class Metric class name.
+     * @param string $expected Expected return value name.
+     */
+    #[DataProvider('test_get_qualified_name_provider')]
+    public function test_get_qualified_name(string $class, string $expected): void {
+        self::assertSame($expected, $class::get_qualified_name());
+    }
+
+    /**
+     * Provides test data for the {@see test_get_qualified_name} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function test_get_qualified_name_provider(): array {
+        return [
+            [
+                'class'    => simple_metric::class,
+                'expected' => 'tool_monitoring_simple_metric',
+            ],
+            [
+                'class'    => metric_strict_label_names::class,
+                'expected' => 'tool_monitoring_metric_strict_label_names',
+            ],
+            [
+                'class'    => num_overdue_tasks::class,
+                'expected' => 'tool_monitoring_num_overdue_tasks',
+            ],
+            [
+                'class'    => num_users_accessed::class,
+                'expected' => 'tool_monitoring_num_users_accessed',
+            ],
+        ];
+    }
+
+    public function test_get_config_form(): void {
+        $metric = simple_metric::with_values([]);
+        $form = simple_metric::get_config_form(customdata: ['metric' => $metric]);
+        self::assertSame(form\config::class, get_class($form));
+    }
+
+    public function test_get_default_config_data(): void {
+        self::assertSame([], simple_metric::get_default_config_data());
+    }
+
+    /**
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException
+     */
+    public function test_save_config(): void {
+        global $DB, $USER;
+        $this->resetAfterTest();
+        $metric = simple_metric::with_values([]);
+        // Set modification time in the past.
+        $creationtime = time() - 1000;
+        $metric->timecreated = $creationtime;
+        $metric->timemodified = $creationtime;
+        $metric->usermodified = 1;
+        $data = (array) $metric;
+        $data['config'] = '{}';
+        // Insert record manually.
+        $metric->id = $DB->insert_record(metric::TABLE, $data);
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id]);
+        // Some sanity checks.
+        $expectedproperties = [
+            'id'           => $metric->id,
+            'component'    => $metric->component,
+            'name'         => $metric->name,
+            'enabled'      => $metric->enabled,
+            'config'       => '{}',
+            'timecreated'  => $creationtime,
+            'timemodified' => $creationtime,
+            'usermodified' => 1,
+        ];
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
+        // Modify what we expect to be updated.
+        $metric->enabled = true;
+        $metric->config = (object) ['foo' => 'bar', 'spam' => 'eggs'];
+        // Modify what we expect to be ignored in the update.
+        $metric->component = 'spam';
+        $metric->name = 'eggs';
+        $metric->timecreated = 123;
+        $metric->timemodified = 0;
+        $metric->usermodified = 123456789;
+        unset($expectedproperties['timemodified']);
+        // Expect only `enabled` and `config` to match what we set above.
+        $expectedproperties['enabled'] = true;
+        $expectedproperties['config'] = '{"foo":"bar","spam":"eggs"}';
+        // User should be the current one.
+        $expectedproperties['usermodified'] = $USER->id;
+        // Intercept the event here.
+        $eventsink = $this->redirectEvents();
+        $metric->save_config();
+        $eventsink->close();
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id]);
+        // Check the expected values.
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
+        // Time modified should have been updated as well.
+        self::assertGreaterThan($creationtime, $record->timemodified);
+        // Check that the event was triggered as expected.
+        $events = $eventsink->get_events();
+        self::assertCount(1, $events);
+        $event = $events[0];
+        self::assertInstanceOf(metric_config_updated::class, $event);
+        self::assertArrayHasKey('metric', $event->other);
+        self::assertSame($metric, $event->other['metric']);
     }
 }

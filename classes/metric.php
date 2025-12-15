@@ -37,7 +37,6 @@ use dml_missing_record_exception;
 use Exception;
 use IteratorAggregate;
 use JsonException;
-use stdClass;
 use tool_monitoring\event\metric_config_updated;
 use tool_monitoring\hook\metrics_manager;
 use tool_monitoring\local\metric_orm;
@@ -98,8 +97,7 @@ abstract class metric implements IteratorAggregate {
             } catch (dml_missing_record_exception) {
                 // There is no entry yet; construct the metric object first and then creat the DB entry for it.
                 // Set the default config as defined in the subclass.
-                $defaultdata = static::get_default_config_data();
-                $conditions['config'] = $defaultdata ? (object) $defaultdata : new stdClass();
+                $conditions['config'] = (object) static::get_default_config_data();
                 $metric = static::from_untyped_object($conditions)->create();
             }
             $transaction->allow_commit();
@@ -233,12 +231,12 @@ abstract class metric implements IteratorAggregate {
      * If the metric requires custom configuration, this method should be overridden and an associative array of configuration
      * field-value-pairs should be returned. These **must** be compatible with the metric-specific config form fields defined via
      * the {@see get_config_form} method, i.e. the keys of the returned array must correspond exactly to the added form field names.
-     * By default, returns `null`.
+     * By default, returns an empty array.
      *
-     * @return array<string, mixed>|null Default config data for the metric or `null` if no specific config is available.
+     * @return array<string, mixed> Default config data for the metric; empty if no specific config is available.
      */
-    public static function get_default_config_data(): array|null {
-        return null;
+    public static function get_default_config_data(): array {
+        return [];
     }
 
     /**

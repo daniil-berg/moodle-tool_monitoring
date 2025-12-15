@@ -37,6 +37,7 @@ use JsonException;
 use moodle_url;
 use tool_monitoring\form\config;
 use tool_monitoring\hook\metrics_manager;
+use tool_monitoring\metric;
 
 /**
  * Provides a configuration form for a specified metric.
@@ -55,6 +56,9 @@ class configure implements renderable, templatable {
     /** @var config Metric config form to be rendered. */
     private config $form;
 
+    /** @var metric Metric instance configured with the form. */
+    private metric $metric;
+
     /**
      * Instantiates the underlying {@see config} form for the specified metric.
      *
@@ -65,14 +69,23 @@ class configure implements renderable, templatable {
     public function __construct(string $qualifiedname) {
         $metric = metrics_manager::instance()->get_metric($qualifiedname);
         if (is_null($metric)) {
-            // TODO: Respond more elegantly.
-            http_response_code(404);
+            throw new moodle_exception('invalidrecord', 'error', '', 'tool_monitoring_metrics');
         }
         $this->form = config::for_metric($metric);
+        $this->metric = $metric;
+    }
+
+    /**
+     *  Processes the form data if the form is submitted or canceled and issues HTTP redirects. Thus, this method
+     *  must be called before any output is sent to the browser.
+     *
+     * @return void
+     */
+    public function process_form() {
         if ($this->form->is_cancelled()) {
             redirect(new moodle_url('/admin/tool/monitoring/'));
         } else if ($this->form->is_submitted() && $this->form->is_validated()) {
-            $this->form->save($metric);
+            $this->form->save($this->metric);
             redirect(new moodle_url('/admin/tool/monitoring/'));
         }
     }

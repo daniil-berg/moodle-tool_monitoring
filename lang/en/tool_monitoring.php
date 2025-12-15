@@ -40,6 +40,7 @@ $string['metricenabled'] = 'Metric enabled';
 $string['metricsoverview'] = 'Overview of Available Metrics';
 $string['monitoring:configure_metrics'] = 'Configure the settings of monitoring metrics';
 $string['monitoring:list_metrics'] = 'List metrics';
+$string['monitoring_metrics'] = 'Monitoring Metrics';
 $string['name'] = 'Name';
 $string['pluginname'] = 'Monitoring';
 $string['num_user_count_description'] = 'Number of total registered users';

@@ -42,8 +42,8 @@ require_capability('tool/monitoring:list_metrics', $context);
 
 $PAGE->set_url('/admin/tool/monitoring/');
 $PAGE->set_context($context);
-$PAGE->set_title('Monitoring Metrics');
-$PAGE->set_heading('Monitoring Metrics');
+$PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
+$PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
 
 echo $OUTPUT->header();

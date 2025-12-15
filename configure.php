@@ -44,8 +44,8 @@ $qualifiedname = required_param('metric', PARAM_ALPHAEXT);
 
 $PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
 $PAGE->set_context($context);
-$PAGE->set_title(get_string('configure_metric', 'tool_monitoring'));
-$PAGE->set_heading(get_string('configure_metric', 'tool_monitoring'));
+$PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
+$PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
 
 $configure = new configure($qualifiedname);

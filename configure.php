@@ -48,6 +48,9 @@ $PAGE->set_title(get_string('configure_metric', 'tool_monitoring'));
 $PAGE->set_heading(get_string('configure_metric', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
 
+$configure = new configure($qualifiedname);
+$configure->process_form();
+
 echo $OUTPUT->header();
-echo $OUTPUT->render(new configure($qualifiedname));
+echo $OUTPUT->render($configure);
 echo $OUTPUT->footer();

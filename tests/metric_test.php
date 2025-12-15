@@ -288,18 +288,16 @@ class metric_test extends advanced_testcase {
         foreach ($expectedproperties as $name => $value) {
             self::assertEquals($value, $record->$name);
         }
-        // Modify what we expect to be updated.
-        $metric->enabled = true;
+        // We expect only this to be updated.
         $metric->config = (object) ['foo' => 'bar', 'spam' => 'eggs'];
-        // Modify what we expect to be ignored in the update.
+        // We expect these to be ignored in the update.
         $metric->component = 'spam';
         $metric->name = 'eggs';
         $metric->timecreated = 123;
         $metric->timemodified = 0;
         $metric->usermodified = 123456789;
         unset($expectedproperties['timemodified']);
-        // Expect only `enabled` and `config` to match what we set above.
-        $expectedproperties['enabled'] = true;
+        // Expect only `config` to match what we set above.
         $expectedproperties['config'] = '{"foo":"bar","spam":"eggs"}';
         // User should be the current one.
         $expectedproperties['usermodified'] = $USER->id;
@@ -321,5 +319,76 @@ class metric_test extends advanced_testcase {
         self::assertInstanceOf(metric_config_updated::class, $event);
         self::assertArrayHasKey('metric', $event->other);
         self::assertSame($metric, $event->other['metric']);
+    }
+
+    /**
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException
+     */
+    public function test_enable_disable(): void {
+        global $DB, $USER;
+        $this->resetAfterTest();
+        $metric = simple_metric::with_values([]);
+        // Set modification time in the past.
+        $creationtime = time() - 1000;
+        $metric->timecreated = $creationtime;
+        $metric->timemodified = $creationtime;
+        $metric->usermodified = 1;
+        $data = (array) $metric;
+        $data['config'] = '{}';
+        // Insert record manually.
+        $metric->id = $DB->insert_record(metric::TABLE, $data);
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id]);
+        // Some sanity checks.
+        $expectedproperties = [
+            'id'           => $metric->id,
+            'component'    => $metric->component,
+            'name'         => $metric->name,
+            'enabled'      => $metric->enabled,
+            'config'       => '{}',
+            'timecreated'  => $creationtime,
+            'timemodified' => $creationtime,
+            'usermodified' => 1,
+        ];
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
+
+        // This should do nothing.
+        $metric->disable();
+        // Check that nothing changed.
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id]);
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
+
+        $metric->enable();
+        // User should now be the current one.
+        $expectedproperties['usermodified'] = $USER->id;
+        $expectedproperties['enabled'] = true;
+        unset($expectedproperties['timemodified']);
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id]);
+        // Check the expected values.
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
+        // Time modified should have been updated as well.
+        self::assertGreaterThan($creationtime, $record->timemodified);
+        // This should do nothing.
+        $metric->enable();
+        // Check that nothing changed.
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id]);
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
+
+        $metric->disable();
+        $expectedproperties['enabled'] = false;
+        $record = $DB->get_record(metric::TABLE, ['id' => $metric->id]);
+        // Check the expected values.
+        foreach ($expectedproperties as $name => $value) {
+            self::assertEquals($value, $record->$name);
+        }
     }
 }

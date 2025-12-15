@@ -95,15 +95,19 @@ class config extends moodleform {
         if (is_null($formdata = $this->get_data())) {
             return;
         }
-        $metric->enabled = $formdata->enabled ?? false;
-        // Only store metric-specific config in the `data` field.
-        $data = [];
+        if ($formdata->enabled ?? false) {
+            $metric->enable();
+        } else {
+            $metric->disable();
+        }
+        // Only store actual metric-specific config.
+        $config = [];
         foreach (array_keys($metric::get_default_config_data()) as $field) {
             if (property_exists($formdata, $field)) {
-                $data[$field] = $formdata->$field;
+                $config[$field] = $formdata->$field;
             }
         }
-        $metric->config = (object) $data;
+        $metric->config = (object) $config;
         $metric->save_config();
     }
 }

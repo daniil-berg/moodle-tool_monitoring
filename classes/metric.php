@@ -101,11 +101,13 @@ abstract class metric implements IteratorAggregate {
                 $metric = static::from_untyped_object($conditions)->create();
             }
             $transaction->allow_commit();
+        // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             if (!empty($transaction) && !$transaction->is_disposed()) {
                 $transaction->rollback($e);
             }
             throw $e;
+        // @codeCoverageIgnoreEnd
         }
         // Store the metric object in our manager.
         $hook->add_metric($metric);

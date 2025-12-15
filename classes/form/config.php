@@ -53,6 +53,7 @@ class config extends moodleform {
         $mform->addElement('static', 'type', get_string('type', 'tool_monitoring'), $metric::get_type()->value);
         $mform->addElement('static', 'description', get_string('description', 'tool_monitoring'), $metric::get_description());
         $mform->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
+        $metric->add_config_form_elements($mform);
     }
 
     /**

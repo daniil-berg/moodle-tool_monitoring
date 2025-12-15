@@ -46,6 +46,8 @@ class config extends moodleform {
     protected function definition(): void {
         $mform = $this->_form;
         $metric = $this->_customdata['metric'];
+        $mform->addElement('hidden', 'metric', $metric::get_qualified_name());
+        $mform->setType('metric', PARAM_ALPHAEXT);
         $mform->addElement('static', 'component', get_string('component', 'tool_monitoring'), $metric::get_component());
         $mform->addElement('static', 'name', get_string('name', 'tool_monitoring'), $metric::get_name());
         $mform->addElement('static', 'type', get_string('type', 'tool_monitoring'), $metric::get_type()->value);

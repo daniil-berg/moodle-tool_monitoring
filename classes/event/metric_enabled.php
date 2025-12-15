@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_config_updated} event class.
+ * Definition of the {@see metric_enabled} event class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -32,7 +32,7 @@ namespace tool_monitoring\event;
 use core\lang_string;
 
 /**
- * Triggered when the configuration for a metric is updated.
+ * Triggered when a metric is enabled.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -43,7 +43,7 @@ use core\lang_string;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_config_updated extends metric_event {
+class metric_enabled extends metric_event {
 
     /**
      * Returns localised event name.
@@ -51,7 +51,7 @@ class metric_config_updated extends metric_event {
      * @return lang_string Name of the event as a lazy string.
      */
     public static function get_name(): lang_string {
-        return new lang_string('metricconfigupdated', 'tool_monitoring');
+        return new lang_string('event:metric_enabled', 'tool_monitoring');
     }
 
     /**
@@ -60,6 +60,6 @@ class metric_config_updated extends metric_event {
      * @return string Short description.
      */
     public function get_description(): string {
-        return "User with ID '$this->userid' updated the metric config for '{$this->metric::get_qualified_name()}'.";
+        return "User with ID '$this->userid' enabled the metric '{$this->metric::get_qualified_name()}'.";
     }
 }

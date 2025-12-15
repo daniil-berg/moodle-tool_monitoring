@@ -263,7 +263,7 @@ abstract class metric implements IteratorAggregate {
     }
 
     /**
-     * Saves the metric's current {@see config} and {@see enabled} values to the database.
+     * Saves the metric's current {@see config} to the database.
      *
      * @throws coding_exception Should never happen.
      * @throws dml_exception
@@ -272,8 +272,44 @@ abstract class metric implements IteratorAggregate {
     public function save_config(): void {
         global $DB;
         $transaction = $DB->start_delegated_transaction();
-        $this->update(['enabled', 'config', 'timemodified', 'usermodified']);
+        $this->update(['config', 'timemodified', 'usermodified']);
         metric_config_updated::for_metric($this)->trigger();
         $transaction->allow_commit();
+    }
+
+    /**
+     * Enables the metric making it available for calculation and export.
+     *
+     * No-op if the metric is already enabled.
+     *
+     * @throws coding_exception Should never happen.
+     * @throws dml_exception
+     * @throws JsonException Should never happen.
+     */
+    public function enable(): void {
+        if ($this->enabled) {
+            return;
+        }
+        $this->enabled = true;
+        $this->update(['enabled', 'timemodified', 'usermodified']);
+        // TODO: Implement `metric_enabled` event and trigger it here in a transaction.
+    }
+
+    /**
+     * Disables the metric making it unavailable for calculation and export.
+     *
+     * No-op if the metric is already disabled.
+     *
+     * @throws coding_exception Should never happen.
+     * @throws dml_exception
+     * @throws JsonException Should never happen.
+     */
+    public function disable(): void {
+        if (!$this->enabled) {
+            return;
+        }
+        $this->enabled = false;
+        $this->update(['enabled', 'timemodified', 'usermodified']);
+        // TODO: Implement `metric_disabled` event and trigger it here in a transaction.
     }
 }

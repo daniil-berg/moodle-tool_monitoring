@@ -41,7 +41,7 @@ require_once("$CFG->libdir/formslib.php");
 class config extends moodleform {
 
     /**
-     * @throws coding_exception
+     * {@inheritDoc}
      */
     protected function definition(): void {
         $mform = $this->_form;
@@ -53,7 +53,17 @@ class config extends moodleform {
         $mform->addElement('static', 'type', get_string('type', 'tool_monitoring'), $metric::get_type()->value);
         $mform->addElement('static', 'description', get_string('description', 'tool_monitoring'), $metric::get_description());
         $mform->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return void
+     */
+    protected function after_definition()
+    {
         $this->add_action_buttons();
+        parent::after_definition();
     }
 
     /**

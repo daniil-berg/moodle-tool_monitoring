@@ -30,8 +30,8 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
+use MoodleQuickForm;
 use tool_monitoring\metric;
-use tool_monitoring\form\config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
@@ -60,16 +60,10 @@ class num_users_accessed extends metric {
         return new metric_value($DB->count_records_select('user', $where, $params));
     }
 
-    public static function get_config_form(...$args): config {
-        return new class(...$args) extends config {
-            protected function definition(): void {
-                parent::definition();
-                $mform = $this->_form;
-                $mform->addElement('text', 'timewindow', 'Users online in the last seconds');
-                // TODO: Localize and allow to set multiple values.
-                $mform->setType('timewindow', PARAM_INT);
-            }
-        };
+    public static function add_config_form_elements(MoodleQuickForm $mform) {
+        $mform->addElement('text', 'timewindow', 'Users online in the last seconds');
+        // TODO: Localize and allow to set multiple values.
+        $mform->setType('timewindow', PARAM_INT);
     }
 
     public static function get_default_config_data(): array {

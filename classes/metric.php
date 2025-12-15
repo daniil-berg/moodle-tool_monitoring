@@ -37,6 +37,7 @@ use dml_missing_record_exception;
 use Exception;
 use IteratorAggregate;
 use JsonException;
+use MoodleQuickForm;
 use tool_monitoring\event\metric_config_updated;
 use tool_monitoring\hook\metrics_manager;
 use tool_monitoring\local\metric_orm;
@@ -212,8 +213,11 @@ abstract class metric implements IteratorAggregate {
     /**
      * Form definition for the metric configuration.
      *
-     * If the metric requires custom configuration, this method should be overridden and an appropriately defined form object that
-     * inherits from {@see form\config} should be returned. Any additional fields in the form's definition **must** be compatible
+     * If the metric requires complex custom configuration, this method should be overridden. For simple cases
+     * overriding {@see add_config_form_elements} is sufficient.
+     *
+     * Implementations of this methid should return an appropriately defined form object that
+     * inherits from {@see form\config}. Any additional fields in the form's definition **must** be compatible
      * with the default config data returned by the {@see get_default_config_data} method. This means the keys of the returned array
      * must correspond exactly to the added form field names.
      * The parent {@see form\config::definition} method **must** be called in the form's `definition` method.
@@ -225,6 +229,23 @@ abstract class metric implements IteratorAggregate {
      */
     public static function get_config_form(...$args): form\config {
         return new form\config(...$args);
+    }
+
+    /**
+     * If the metric requires custom configuration, this method should be overridden. For more complex cases where
+     * you need access to the form object itself you can override {@see get_config_form} instead.
+     *
+     * Any additional fields in the form's definition **must** be compatible
+     * with the default config data returned by the {@see get_default_config_data} method. This means the keys of the returned array
+     * must correspond exactly to the added form field names.
+     *
+     * By default, this does nothing. There is no need to call the parent method when you override this empty stub.
+     *
+     * @param MoodleQuickForm $mform
+     * @return void
+     */
+    public static function add_config_form_elements(MoodleQuickForm $mform) {
+        // Do nothing.
     }
 
     /**

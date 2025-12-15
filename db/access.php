@@ -33,14 +33,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
-    'tool/monitoring:list_metrics' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-    'tool/monitoring:configure_metrics' => [
+    'tool/monitoring:manage_metrics' => [
         'captype' => 'write',
         'riskbitmask' => RISK_CONFIG,
         'contextlevel' => CONTEXT_SYSTEM,

@@ -38,7 +38,7 @@ global $OUTPUT, $PAGE;
 require_login();
 
 $context = context_system::instance();
-require_capability('tool/monitoring:configure_metrics', $context);
+require_capability('tool/monitoring:manage_metrics', $context);
 
 $qualifiedname = required_param('metric', PARAM_ALPHAEXT);
 

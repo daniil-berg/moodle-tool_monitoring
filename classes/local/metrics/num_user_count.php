@@ -47,7 +47,7 @@ class num_user_count extends metric {
         return new lang_string('num_user_count_description', 'tool_monitoring');
     }
 
-    protected function calculate(): metric_value {
+    public function calculate(object $config): metric_value {
         global $DB;
         return new metric_value($DB->count_records('user'));
     }

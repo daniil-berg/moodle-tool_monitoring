@@ -49,7 +49,7 @@ class num_tasks_spawned_scheduled extends metric {
         return new lang_string('num_tasks_spawned_scheduled_description', 'tool_monitoring');
     }
 
-    protected function calculate(): metric_value {
+    public function calculate(object $config): metric_value {
         global $CFG;
         return new metric_value(self::sum_last_sequence_value("{$CFG->prefix}task_scheduled_id_seq"));
     }

@@ -36,8 +36,7 @@ use core\output\templatable;
 use JsonException;
 use moodle_url;
 use tool_monitoring\form\config;
-use tool_monitoring\hook\metrics_manager;
-use tool_monitoring\metric;
+use tool_monitoring\metrics_manager;
 
 /**
  * Provides a configuration form for a specified metric.
@@ -56,36 +55,33 @@ class configure implements renderable, templatable {
     /** @var config Metric config form to be rendered. */
     private config $form;
 
-    /** @var metric Metric instance configured with the form. */
-    private metric $metric;
-
     /**
      * Instantiates the underlying {@see config} form for the specified metric.
      *
      * @param string $qualifiedname Qualified name of the metric for which to render the config form.
-     * @throws JsonException Metric-specific config data could not be (de-)serialized.
      * @throws moodle_exception
      */
     public function __construct(string $qualifiedname) {
-        $metric = metrics_manager::instance()->get_metric($qualifiedname);
+        $metric = metrics_manager::instance()->metrics[$qualifiedname] ?? null;
         if (is_null($metric)) {
             throw new moodle_exception('invalidrecord', 'error', '', 'tool_monitoring_metrics');
         }
         $this->form = config::for_metric($metric);
-        $this->metric = $metric;
     }
 
     /**
-     *  Processes the form data if the form is submitted or canceled and issues HTTP redirects. Thus, this method
-     *  must be called before any output is sent to the browser.
+     * Processes the form data if the form is submitted or canceled and issues HTTP redirects.
      *
-     * @return void
+     * This method must be called before any output is sent to the browser.
+     *
+     * @throws moodle_exception
+     * @throws JsonException Metric-specific config data could not be (de-)serialized.
      */
-    public function process_form() {
+    public function process_form(): void {
         if ($this->form->is_cancelled()) {
             redirect(new moodle_url('/admin/tool/monitoring/'));
         } else if ($this->form->is_submitted() && $this->form->is_validated()) {
-            $this->form->save($this->metric);
+            $this->form->save();
             redirect(new moodle_url('/admin/tool/monitoring/'));
         }
     }

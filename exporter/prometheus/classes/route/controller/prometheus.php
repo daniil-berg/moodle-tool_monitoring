@@ -38,7 +38,7 @@ use GuzzleHttp\Psr7\Utils;
 use monitoringexporter_prometheus\exporter as prometheus_exporter;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use tool_monitoring\hook\metrics_manager;
+use tool_monitoring\metrics_manager;
 
 /**
  * Defines the route for Prometheus to pull the current metrics.
@@ -101,7 +101,8 @@ class prometheus {
         if ($expectedtoken && $params['token'] !== $expectedtoken) {
             return $response->withStatus(403);
         }
-        $metrics = metrics_manager::instance()->get_metrics($params['tag']);
+        // TODO: Allow passing multiple tags.
+        $metrics = metrics_manager::instance()->get_enabled_metrics($params['tag']);
         $body = Utils::streamFor(prometheus_exporter::export($metrics));
         return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }

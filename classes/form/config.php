@@ -22,12 +22,12 @@ use core\exception\coding_exception;
 use dml_exception;
 use JsonException;
 use moodleform;
-use tool_monitoring\metric;
+use tool_monitoring\registered_metric;
 
 require_once("$CFG->libdir/formslib.php");
 
 /**
- * Configuration form for a metric
+ * Configuration form for a metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -38,31 +38,23 @@ require_once("$CFG->libdir/formslib.php");
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class config extends moodleform {
+final class config extends moodleform {
 
-    /**
-     * {@inheritDoc}
-     */
+    private registered_metric $metric;
+
     protected function definition(): void {
-        $mform = $this->_form;
-        $metric = $this->_customdata['metric'];
-        $mform->addElement('hidden', 'metric', $metric::get_qualified_name());
-        $mform->setType('metric', PARAM_ALPHAEXT);
-        $mform->addElement('static', 'component', get_string('component', 'tool_monitoring'), $metric::get_component());
-        $mform->addElement('static', 'name', get_string('name', 'tool_monitoring'), $metric::get_name());
-        $mform->addElement('static', 'type', get_string('type', 'tool_monitoring'), $metric::get_type()->value);
-        $mform->addElement('static', 'description', get_string('description', 'tool_monitoring'), $metric::get_description());
-        $mform->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
-        $metric->add_config_form_elements($mform);
+        $this->metric = $this->_customdata['metric'];
+        $this->_form->addElement('hidden', 'metric', $this->metric->qualifiedname);
+        $this->_form->setType('metric', PARAM_ALPHAEXT);
+        $this->_form->addElement('static', 'component', get_string('component', 'tool_monitoring'), $this->metric->component);
+        $this->_form->addElement('static', 'name', get_string('name', 'tool_monitoring'), $this->metric->name);
+        $this->_form->addElement('static', 'type', get_string('type', 'tool_monitoring'), $this->metric->type->value);
+        $this->_form->addElement('static', 'description', get_string('description', 'tool_monitoring'), $this->metric->description);
+        $this->_form->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
+        $this->metric->extend_config_form($this->_form);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return void
-     */
-    protected function after_definition()
-    {
+    protected function after_definition(): void {
         $this->add_action_buttons();
         parent::after_definition();
     }
@@ -70,11 +62,11 @@ class config extends moodleform {
     /**
      * Returns a new instance for configuring the specified metric.
      *
-     * @param metric $metric Metric for which to return the form.
+     * @param registered_metric $metric Metric for which to return the form.
      * @return self New config form instance.
      */
-    public static function for_metric(metric $metric): self {
-        $form = $metric::get_config_form(customdata: ['metric' => $metric]);
+    public static function for_metric(registered_metric $metric): self {
+        $form = new self(customdata: ['metric' => $metric]);
         $formdata = (array) $metric->config;
         $formdata['enabled'] = $metric->enabled;
         $form->set_data($formdata);
@@ -82,32 +74,28 @@ class config extends moodleform {
     }
 
     /**
-     * Updates the {@see metric} config in the DB with the submitted form data.
+     * Updates the registered metric in the database with the submitted form data.
      *
      * If no form data is present, or it did not pass validation, this method does nothing.
      *
-     * @param metric $metric Metric for which to update the config with the form data.
      * @throws coding_exception Should not happen.
      * @throws dml_exception
      * @throws JsonException The metric-specific config data could not be serialized.
      */
-    public function save(metric $metric): void {
+    public function save(): void {
         if (is_null($formdata = $this->get_data())) {
             return;
         }
         if ($formdata->enabled ?? false) {
-            $metric->enable();
+            $this->metric->enable();
         } else {
-            $metric->disable();
+            $this->metric->disable();
         }
         // Only store actual metric-specific config.
-        $config = [];
-        foreach (array_keys($metric::get_default_config_data()) as $field) {
-            if (property_exists($formdata, $field)) {
-                $config[$field] = $formdata->$field;
-            }
+        foreach (['metric', 'component', 'name', 'type', 'description', 'enabled'] as $key) {
+            unset($formdata->$key);
         }
-        $metric->config = (object) $config;
-        $metric->save_config();
+        $this->metric->config = $formdata;
+        $this->metric->save_config();
     }
 }

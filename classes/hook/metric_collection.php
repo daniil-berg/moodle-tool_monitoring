@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_overdue_tasks} class.
+ * Definition of the {@see metric_collection} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,21 +27,20 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring\hook;
 
-use core\lang_string;
-use dml_exception;
-use Generator;
+use core\attribute\label;
+use core\attribute\tags;
+use IteratorAggregate;
 use tool_monitoring\metric;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric_value;
-use tool_monitoring\strict_labels;
+use Traversable;
 
 /**
- * Calculates the number of tasks that should have already executed but did not.
+ * Hook for collecting {@see metric}s defined in different components throughout the system.
  *
- * The `task_type` label is used to distinguish between the number of overdue _adhoc_ tasks and overdue _scheduled_ tasks.
- * In the latter case disabled tasks are not counted.
+ * A callback can use the {@see add_metric} method to add a metric instance to the collection.
+ *
+ * @link https://moodledev.io/docs/apis/core/hooks Moodle Hooks API
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -52,38 +51,30 @@ use tool_monitoring\strict_labels;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_overdue_tasks extends metric {
-    use strict_labels;
+#[label('Provides the ability to register custom metrics.')]
+#[tags('metric', 'monitoring', 'tool_monitoring')]
+final class metric_collection implements IteratorAggregate {
 
-    public static function get_description(): lang_string {
-        return new lang_string('num_overdue_tasks_description', 'tool_monitoring');
-    }
+    /** @var metric[] All added metrics. */
+    private array $metrics = [];
 
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
-    }
-
-    public static function get_labels(): array {
-        return [['task_type' => 'adhoc'], ['task_type' => 'scheduled']];
+    /**
+     * Adds the specified metric to the collection.
+     *
+     * @param metric $metric Metric instance to add.
+     */
+    public function add_metric(metric $metric): void {
+        $this->metrics[] = $metric;
     }
 
     /**
-     * @return Generator<metric_value>
-     * @throws dml_exception Database query failed.
+     * Yields the metrics from the collection in the order they were added.
+     *
+     * @return Traversable<metric> Previously added metrics.
      */
-    public function calculate(object $config): Generator {
-        global $DB;
-        $where = 'nextruntime <= :next_runtime';
-        $params = ['next_runtime' => time()];
-        yield new metric_value(
-            value: $DB->count_records_select('task_adhoc', $where, $params),
-            label: ['task_type' => 'adhoc'],
-        );
-        $where .= ' AND disabled = :disabled';
-        $params['disabled'] = 0;
-        yield new metric_value(
-            value: $DB->count_records_select('task_scheduled', $where, $params),
-            label: ['task_type' => 'scheduled'],
-        );
+    public function getIterator(): Traversable {
+        foreach ($this->metrics as $metric) {
+            yield $metric;
+        }
     }
 }

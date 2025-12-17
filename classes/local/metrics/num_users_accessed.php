@@ -50,24 +50,24 @@ class num_users_accessed extends metric {
         return new lang_string('num_users_accessed_description', 'tool_monitoring');
     }
 
-    protected function calculate(): metric_value {
+    public function calculate(object $config): metric_value {
         global $DB;
         $where = 'username <> :excl_user AND lastaccess >= :earliest';
         $params = [
             'excl_user' => 'guest',
-            'earliest'  => time() - $this->config->timewindow,
+            'earliest'  => time() - $config->timewindow,
         ];
         return new metric_value($DB->count_records_select('user', $where, $params));
     }
 
-    public static function add_config_form_elements(MoodleQuickForm $mform) {
+    public static function add_config_form_elements(MoodleQuickForm $mform): void {
         $mform->addElement('text', 'timewindow', 'Users online in the last seconds');
         // TODO: Localize and allow to set multiple values.
         $mform->setType('timewindow', PARAM_INT);
     }
 
-    public static function get_default_config_data(): array {
-        return [
+    public static function get_default_config_data(): object {
+        return (object) [
             'timewindow' => 300,
         ];
     }

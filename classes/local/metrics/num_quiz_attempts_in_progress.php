@@ -47,19 +47,18 @@ class num_quiz_attempts_in_progress extends metric {
         return new lang_string('num_quiz_attempts_in_progress_description', 'tool_monitoring');
     }
 
-    protected function calculate(int|null $max_seconds_ago = null, int|null $max_seconds_to_end = null): metric_value {
+    public function calculate(object $config): metric_value {
         global $DB;
         $now = time();
         $where = 'state = :state';
         $params = ['state' => 'inprogress'];
-        if (!is_null($max_seconds_ago)) {
-            $where .= ' AND timemodified >= :time_modified';
-            $params['time_modified'] = $now - $max_seconds_ago;
-        }
-        if (!is_null($max_seconds_to_end)) {
-            $where .=' " AND timecheckstate <= :time_check_state"';
-            $params['time_check_state'] = $now + $max_seconds_to_end;
-        }
+        // TODO: Make these configurable.
+        $max_seconds_ago = 3600;
+        $max_seconds_to_end = 4 * 3600;
+        $where .= ' AND timemodified >= :time_modified';
+        $where .=' " AND timecheckstate <= :time_check_state"';
+        $params['time_modified'] = $now - $max_seconds_ago;
+        $params['time_check_state'] = $now + $max_seconds_to_end;
         return new metric_value($DB->count_records_select('quiz_attempts', $where, $params));
     }
 }

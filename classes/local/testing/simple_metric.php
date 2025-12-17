@@ -58,12 +58,12 @@ class simple_metric extends metric {
      * @param iterable<metric_value>|metric_value $values Metric value(s) to be produced by the metric.
      */
     public static function with_values(iterable|metric_value $values): static {
-        $metric = new static(component: 'foo', name: 'bar');
+        $metric = new static();
         $metric->values = $values;
         return $metric;
     }
 
-    protected function calculate(): iterable|metric_value {
+    public function calculate(object $config): iterable|metric_value {
         return $this->values;
     }
 

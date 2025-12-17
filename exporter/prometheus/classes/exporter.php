@@ -29,8 +29,8 @@
 
 namespace monitoringexporter_prometheus;
 
-use tool_monitoring\metric;
 use tool_monitoring\metric_value;
+use tool_monitoring\registered_metric;
 
 /**
  * Exports metrics in Prometheus format.
@@ -51,7 +51,7 @@ class exporter {
     /**
      * Exports the provided metrics in the Prometheus text format.
      *
-     * @param metric[] $metrics Array of metric instances to export.
+     * @param registered_metric[] $metrics Array of metric instances to export.
      * @return string Prometheus text format.
      */
     public static function export(array $metrics): string {
@@ -63,13 +63,13 @@ class exporter {
      *
      * @see https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information
      *
-     * @param metric $metric Instance of the metric to export.
+     * @param registered_metric $metric Instance of the metric to export.
      * @return string Prometheus text format for a single metric.
      */
-    private static function export_metric(metric $metric): string {
-        $name = $metric::get_component() . "_" . $metric::get_name();
-        $output = "# HELP $name {$metric::get_description()->out()}\n";
-        $output .= "# TYPE $name {$metric::get_type()->value}";
+    private static function export_metric(registered_metric $metric): string {
+        $name = $metric->qualifiedname;
+        $output = "# HELP $name {$metric->description->out()}\n";
+        $output .= "# TYPE $name {$metric->type->value}";
         foreach ($metric as $metricvalue) {
             $output .= "\n" . self::get_metric_value_line($metricvalue, $name);
         }

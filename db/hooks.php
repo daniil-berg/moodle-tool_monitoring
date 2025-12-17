@@ -17,7 +17,7 @@
 /**
  * Registration of metrics via the Hooks API.
  *
- * @link https://moodledev.io/docs/apis/core/hooks#registering-of-hook-callbacks
+ * @link https://moodledev.io/docs/apis/core/hooks#registering-of-hook-callbacks API Documentation
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,17 +29,17 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use tool_monitoring\hook\metrics_manager;
+use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
 
 defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [
-    ['hook' => metrics_manager::class, 'callback' => [metrics\num_course_count::class, 'register']],
-    ['hook' => metrics_manager::class, 'callback' => [metrics\num_overdue_tasks::class, 'register']],
-    ['hook' => metrics_manager::class, 'callback' => [metrics\num_quiz_attempts_in_progress::class, 'register']],
-    ['hook' => metrics_manager::class, 'callback' => [metrics\num_tasks_spawned_adhoc::class, 'register']],
-    ['hook' => metrics_manager::class, 'callback' => [metrics\num_tasks_spawned_scheduled::class, 'register']],
-    ['hook' => metrics_manager::class, 'callback' => [metrics\num_user_count::class, 'register']],
-    ['hook' => metrics_manager::class, 'callback' => [metrics\num_users_accessed::class, 'register']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_course_count::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_overdue_tasks::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_quiz_attempts_in_progress::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_tasks_spawned_adhoc::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_tasks_spawned_scheduled::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_user_count::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_users_accessed::class, 'collect']],
 ];

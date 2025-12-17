@@ -34,7 +34,7 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
-use tool_monitoring\hook\metrics_manager;
+use tool_monitoring\metrics_manager;
 
 /**
  * Provides information about all available metrics and links to their configuration pages.
@@ -55,14 +55,13 @@ class overview implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output): array {
         $lines = [];
-        $metrics = metrics_manager::instance()->get_metrics();
-        foreach ($metrics as $qualifiedname => $metric) {
+        foreach (metrics_manager::instance()->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
             $lines[] = [
                 'component'   => $metric->component,
                 'name'        => $metric->name,
-                'type'        => $metric::get_type()->value,
-                'description' => $metric::get_description()->out(),
+                'type'        => $metric->type->value,
+                'description' => $metric->description->out(),
                 'configurl'   => $configurl->out(false),
             ];
         }

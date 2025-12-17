@@ -110,6 +110,18 @@ abstract class metric implements IteratorAggregate {
     }
 
     /**
+     * Add the metric to the hook
+     *
+     * Subclasses may override this for special cases. The default implementation is that the class name string 
+     * is added to the hook
+     * 
+     * @param \tool_monitoring\hook\gather_metrics $hook The hook instance
+     */
+    public static function gather_metrics_callback(\tool_monitoring\hook\gather_metrics $hook): void {
+        $hook->add_metric(static::class);
+    }
+
+    /**
      * Ensures that the provided metric value is valid.
      *
      * Inheriting classes may override this method to validate each {@see metric_value} before yielding it from the iterator.

@@ -60,9 +60,9 @@ final class gather_metrics {
      *
      * @param metric $metric
      */
-    public function add_metric(metric $metric): void {
+    public function add_metric(string $metric): void {
         // TODO: Ensure unique names?
-        $this->metrics[$metric::get_name()] = $metric;
+        $this->metrics[$metric::get_name()] = new $metric();
     }
 
     /**

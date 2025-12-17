@@ -30,7 +30,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2025090305;      // The current plugin version (Date: YYYYMMDDXX).
+$plugin->version   = 2025090305.02;      // The current plugin version (Date: YYYYMMDDXX).
 $plugin->component = 'monitoringexporter_prometheus'; // Full name of the plugin (used for diagnostics).
 $plugin->requires  = 2025041400; // Moodle 5.0.
 $plugin->maturity  = MATURITY_ALPHA;

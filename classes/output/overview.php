@@ -34,7 +34,7 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
-use tool_monitoring\metrics_manager;
+use tool_monitoring\registered_metric;
 
 /**
  * Provides information about all available metrics and links to their configuration pages.
@@ -48,14 +48,23 @@ use tool_monitoring\metrics_manager;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class overview implements renderable, templatable {
+final readonly class overview implements renderable, templatable {
 
     /**
-     * @throws moodle_exception Should never happen.
+     * Constructor without additional logic.
+     *
+     * @param array<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     */
+    public function __construct(
+        private array $metrics,
+    ) {}
+
+    /**
+     * @throws moodle_exception
      */
     public function export_for_template(renderer_base $output): array {
         $lines = [];
-        foreach (metrics_manager::instance()->metrics as $qualifiedname => $metric) {
+        foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
             $lines[] = [
                 'component'   => $metric->component,
@@ -65,7 +74,6 @@ class overview implements renderable, templatable {
                 'configurl'   => $configurl->out(false),
             ];
         }
-        // TODO: Add records left over in database, but not registered by the manager.
         return ['metrics' => $lines];
     }
 }

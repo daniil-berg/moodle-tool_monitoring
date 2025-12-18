@@ -35,8 +35,8 @@ use core\output\renderer_base;
 use core\output\templatable;
 use JsonException;
 use moodle_url;
-use tool_monitoring\form\config;
-use tool_monitoring\metrics_manager;
+use tool_monitoring\form\config as config_form;
+use tool_monitoring\registered_metric;
 
 /**
  * Provides a configuration form for a specified metric.
@@ -50,23 +50,18 @@ use tool_monitoring\metrics_manager;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class configure implements renderable, templatable {
+final readonly class configure implements renderable, templatable {
 
-    /** @var config Metric config form to be rendered. */
-    private config $form;
+    /** @var config_form Metric config form to be rendered. */
+    private config_form $form;
 
     /**
-     * Instantiates the underlying {@see config} form for the specified metric.
+     * Instantiates the underlying {@see config_form} for the specified metric.
      *
-     * @param string $qualifiedname Qualified name of the metric for which to render the config form.
-     * @throws moodle_exception
+     * @param registered_metric $metric Metric for which to render the config form.
      */
-    public function __construct(string $qualifiedname) {
-        $metric = metrics_manager::instance()->metrics[$qualifiedname] ?? null;
-        if (is_null($metric)) {
-            throw new moodle_exception('invalidrecord', 'error', '', 'tool_monitoring_metrics');
-        }
-        $this->form = config::for_metric($metric);
+    public function __construct(registered_metric $metric) {
+        $this->form = config_form::for_metric($metric);
     }
 
     /**
@@ -75,7 +70,7 @@ class configure implements renderable, templatable {
      * This method must be called before any output is sent to the browser.
      *
      * @throws moodle_exception
-     * @throws JsonException Metric-specific config data could not be (de-)serialized.
+     * @throws JsonException The {@see registered_metric::config} could not be serialized.
      */
     public function process_form(): void {
         if ($this->form->is_cancelled()) {

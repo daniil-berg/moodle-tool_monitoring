@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see simple_metric} class.
+ * Definition of the {@see metric_settable_values} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -37,8 +37,6 @@ use tool_monitoring\metric_value;
 /**
  * Metric for testing purposes.
  *
- * Simply produces the values specified in its public constructor.
- *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
@@ -48,20 +46,9 @@ use tool_monitoring\metric_value;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class simple_metric extends metric {
+class metric_settable_values extends metric {
     /** @var iterable<metric_value>|metric_value Metric values to be produced by the metric. */
-    private readonly iterable|metric_value $values;
-
-    /**
-     * Sets up the metric instance.
-     *
-     * @param iterable<metric_value>|metric_value $values Metric value(s) to be produced by the metric.
-     */
-    public static function with_values(iterable|metric_value $values): static {
-        $metric = new static();
-        $metric->values = $values;
-        return $metric;
-    }
+    public iterable|metric_value $values = [];
 
     public function calculate(object $config): iterable|metric_value {
         return $this->values;

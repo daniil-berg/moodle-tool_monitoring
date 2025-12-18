@@ -33,8 +33,6 @@ namespace tool_monitoring;
 
 use advanced_testcase;
 use coding_exception;
-use dml_exception;
-use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\testing\metric_strict_label_names;
@@ -47,12 +45,12 @@ class strict_label_names_test extends advanced_testcase {
      * @param metric_value[] $values Metric values to be produced by the test metric.
      * @param string|null $exception Name of exception class to expect; `null` (default) means no exception is expected.
      * @throws coding_exception
-     * @throws dml_exception
-     * @throws JsonException
      */
     #[DataProvider('test_validate_value_provider')]
     public function test_validate_value(array $labelnames, array $values, string|null $exception = null): void {
-        $testmetric = metric_strict_label_names::with_label_names_and_values($labelnames, $values);
+        $testmetric = new metric_strict_label_names();
+        $testmetric::$labelnames = $labelnames;
+        $testmetric->values = $values;
         if (!is_null($exception)) {
             $this->expectException($exception);
         }

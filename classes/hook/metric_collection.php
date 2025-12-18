@@ -38,7 +38,7 @@ use Traversable;
 /**
  * Hook for collecting {@see metric}s defined in different components throughout the system.
  *
- * A callback can use the {@see add_metric} method to add a metric instance to the collection.
+ * A callback can use the {@see self::add} method to add a metric instance to the collection.
  *
  * @link https://moodledev.io/docs/apis/core/hooks Moodle Hooks API
  *
@@ -63,7 +63,7 @@ final class metric_collection implements IteratorAggregate {
      *
      * @param metric $metric Metric instance to add.
      */
-    public function add_metric(metric $metric): void {
+    public function add(metric $metric): void {
         $this->metrics[] = $metric;
     }
 

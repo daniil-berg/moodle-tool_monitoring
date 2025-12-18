@@ -65,19 +65,19 @@ abstract class metric {
     /**
      * Constructor without any parameters.
      */
-    final protected function __construct() {}
+    final public function __construct() {}
 
     /**
      * Creates a new instance of the metric and adds it to the provided collection.
      *
-     * Calls the hook's {@see metric_collection::add_metric} method.
+     * Calls the hook's {@see metric_collection::add} method.
      *
      * @param metric_collection $hook Hook to pick up the metric.
      * @return static New metric instance.
      */
     public static function collect(metric_collection $hook): static {
         $instance = new static();
-        $hook->add_metric($instance);
+        $hook->add($instance);
         return $instance;
     }
 

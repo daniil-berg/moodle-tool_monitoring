@@ -29,13 +29,10 @@
 
 namespace tool_monitoring\local\testing;
 
-use tool_monitoring\metric_value;
 use tool_monitoring\strict_label_names;
 
 /**
  * Metric for testing purposes.
- *
- * Produces values specified in the public constructor and validates their label names against those specified in the constructor.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -46,23 +43,11 @@ use tool_monitoring\strict_label_names;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_strict_label_names extends simple_metric {
+class metric_strict_label_names extends metric_settable_values {
     use strict_label_names;
 
     /** @var string[] Set of expected label names for the test metric. */
-    private static array $labelnames = [];
-
-    /**
-     * Sets up the metric instance.
-     *
-     * @param string[] $labelnames Set of expected label names for the test metric.
-     * @param metric_value[] $values Metric values to be produced by the test metric.
-     */
-    public static function with_label_names_and_values(array $labelnames, array $values): static {
-        $metric = static::with_values($values);
-        self::$labelnames = $labelnames;
-        return $metric;
-    }
+    public static array $labelnames = [];
 
     protected static function get_label_names(): array {
         return self::$labelnames;

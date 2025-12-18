@@ -39,7 +39,7 @@ use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics\num_overdue_tasks;
 use tool_monitoring\local\metrics\num_users_accessed;
 use tool_monitoring\local\testing\metric_strict_label_names;
-use tool_monitoring\local\testing\simple_metric;
+use tool_monitoring\local\testing\metric_settable_values;
 
 #[CoversClass(metric::class)]
 class metric_test extends advanced_testcase {
@@ -48,11 +48,11 @@ class metric_test extends advanced_testcase {
         $collection = new metric_collection();
         // The collection should not yet have the test metric.
         self::assertSame([], iterator_to_array($collection));
-        $metric = simple_metric::collect($collection);
+        $metric = metric_settable_values::collect($collection);
         // Now the collection should have the test metric.
         self::assertSame([$metric], iterator_to_array($collection));
         // Doing the same thing again should create a new instance and extend the collection.
-        $metric2 = simple_metric::collect($collection);
+        $metric2 = metric_settable_values::collect($collection);
         self::assertSame([$metric, $metric2], iterator_to_array($collection));
     }
 
@@ -73,8 +73,8 @@ class metric_test extends advanced_testcase {
     public static function test_get_name_provider(): array {
         return [
             [
-                'class'    => simple_metric::class,
-                'expected' => 'simple_metric',
+                'class'    => metric_settable_values::class,
+                'expected' => 'metric_settable_values',
             ],
             [
                 'class'    => metric_strict_label_names::class,
@@ -108,7 +108,7 @@ class metric_test extends advanced_testcase {
     public static function test_get_component_provider(): array {
         return [
             [
-                'class'    => simple_metric::class,
+                'class'    => metric_settable_values::class,
                 'expected' => 'tool_monitoring',
             ],
             [
@@ -137,6 +137,6 @@ class metric_test extends advanced_testcase {
 
     public function test_get_default_config_data(): void {
         $expected = (object) [];
-        self::assertEquals($expected, simple_metric::get_default_config_data());
+        self::assertEquals($expected, metric_settable_values::get_default_config_data());
     }
 }

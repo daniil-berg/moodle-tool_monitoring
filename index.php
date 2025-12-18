@@ -30,6 +30,7 @@
  */
 
 use tool_monitoring\output\overview;
+use tool_monitoring\metrics_manager;
 
 require_once(__DIR__ . '/../../../config.php');
 
@@ -45,7 +46,7 @@ $PAGE->set_context($context);
 $PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
-
+$manager = metrics_manager::instance(syncdb: true);
 echo $OUTPUT->header();
-echo $OUTPUT->render(new overview());
+echo $OUTPUT->render(new overview($manager->metrics));
 echo $OUTPUT->footer();

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Displays the configuration form for a single metric.
+ * Definition of the {@see metric_collection_test} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -26,37 +26,26 @@
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
- * {@noinspection PhpUnhandledExceptionInspection}
+ * {@noinspection PhpIllegalPsrClassPathInspection}
  */
 
-use core\exception\moodle_exception;
-use tool_monitoring\metrics_manager;
-use tool_monitoring\output\configure;
+namespace tool_monitoring\hook;
 
-require_once(__DIR__ . '/../../../config.php');
+use advanced_testcase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use tool_monitoring\local\testing\metric_settable_values;
 
-global $OUTPUT, $PAGE;
-
-require_login();
-
-$context = context_system::instance();
-require_capability('tool/monitoring:manage_metrics', $context);
-
-$qualifiedname = required_param('metric', PARAM_ALPHAEXT);
-
-$PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
-$PAGE->set_context($context);
-$PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
-$PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
-$PAGE->add_body_class('limitedwidth');
-
-$metric = metrics_manager::instance(syncdb: true)->metrics[$qualifiedname] ?? null;
-if (is_null($metric)) {
-    throw new moodle_exception('invalidrecord', 'error', '', 'tool_monitoring_metrics');
+#[CoversClass(metric_collection::class)]
+class metric_collection_test extends advanced_testcase {
+    public function test(): void {
+        $metric1 = new metric_settable_values();
+        $metric2 = new metric_settable_values();
+        $metric3 = new metric_settable_values();
+        $collection = new metric_collection();
+        $collection->add($metric1);
+        $collection->add($metric2);
+        $collection->add($metric3);
+        $metrics = iterator_to_array($collection);
+        self::assertSame([$metric1, $metric2, $metric3], $metrics);
+    }
 }
-$configure = new configure($metric);
-$configure->process_form();
-
-echo $OUTPUT->header();
-echo $OUTPUT->render($configure);
-echo $OUTPUT->footer();

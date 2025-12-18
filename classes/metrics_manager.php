@@ -43,7 +43,8 @@ use tool_monitoring\hook\metric_collection;
  *
  * Implemented as a singleton, accessed via the {@see instance} method.
  *
- * @property-read array<string, registered_metric> $metrics All registered metrics indexed by their qualified name.
+ * @property-read array<string, registered_metric> $metrics Registered metrics indexed by their qualified name; must be populated
+ *                                                          by calling the {@see sync_registered_metrics} method.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -58,45 +59,39 @@ final class metrics_manager {
     /** @var self Singleton object. */
     private static self $instance;
 
-    /** @var array<string, registered_metric> All registered metrics indexed by their qualified name. */
+    /** @var metric_collection Metric collection hook (already dispatched). */
+    private metric_collection $collection;
+
+    /** @var array<string, registered_metric> All collected and registered metrics indexed by their qualified name. */
     private array $metrics = [];
 
     /**
      * Returns the singleton object, constructing one on the first call.
      *
-     * When called for the first time, dispatches the {@see metric_collection} hook and attempts to register all added metrics.
-     * If it encounters a metric with a qualified name that is already registered, that instance is ignored and a warning issued.
+     * When called for the first time, dispatches the {@see metric_collection} hook and stores the collection of metrics.
      *
-     * @return self Singleton object.
+     * @param bool $syncdb If `true`, calls {@see sync_registered_metrics} method on the instance before returning it.
+     * @return self Manager singleton.
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException Failed to serialize a {@see registered_metric::config} value during synchronization.
      */
-    public static function instance(): self {
+    public static function instance(bool $syncdb = false): self {
         if (!isset(self::$instance)) {
             self::$instance = new self();
+        }
+        if ($syncdb) {
+            self::$instance->sync_registered_metrics();
         }
         return self::$instance;
     }
 
     /**
-     * Dispatches the {@see metric_collection} hook allowing callbacks to register metrics.
-     *
-     * Populates its {@see self::metrics} array with {@see registered_metric} instances derived from the metrics the hook picked up.
-     * If it encounters a metric with a qualified name that is already registered, that instance is ignored and a warning issued.
-     *
-     * @throws coding_exception Should not happen.
-     * @throws dml_exception
-     * @throws JsonException Failed to (de-)serialize the {@see registered_metric::config} value.
+     * Dispatches the {@see metric_collection} hook allowing callbacks to add metrics.
      */
     private function __construct() {
-        $collection = new metric_collection();
-        di::get(hook_manager::class)->dispatch($collection);
-        foreach ($collection as $metric) {
-            $qname = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());
-            if (array_key_exists($qname, $this->metrics)) {
-                trigger_error("Metric '$qname' is already registered", E_USER_WARNING);
-                return;
-            }
-            $this->metrics[$qname] = registered_metric::from_metric($metric);
-        }
+        $this->collection = new metric_collection();
+        di::get(hook_manager::class)->dispatch($this->collection);
     }
 
     /**
@@ -108,23 +103,36 @@ final class metrics_manager {
      * @return mixed Property value.
      */
     public function __get(string $name): mixed {
-        return match ($name) {
-            'metrics' => $this->metrics,
-            default   => $this->$name,
-        };
+        if ($name === 'metrics') {
+            return $this->metrics;
+        }
+        return $this->$name;
+    }
+
+    /**
+     * Synchronizes all collected metrics with the database.
+     *
+     * For details see the {@see registered_metric::sync_with_collection} method.
+     *
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException Failed to serialize a {@see registered_metric::config} value.
+     */
+    public function sync_registered_metrics(): void {
+        $this->metrics = registered_metric::sync_with_collection($this->collection);
     }
 
     /**
      * Returns the enabled registered metrics, optionally filtering by tags.
      *
+     * For details see the {@see registered_metric::get_from_collection} method.
+     *
      * @param string ...$tags Only metrics that carry all the provided tags will be returned.
      * @return array<string, registered_metric> Metrics indexed by their qualified name.
+     * @throws coding_exception
+     * @throws dml_exception
      */
     public function get_enabled_metrics(string ...$tags): array {
-        // TODO: Filter by metric tags.
-        return array_filter(
-            $this->metrics,
-            fn (registered_metric $metric): bool => $metric->enabled,
-        );
+        return registered_metric::get_from_collection($this->collection, enabled: true, tags: $tags);
     }
 }

@@ -32,12 +32,12 @@ namespace tool_monitoring;
 use core\exception\coding_exception;
 use core\lang_string;
 use dml_exception;
-use dml_missing_record_exception;
 use Exception;
 use IteratorAggregate;
 use JsonException;
 use MoodleQuickForm;
 use stdClass;
+use tool_monitoring\hook\metric_collection;
 use Traversable;
 
 /**
@@ -45,11 +45,11 @@ use Traversable;
  *
  * Metric values can be retrieved by iterating over an instance of this class.
  *
- * For metrics with custom configurations, the trait is generic in terms of the {@see config} type.
+ * For metrics with custom configurations, the class is generic in terms of the {@see config} type.
  *
- * @property-read string $qualifiedname
- * @property-read lang_string $description
- * @property-read metric_type $type
+ * @property-read string $qualifiedname Qualified name of the metric.
+ * @property-read lang_string $description Localized description of the metric.
+ * @property-read metric_type $type Type of the metric.
  * @template ConfT of object = stdClass
  *
  * @package    tool_monitoring
@@ -66,16 +66,16 @@ final class registered_metric implements IteratorAggregate {
     /** @var string Name of the mapped DB table. */
     public const string TABLE = 'tool_monitoring_metrics';
 
-    /** @var array<string, bool> Names of all fields in the DB table mapped to whether or not they are required for construction. */
-    private const array FIELDS_REQUIRED = [
-        'component'    => true,
-        'name'         => true,
-        'enabled'      => false,
-        'config'       => false,
-        'timecreated'  => false,
-        'timemodified' => false,
-        'usermodified' => false,
-        'id'           => false,
+    /** @var string[] Names of all fields in the DB table, i.e. all constructor parameters. */
+    private const array FIELDS = [
+        'component',
+        'name',
+        'enabled',
+        'config',
+        'timecreated',
+        'timemodified',
+        'usermodified',
+        'id',
     ];
 
     /** @var metric<ConfT> */
@@ -105,36 +105,38 @@ final class registered_metric implements IteratorAggregate {
     ) {}
 
     /**
-     * Constructs a new instance from an untyped data object/array with the necessary properties/keys.
+     * Constructs a new instance from the specified metric.
      *
-     * Which values are required is flagged in the {@see self::FIELDS_REQUIRED} constant.
-     *
-     * If a `config` key is present and a string value, {@see json_decode} will be used to turn it into a {@see stdClass} object.
-     *
-     * @param array<string, mixed>|stdClass $untyped Data to use for construction; must have the required keys/properties.
-     * @return self New instance constructed from the provided `$untyped` data.
-     * @throws coding_exception A required field was missing or a provided `config` string did not represent a valid JSON object.
+     * @param metric $metric Metric to wrap in the new instance; unless passed via `...$properties`, the `component`, `name`,
+     *                       and `config` properties are derived from the {@see metric::get_component}, {@see metric::get_name},
+     *                       and {@see metric::get_default_config_data} methods respectively.
+     * @param mixed ...$properties Properties to set/overwrite on the new instance; non-property names are ignored.
+     * @return self New instance from the provided metric and optional properties.
+     * @throws coding_exception A provided `config` string did not represent a valid JSON object.
      */
-    private static function from_untyped_object(array|stdClass $untyped): self {
-        $untyped = (array) $untyped;
-        $arguments = [];
-        foreach (self::FIELDS_REQUIRED as $name => $required) {
-            if (array_key_exists($name, $untyped)) {
-                $value = $untyped[$name];
-                if ($name == 'config' && is_string($value)) {
-                    $value = json_decode($value);
-                    if (!($value instanceof stdClass)) {
-                        // TODO: Use custom exception class.
-                        throw new coding_exception('The provided `config` is not a valid JSON object.');
-                    }
-                }
-                $arguments[$name] = $value;
-            } else if ($required) {
-                // TODO: Use custom exception class.
-                throw new coding_exception("Missing required `$name`");
+    public static function from_metric(metric $metric, mixed ...$properties): self {
+        $arguments = [
+            'component' => $metric::get_component(),
+            'name'      => $metric::get_name(),
+            'config'    => $metric::get_default_config_data(),
+        ];
+        foreach (self::FIELDS as $name) {
+            if (!array_key_exists($name, $properties)) {
+                continue;
             }
+            $value = $properties[$name];
+            if ($name == 'config' && is_string($value)) {
+                $value = json_decode($value);
+                if (!($value instanceof stdClass)) {
+                    // TODO: Use custom exception class.
+                    throw new coding_exception('The provided `config` is not a valid JSON object.');
+                }
+            }
+            $arguments[$name] = $value;
         }
-        return new self(...$arguments);
+        $instance = new self(...$arguments);
+        $instance->metric = $metric;
+        return $instance;
     }
 
     /**
@@ -156,13 +158,14 @@ final class registered_metric implements IteratorAggregate {
         if (!is_null($this->id)) {
             $data['id'] = $this->id;
         }
-        $returnfields = array_keys(self::FIELDS_REQUIRED);
+        $returnfields = self::FIELDS;
         if (!is_null($fields)) {
             $returnfields = array_intersect($returnfields, $fields);
         }
         foreach ($returnfields as $field) {
             $data[$field] = $this->$field;
             if ($field == 'config') {
+                // TODO: Catch and wrap `JsonException` in custom exception.
                 $data[$field] = json_encode($this->$field, JSON_THROW_ON_ERROR);
             }
         }
@@ -170,41 +173,17 @@ final class registered_metric implements IteratorAggregate {
     }
 
     /**
-     * Fetches an instance matching the specified conditions from the database.
-     *
-     * @param array<string, mixed> $conditions Associative array with field names as keys and values to match.
-     * @return self Instance matching the specified `$conditions`.
-     * @throws coding_exception
-     * @throws dml_exception No matching metric or multiple matching metrics found or an unexpected database error occurred.
-     */
-    private static function get(array $conditions = []): self {
-        global $DB;
-        return self::from_untyped_object(
-            $DB->get_record(self::TABLE, $conditions, strictness: MUST_EXIST)
-        );
-    }
-
-    /**
      * Inserts a corresponding row into the database table with data from the object.
-     *
-     * **Note**:
-     * The `id` will always be set by the DB during creation. Therefore, calling this method on an instance with an `id` that is
-     * not `null` will result in an error.
      *
      * The {@see timecreated} and {@see timemodified} are set to the current time and the {@see usermodified} to the current user
      * before the database entry is created.
      *
      * @return $this Same instance with its {@see id}, {@see timecreated}, {@see timemodified}, and {@see usermodified} updated.
-     * @throws coding_exception Instance already had an {@see id} value.
      * @throws dml_exception
      * @throws JsonException The {@see config} object could not be serialized.
      */
     private function create(): self {
         global $DB, $USER;
-        if (!is_null($this->id)) {
-            // TODO: Use custom exception class.
-            throw new coding_exception('Cannot insert instance that already has an `id` property');
-        }
         $currenttime = time();
         $this->timecreated = $currenttime;
         $this->timemodified = $currenttime;
@@ -216,87 +195,17 @@ final class registered_metric implements IteratorAggregate {
     /**
      * Updates the corresponding row in the database table with data from the object.
      *
-     * **Note**:
-     * The `id` is needed to identify the actual DB entry to update. If it is not set, an error will be thrown.
-     *
      * The {@see timemodified} and {@see usermodified} are set to the current time and user respectively before the update.
      *
      * @param string[]|null $fields If specified, only these fields will be updated.
-     * @throws coding_exception Instance was missing an {@see id} value.
      * @throws dml_exception
      * @throws JsonException The {@see config} object could not be serialized.
      */
     private function update(array|null $fields = null): void {
         global $DB, $USER;
-        if (is_null($this->id)) {
-            // TODO: Use custom exception class.
-            throw new coding_exception('Cannot update instance without `id` property');
-        }
         $this->timemodified = time();
         $this->usermodified = $USER->id;
         $DB->update_record(self::TABLE, $this->to_db($fields));
-    }
-
-    /**
-     * Constructs a new instance from the specified metric.
-     *
-     * If no entry in the database table exists (yet) for the metric, it is created first.
-     *
-     * @param metric $metric Metric to wrap in the new instance.
-     * @return self New instance from the provided metric.
-     * @throws coding_exception Should not happen.
-     * @throws dml_exception
-     * @throws JsonException Failed to (de-)serialize the {@see config} value.
-     */
-    private static function db_get_or_create_from_metric(metric $metric): self {
-        global $DB;
-        // Either fetch the existing DB entry or create a new one for the metric with this component & name.
-        $conditions = ['component' => $metric::get_component(), 'name' => $metric::get_name()];
-        try {
-            $transaction = $DB->start_delegated_transaction();
-            try {
-                // Assume we already have a DB entry and construct the new instance from it.
-                $instance = self::get($conditions);
-            } catch (dml_missing_record_exception) {
-                // There is no entry yet; construct the instance first and then creat the DB entry for it.
-                // Set the default config as defined in the metric class.
-                $conditions['config'] = $metric::get_default_config_data();
-                $instance = self::from_untyped_object($conditions)->create();
-            }
-            $transaction->allow_commit();
-            // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            if (!empty($transaction) && !$transaction->is_disposed()) {
-                $transaction->rollback($e);
-            }
-            throw $e;
-            // @codeCoverageIgnoreEnd
-        }
-        return $instance;
-    }
-
-    /**
-     * Constructs a new instance from the specified metric.
-     *
-     * Synchronizes the registered metric with the database, unless otherwise specified.
-     * If no entry in the database table exists (yet) for the metric, it is created first.
-     *
-     * @param metric $metric Metric to wrap in the new instance.
-     * @param bool $syncdb If `false`, the database is not touched; then the returned instance will have all default properties, and
-     *                     only have its {@see self::component} and {@see self::name} derived from the provided `$metric`.
-     * @return self New instance from the provided metric.
-     * @throws coding_exception Should not happen.
-     * @throws dml_exception
-     * @throws JsonException Failed to (de-)serialize the {@see config} value.
-     */
-    public static function from_metric(metric $metric, bool $syncdb = true): self {
-        if (!$syncdb) {
-            $instance = new self(component: $metric::get_component(), name: $metric::get_name());
-        } else {
-            $instance = self::db_get_or_create_from_metric($metric);
-        }
-        $instance->metric = $metric;
-        return $instance;
     }
 
     /**
@@ -308,6 +217,16 @@ final class registered_metric implements IteratorAggregate {
      */
     public static function get_qualified_name(string $component, string $name): string {
         return "{$component}_$name";
+    }
+
+    /**
+     * Returns the proper SQL snippet to construct the qualified name.
+     *
+     * @return string Qualified name SQL.
+     */
+    private static function get_qualified_name_sql(): string {
+        global $DB;
+        return $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }
 
     /**
@@ -408,5 +327,160 @@ final class registered_metric implements IteratorAggregate {
         foreach ($values as $metricvalue) {
             yield $this->metric::validate_value($metricvalue);
         }
+    }
+
+    /**
+     * Efficiently synchronizes the database table with the provided metric collection and returns all registered metrics.
+     *
+     * Ensures that a corresponding entry in the database exists for every unique metric in the collection (per qualified name),
+     * **and** that no entries exist that do not correspond to a metric in the collection.
+     *
+     * **WARNING**: Calling this function with an incomplete metrics collection will cause data loss! Therefore, calling it directly
+     * outside of testing is highly discouraged. The {@see metrics_manager::sync_registered_metrics} method should be used instead.
+     *
+     * Triggers individual deletion events for all deleted database records.
+     *
+     * This function issues no more than two `SELECT`, exactly one (possibly no-op) `DELETE`, and no more than two `INSERT` queries.
+     *
+     * @param metric_collection $collection Metrics to synchronize the database table with; a warning will be issued for every
+     *                                      duplicate metric (determined via the qualified name) found in the collection, and that
+     *                                      metric will be ignored.
+     * @return array<string, self> All currently registered metrics that appear in the collection, indexed by their qualified name.
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException Failed to serialize a {@see config} value.
+     */
+    public static function sync_with_collection(metric_collection $collection): array {
+        global $DB, $USER;
+        // Grab all existing records indexed by qualified name.
+        $sqlqname = self::get_qualified_name_sql();
+        try {
+            $transaction = $DB->start_delegated_transaction();
+            $existingrecords = $DB->get_records(self::TABLE, fields: "$sqlqname AS qname, *");
+            // For us to later know which records were inserted, we remember the existing IDs.
+            [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal(
+                items:        array_column($existingrecords, 'id'),
+                equal:        false,
+                onemptyitems: null,
+            );
+            // Iterate over the collection. Construct a new instance for every metric in the collection that has a DB record
+            // and add that instance to the `$output`, making sure to remove the corresponding item from `$existingrecords`.
+            // Track all metrics _without_ a matching DB record in the `$unregistered` array.
+            $output = [];
+            $unregistered = [];
+            foreach ($collection as $metric) {
+                $qname = self::get_qualified_name($metric::get_component(), $metric::get_name());
+                if (array_key_exists($qname, $output)) {
+                    trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                    continue;
+                }
+                if (array_key_exists($qname, $existingrecords)) {
+                    $output[$qname] = self::from_metric($metric, ...(array) $existingrecords[$qname]);
+                    unset($existingrecords[$qname]);
+                } else {
+                    $unregistered[$qname] = $metric;
+                    // This is just a placeholder for the duplicate check above to work.
+                    $output[$qname] = self::from_metric($metric);
+                }
+            }
+            // At this point `$existingrecords` should only contain "orphans", i.e. entries for metrics not found in the collection,
+            // and `$unregistered` should contain those metrics from the collection that do not have a corresponding DB entry.
+            // Delete the former and insert the latter.
+            [$oprphansql, $orphanparams] = $DB->get_in_or_equal(array_column($existingrecords, 'id'), onemptyitems: null);
+            $DB->delete_records_select(self::TABLE, "id $oprphansql", $orphanparams);
+            // TODO: Trigger individual deletion events here.
+            if (count($unregistered) > 2) {
+                // Insert in bulk.
+                $toinsert = [];
+                $currenttime = time();
+                foreach ($unregistered as $qname => $metric) {
+                    $instance = self::from_metric(
+                        metric:       $metric,
+                        timecreated:  $currenttime,
+                        timemodified: $currenttime,
+                        usermodified: $USER->id,
+                    );
+                    $toinsert[] = $instance->to_db();
+                    $output[$qname] = $instance;
+                }
+                $DB->insert_records(self::TABLE, $toinsert);
+                // Now we just need to get the IDs of the newly inserted records and assign them to the corresponding new instances.
+                $newids = $DB->get_records_select_menu(
+                    table:  self::TABLE,
+                    select: "id $notexistingsql",
+                    params: $notexistingparams,
+                    fields: "$sqlqname AS qname, id",
+                );
+                foreach ($newids as $qname => $id) {
+                    $output[$qname]->id = $id;
+                }
+            } else {
+                // Insert individually.
+                foreach ($unregistered as $qname => $metric) {
+                    $output[$qname] = self::from_metric($metric)->create();
+                }
+            }
+            $transaction->allow_commit();
+        // @codeCoverageIgnoreStart
+        } catch (Exception $e) {
+            if (!empty($transaction) && !$transaction->is_disposed()) {
+                $transaction->rollback($e);
+            }
+            throw $e;
+        }
+        // @codeCoverageIgnoreEnd
+        return $output;
+    }
+
+    /**
+     * Returns the registered metrics from the provided collection.
+     *
+     * Does not construct registered metrics that are _not_ present in the collection, even if they have entries in the database.
+     * Issues a single `SELECT` query; does not perform any `INSERT`/`UPDATE`/`DELETE` queries.
+     *
+     * @param metric_collection $collection Metrics to construct the new instances from; a warning will be issued for every
+     *                                      duplicate metric (determined via the qualified name) found in the collection, and that
+     *                                      metric will be ignored.
+     * @param bool|null $enabled If `true`, only enabled metrics are returned; if `false`, only disabled ones are returned;
+     *                           passing `null` (default) disables this filter.
+     * @param string[] $tags Only metrics that carry all the provided tags will be returned.
+     * @return array<string, self> Metrics indexed by their qualified name.
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    public static function get_from_collection(metric_collection $collection, bool|null $enabled = null, array $tags = []): array {
+        global $DB;
+        // Store metrics indexed by qualified name for later.
+        $metrics = [];
+        // Construct the `IN` expression and parameters from the component-name-combinations present in the collection.
+        $inplaceholders = [];
+        $params = [];
+        foreach ($collection as $metric) {
+            $component = $metric::get_component();
+            $name = $metric::get_name();
+            $qname = self::get_qualified_name($component, $name);
+            if (array_key_exists($qname, $metrics)) {
+                trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                continue;
+            }
+            $metrics[$qname] = $metric;
+            $inplaceholders[] = '(?,?)';
+            $params[] = $component;
+            $params[] = $name;
+        }
+        // TODO: Filter by tags.
+        $where = '(component, name) IN (' . implode(',', $inplaceholders) . ')';
+        if (!is_null($enabled)) {
+            $where .= ' AND enabled = ?';
+            $params[] = $enabled;
+        }
+        // Issue a single `SELECT` query and construct the instances from the returned records.
+        $records = $DB->get_records_select(self::TABLE, $where, $params);
+        $output = [];
+        foreach ($records as $record) {
+            $qname = self::get_qualified_name($record->component, $record->name);
+            $output[$qname] = self::from_metric($metrics[$qname], ...(array) $record);
+        }
+        return $output;
     }
 }

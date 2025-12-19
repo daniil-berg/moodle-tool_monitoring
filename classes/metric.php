@@ -72,6 +72,8 @@ abstract class metric {
      *
      * Calls the hook's {@see metric_collection::add} method.
      *
+     * @link https://moodledev.io/docs/apis/core/hooks#hook-callback Documentation: Hook callback
+     *
      * @param metric_collection $hook Hook to pick up the metric.
      * @return static New metric instance.
      */

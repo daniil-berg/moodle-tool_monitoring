@@ -88,6 +88,8 @@ final class metrics_manager {
 
     /**
      * Dispatches the {@see metric_collection} hook allowing callbacks to add metrics.
+     *
+     * @link https://moodledev.io/docs/apis/core/hooks#hook-emitter Documentation: Hook emitter
      */
     private function __construct() {
         $this->collection = new metric_collection();

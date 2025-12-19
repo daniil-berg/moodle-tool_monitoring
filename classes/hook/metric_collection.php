@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_collection} class.
+ * Definition of the {@see metric_collection} hook class.
+ *
+ * @link https://moodledev.io/docs/apis/core/hooks Documentation: Hooks API
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -40,7 +42,7 @@ use Traversable;
  *
  * A callback can use the {@see self::add} method to add a metric instance to the collection.
  *
- * @link https://moodledev.io/docs/apis/core/hooks Moodle Hooks API
+ * @link https://moodledev.io/docs/apis/core/hooks#hook-instance Documentation: Hook instance
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp

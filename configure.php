@@ -50,7 +50,8 @@ $PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
 
-$metric = metrics_manager::instance(syncdb: true)->metrics[$qualifiedname] ?? null;
+$manager = new metrics_manager();
+$metric = $manager->sync(delete: true)->metrics[$qualifiedname] ?? null;
 if (is_null($metric)) {
     throw new moodle_exception('invalidrecord', 'error', '', 'tool_monitoring_metrics');
 }

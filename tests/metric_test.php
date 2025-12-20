@@ -136,7 +136,6 @@ class metric_test extends advanced_testcase {
     }
 
     public function test_get_default_config_data(): void {
-        $expected = (object) [];
-        self::assertEquals($expected, metric_settable_values::get_default_config_data());
+        self::assertNull(metric_settable_values::get_default_config_data());
     }
 }

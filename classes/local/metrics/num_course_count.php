@@ -47,7 +47,7 @@ class num_course_count extends metric {
         return new lang_string('num_course_count_description', 'tool_monitoring');
     }
 
-    public function calculate(object $config): metric_value {
+    public function calculate(object|null $config): metric_value {
         global $DB;
         return new metric_value($DB->count_records('course'));
     }

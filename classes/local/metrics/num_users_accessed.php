@@ -50,7 +50,7 @@ class num_users_accessed extends metric {
         return new lang_string('num_users_accessed_description', 'tool_monitoring');
     }
 
-    public function calculate(object $config): metric_value {
+    public function calculate(object|null $config): metric_value {
         global $DB;
         $where = 'username <> :excl_user AND lastaccess >= :earliest';
         $params = [

@@ -47,7 +47,7 @@ class num_quiz_attempts_in_progress extends metric {
         return new lang_string('num_quiz_attempts_in_progress_description', 'tool_monitoring');
     }
 
-    public function calculate(object $config): metric_value {
+    public function calculate(object|null $config): metric_value {
         global $DB;
         $now = time();
         $where = 'state = :state';

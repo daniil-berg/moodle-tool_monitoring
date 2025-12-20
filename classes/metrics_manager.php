@@ -34,6 +34,7 @@ use core\exception\coding_exception;
 use core\hook\manager as hook_manager;
 use dml_exception;
 use Exception;
+use JsonException;
 use tool_monitoring\hook\metric_collection;
 
 /**
@@ -165,6 +166,7 @@ final class metrics_manager {
      * @return $this Same instance.
      * @throws coding_exception
      * @throws dml_exception
+     * @throws JsonException
      */
     public function sync(bool $collect = true, bool $delete = false): self {
         global $DB, $USER;
@@ -220,7 +222,11 @@ final class metrics_manager {
                     timemodified: $currenttime,
                     usermodified: $USER->id,
                 );
-                $toinsert[$qname] = (array) $instance;
+                $data = (array) $instance;
+                if (!is_null($data['config'])) {
+                    $data['config'] = json_encode($data['config'], JSON_THROW_ON_ERROR);
+                }
+                $toinsert[$qname] = $data;
                 $this->metrics[$qname] = $instance;
             }
             if (count($unregistered) > 2) {

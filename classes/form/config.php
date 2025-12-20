@@ -92,10 +92,12 @@ final class config extends moodleform {
             $this->metric->disable();
         }
         // Only store actual metric-specific config.
-        foreach (['metric', 'component', 'name', 'type', 'description', 'enabled'] as $key) {
-            unset($formdata->$key);
+        // TODO: This is too brittle.
+        $data = (array) $formdata;
+        foreach (['metric', 'component', 'name', 'type', 'description', 'enabled', 'submitbutton'] as $key) {
+            unset($data[$key]);
         }
-        $this->metric->config = $formdata;
+        $this->metric->config = $data ?: null;
         $this->metric->save_config();
     }
 }

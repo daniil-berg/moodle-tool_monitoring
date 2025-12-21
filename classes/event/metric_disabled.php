@@ -60,6 +60,6 @@ class metric_disabled extends metric_event {
      * @return string Short description.
      */
     public function get_description(): string {
-        return "User with ID '$this->userid' disabled the metric '{$this->metric->qualifiedname}'.";
+        return "User with ID '$this->userid' disabled the metric '$this->metric'.";
     }
 }

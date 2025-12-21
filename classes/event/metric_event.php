@@ -40,6 +40,8 @@ use tool_monitoring\registered_metric;
 /**
  * Metric-related event base class for convenience.
  *
+ * @property-read string $metric Qualified name of the {@see registered_metric} that the even relates to.
+ *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
@@ -51,8 +53,12 @@ use tool_monitoring\registered_metric;
  */
 abstract class metric_event extends base {
 
-    /** @var registered_metric Metric that the event relates to. */
-    protected registered_metric $metric;
+    public function __get($name) {
+        if ($name === 'metric') {
+            return $this->data['other']['metric'];
+        }
+        return parent::__get($name);
+    }
 
     /**
      * Initialises event properties.
@@ -73,20 +79,18 @@ abstract class metric_event extends base {
      * @throws moodle_exception
      */
     public function get_url(): moodle_url {
-        return new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $this->metric->qualifiedname]);
+        return new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $this->metric]);
     }
 
     /**
-     * Validates that a {@see registered_metric} instance was passed via the `other` data during construction.
+     * Validates that the `metric` key is present in the `other` data.
      *
-     * @throws coding_exception No `metric` key in the `other` array or value not a {@see registered_metric} object.
+     * @throws coding_exception
      */
     public function validate_data(): void {
-        $metric = $this->data['other']['metric'] ?? null;
-        if (!($metric instanceof registered_metric)) {
-            throw new coding_exception('No metric passed to metric event.');
+        if (!isset($this->other['metric'])) {
+            throw new coding_exception('Metric name is required.');
         }
-        $this->metric = $metric;
     }
 
     /**
@@ -99,7 +103,7 @@ abstract class metric_event extends base {
     public static function for_metric(registered_metric $metric): static {
         return static::create([
             'objectid' => $metric->id,
-            'other'    => ['metric' => $metric],
+            'other'    => ['metric' => $metric->qualifiedname],
         ]);
     }
 }

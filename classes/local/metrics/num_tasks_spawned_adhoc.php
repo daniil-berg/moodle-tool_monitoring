@@ -49,7 +49,7 @@ class num_tasks_spawned_adhoc extends metric {
         return new lang_string('num_tasks_spawned_adhoc_description', 'tool_monitoring');
     }
 
-    public function calculate(object|null $config): metric_value {
+    public function calculate(): metric_value {
         global $CFG;
         return new metric_value(self::sum_last_sequence_value("{$CFG->prefix}task_adhoc_id_seq"));
     }

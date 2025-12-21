@@ -50,7 +50,7 @@ class metric_settable_values extends metric {
     /** @var iterable<metric_value>|metric_value Metric values to be produced by the metric. */
     public iterable|metric_value $values = [];
 
-    public function calculate(object|null $config): iterable|metric_value {
+    public function calculate(): iterable|metric_value {
         return $this->values;
     }
 

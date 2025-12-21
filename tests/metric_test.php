@@ -32,7 +32,6 @@
 namespace tool_monitoring;
 
 use advanced_testcase;
-use MoodleQuickForm;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\hook\metric_collection;
@@ -129,13 +128,5 @@ class metric_test extends advanced_testcase {
     public function test_validate_value(): void {
         $value = new metric_value(0);
         self::assertSame($value, metric::validate_value($value));
-    }
-
-    public function test_add_config_form_elements(): void {
-        metric::add_config_form_elements(new MoodleQuickForm('foo', 'POST', 'bar'));
-    }
-
-    public function test_get_default_config_data(): void {
-        self::assertNull(metric_settable_values::get_default_config_data());
     }
 }

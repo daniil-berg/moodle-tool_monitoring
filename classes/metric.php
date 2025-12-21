@@ -31,8 +31,6 @@ namespace tool_monitoring;
 
 use core\component;
 use core\lang_string;
-use MoodleQuickForm;
-use stdClass;
 use tool_monitoring\hook\metric_collection;
 use Traversable;
 
@@ -43,13 +41,6 @@ use Traversable;
  *
  * Inheriting classes _may_ also override the {@see get_name} method to provide a custom identifier and the {@see validate_value}
  * method to perform simple checks on the {@see metric_value} objects yielded by an instance during iteration.
- *
- * For advanced use cases, if the metric should allow specific custom configuration via the admin panel,
- * the {@see add_config_form_elements} the {@see get_default_config_data} methods should also be overridden (in a compatible way).
- * For these use cases, this base class is generic in the type of the `$config` parameter of {@see calculate}.
- * Subclasses may narrow that type in an `extends` tag.
- *
- * @template ConfT of object|null = null
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -92,12 +83,9 @@ abstract class metric {
      *
      * This method will be called to export values to the configured monitoring service(s).
      *
-     * If the implementing class expects a specific `$config` type, it can be narrowed in an `extends` tag in the class' doc block.
-     *
-     * @param ConfT $config Current metric-specific config (if applicable).
      * @return iterable<metric_value>|metric_value Singular metric value or an array or traversable object of metric values.
      */
-    abstract public function calculate(object|null $config): iterable|metric_value;
+    abstract public function calculate(): iterable|metric_value;
 
     /**
      * Returns the localized description of the metric.
@@ -153,32 +141,5 @@ abstract class metric {
      */
     public static function validate_value(metric_value $metricvalue): metric_value {
         return $metricvalue;
-    }
-
-    /**
-     * If the metric requires custom configuration, this method can be overridden to extend a {@see MoodleQuickForm} object.
-     *
-     * Implementations _should_ ensure that any added form fields are compatible with the default config data that is returned by
-     * the {@see get_default_config_data} method, i.e. the properties of the object correspond to the added form field names.
-     *
-     * By default, this does nothing.
-     *
-     * @param MoodleQuickForm $mform Configuration form for the metric.
-     */
-    public static function add_config_form_elements(MoodleQuickForm $mform): void {
-        // Do nothing.
-    }
-
-    /**
-     * If the metric requires custom configuration, this method can be overridden to return a default config.
-     *
-     * Implementations _should_ ensure that the default config is compatible with the metric-specific config form fields added via
-     * the {@see add_config_form_elements} method, i.e. the properties of the object correspond to the added form field names.
-     * By default, returns `null`.
-     *
-     * @return ConfT Default config data for the metric; `null` if no specific config is available.
-     */
-    public static function get_default_config_data(): object|null {
-        return null;
     }
 }

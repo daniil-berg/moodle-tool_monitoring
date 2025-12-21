@@ -30,17 +30,16 @@
 namespace tool_monitoring\local\metrics;
 
 use core\lang_string;
-use MoodleQuickForm;
 use tool_monitoring\metric;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
+use tool_monitoring\with_config;
 
 /**
  * Implements the num_users_accessed metric.
- *
- * @extends metric<object{timewindow: int}>
  */
 class num_users_accessed extends metric {
+    use with_config;
 
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
@@ -50,8 +49,9 @@ class num_users_accessed extends metric {
         return new lang_string('num_users_accessed_description', 'tool_monitoring');
     }
 
-    public function calculate(object|null $config): metric_value {
+    public function calculate(): metric_value {
         global $DB;
+        $config = $this->parse_config(num_users_accessed_config::class);
         $where = 'username <> :excl_user AND lastaccess >= :earliest';
         $params = [
             'excl_user' => 'guest',
@@ -60,15 +60,7 @@ class num_users_accessed extends metric {
         return new metric_value($DB->count_records_select('user', $where, $params));
     }
 
-    public static function add_config_form_elements(MoodleQuickForm $mform): void {
-        $mform->addElement('text', 'timewindow', 'Users online in the last seconds');
-        // TODO: Localize and allow to set multiple values.
-        $mform->setType('timewindow', PARAM_INT);
-    }
-
-    public static function get_default_config_data(): object {
-        return (object) [
-            'timewindow' => 300,
-        ];
+    public static function get_default_config(): num_users_accessed_config {
+        return new num_users_accessed_config();
     }
 }

@@ -67,9 +67,7 @@ final class config extends moodleform {
      */
     public static function for_metric(registered_metric $metric): self {
         $form = new self(customdata: ['metric' => $metric]);
-        $formdata = (array) $metric->config;
-        $formdata['enabled'] = $metric->enabled;
-        $form->set_data($formdata);
+        $form->set_data($metric->to_form_data());
         return $form;
     }
 
@@ -86,18 +84,6 @@ final class config extends moodleform {
         if (is_null($formdata = $this->get_data())) {
             return;
         }
-        if ($formdata->enabled ?? false) {
-            $this->metric->enable();
-        } else {
-            $this->metric->disable();
-        }
-        // Only store actual metric-specific config.
-        // TODO: This is too brittle.
-        $data = (array) $formdata;
-        foreach (['metric', 'component', 'name', 'type', 'description', 'enabled', 'submitbutton'] as $key) {
-            unset($data[$key]);
-        }
-        $this->metric->config = $data ? (object) $data : null;
-        $this->metric->save_config();
+        $this->metric->update_with_form_data($formdata);
     }
 }

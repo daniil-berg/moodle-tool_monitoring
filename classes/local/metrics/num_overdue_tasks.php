@@ -71,7 +71,7 @@ class num_overdue_tasks extends metric {
      * @return Generator<metric_value>
      * @throws dml_exception Database query failed.
      */
-    public function calculate(object|null $config): Generator {
+    public function calculate(): Generator {
         global $DB;
         $where = 'nextruntime <= :next_runtime';
         $params = ['next_runtime' => time()];

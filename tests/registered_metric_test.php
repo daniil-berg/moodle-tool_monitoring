@@ -33,19 +33,18 @@ namespace tool_monitoring;
 
 use advanced_testcase;
 use ArrayIterator;
+use core\event\base as base_event;
 use core\exception\coding_exception;
 use dml_exception;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\testing\metric_settable_values;
+use tool_monitoring\local\testing\metric_with_custom_config;
 
 #[CoversClass(registered_metric::class)]
 class registered_metric_test extends advanced_testcase {
 
-    /**
-     * @throws coding_exception
-     */
     #[DataProvider('test_from_metric_provider')]
     public function test_from_metric(metric $metric, array $arguments, array|string $expected): void {
         if (is_string($expected)) {
@@ -88,7 +87,7 @@ class registered_metric_test extends advanced_testcase {
                     'component'    => 'foo',
                     'name'         => 'bar',
                     'enabled'      => true,
-                    'config'       => (object) ['a' => 'b'],
+                    'config'       => '{"a":"b"}',
                     'timecreated'  => 123,
                     'timemodified' => 456,
                     'usermodified' => 789,
@@ -98,48 +97,17 @@ class registered_metric_test extends advanced_testcase {
                     'component'    => 'foo',
                     'name'         => 'bar',
                     'enabled'      => true,
-                    'config'       => (object) ['a' => 'b'],
+                    'config'       => '{"a":"b"}',
                     'timecreated'  => 123,
                     'timemodified' => 456,
                     'usermodified' => 789,
                 ],
-            ],
-            'Config as a valid string of a JSON object' => [
-                'metric'    => $metric,
-                'arguments' => [
-                    'config' => '{"spam":1}',
-                ],
-                'expected'  => [
-                    'id'           => null,
-                    'component'    => 'tool_monitoring',
-                    'name'         => 'metric_settable_values',
-                    'enabled'      => false,
-                    'config'       => (object) ['spam' => 1],
-                    'timecreated'  => null,
-                    'timemodified' => null,
-                    'usermodified' => null,
-                ],
-            ],
-            'Config as a JSON string, but not of an object' => [
-                'metric'    => $metric,
-                'arguments' => [
-                    'config' => '["a", "b"]',
-                ],
-                'expected'  => coding_exception::class,
-            ],
-            'Config as invalid JSON' => [
-                'metric'    => $metric,
-                'arguments' => [
-                    'config' => '/oops',
-                ],
-                'expected'  => coding_exception::class,
             ],
         ];
     }
 
     /**
      * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
-     * @throws coding_exception
      */
     #[DataProvider('test_iterator_provider')]
     public function test_iterator(iterable|metric_value $testvalues): void {
@@ -212,9 +180,6 @@ class registered_metric_test extends advanced_testcase {
         ];
     }
 
-    /**
-     * @throws coding_exception
-     */
     public function test___get(): void {
         $instance = registered_metric::from_metric(new metric_settable_values());
         self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
@@ -223,157 +188,181 @@ class registered_metric_test extends advanced_testcase {
     }
 
     /**
+     * @param registered_metric $metric Instance on which to call the method.
+     * @param array<string, mixed> $formdata Passed as argument to the method.
+     * @param array<string, mixed> $expected Properties expected to be set after the call on both the instance and the DB record.
+     * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
      * @throws coding_exception
      * @throws dml_exception
      * @throws JsonException
      */
-    public function test_enable_disable(): void {
+    #[DataProvider('test_update_with_form_data_provider')]
+    public function test_update_with_form_data(
+        registered_metric $metric,
+        array $formdata,
+        array $expected,
+        array $events = [],
+    ): void {
         global $DB, $USER;
         $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new metric_settable_values());
-        // Set modification time in the past.
+        $generator = $this->getDataGenerator();
+        // Set modification time in the past and arbitrary user.
         $creationtime = time() - 1000;
+        $newuserid = $generator->create_user()->id;
         $metric->timecreated = $creationtime;
         $metric->timemodified = $creationtime;
-        $metric->usermodified = 1;
+        $metric->usermodified = $newuserid;
         // Insert record manually.
         $data = (array) $metric;
-        $data['config'] = '{}';
         $metric->id = $DB->insert_record(registered_metric::TABLE, $data);
         $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
         // Do some sanity checks.
-        $expectedproperties = [
+        $expectedbefore = [
             'id'           => $metric->id,
             'component'    => $metric->component,
             'name'         => $metric->name,
             'enabled'      => $metric->enabled,
-            'config'       => '{}',
+            'config'       => $metric->config,
             'timecreated'  => $creationtime,
             'timemodified' => $creationtime,
-            'usermodified' => 1,
+            'usermodified' => $newuserid,
         ];
-        foreach ($expectedproperties as $name => $value) {
+        foreach ($expectedbefore as $name => $value) {
             self::assertEquals($value, $record->$name);
         }
+        // Unless otherwise specified, we expect the same properties.
+        $expected += $expectedbefore;
+        // But if anything is expected to be updated, the modification time and the user should be different.
+        if (!empty($events)) {
+            unset($expected['timemodified']);
+            $expected['usermodified'] = $USER->id;
+        }
+        // Intercept the event here.
         $eventsink = $this->redirectEvents();
-
-        // This should do nothing.
-        $metric->disable();
-        // Check that nothing changed.
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
-        foreach ($expectedproperties as $name => $value) {
-            self::assertEquals($value, $record->$name);
-        }
-        // Check that no event was triggered.
-        self::assertSame([], $eventsink->get_events());
-
-        // This should perform an update.
-        $metric->enable();
-        // User should now be the current one.
-        $expectedproperties['usermodified'] = $USER->id;
-        $expectedproperties['enabled'] = true;
-        unset($expectedproperties['timemodified']);
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
-        // Check the expected values.
-        foreach ($expectedproperties as $name => $value) {
-            self::assertEquals($value, $record->$name);
-        }
-        // Time modified should have been updated as well.
-        self::assertGreaterThan($creationtime, $record->timemodified);
-        // The proper event should have been triggered.
-        $events = $eventsink->get_events();
-        self::assertCount(1, $events);
-        $event = $events[0];
-        self::assertInstanceOf(event\metric_enabled::class, $event);
-        $eventsink->clear();
-
-        // This should do nothing.
-        $metric->enable();
-        // Check that nothing changed.
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
-        foreach ($expectedproperties as $name => $value) {
-            self::assertEquals($value, $record->$name);
-        }
-        self::assertSame([], $eventsink->get_events());
-
-        // This should perform an update.
-        $metric->disable();
-        $expectedproperties['enabled'] = false;
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
-        // Check the expected values.
-        foreach ($expectedproperties as $name => $value) {
-            self::assertEquals($value, $record->$name);
-        }
-        // The proper event should have been triggered.
-        $events = $eventsink->get_events();
-        self::assertCount(1, $events);
-        $event = $events[0];
-        self::assertInstanceOf(event\metric_disabled::class, $event);
-        $eventsink->clear();
+        $metric->update_with_form_data((object) $formdata);
         $eventsink->close();
+        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
+        // Check the expected values.
+        foreach ($expected as $name => $value) {
+            self::assertEquals($value, $record->$name);
+            self::assertEquals($value, $metric->$name);
+        }
+        if (!empty($events)) {
+            // Time modified should have been updated as well.
+            self::assertGreaterThan($creationtime, $record->timemodified);
+        }
+        // Check that the events were triggered as expected.
+        $actualevents = array_map(fn (base_event $event): string => $event::class, $eventsink->get_events());
+        self::assertSame($events, $actualevents);
     }
 
     /**
-     * @throws coding_exception
-     * @throws dml_exception
-     * @throws JsonException
+     * Provides test data for the {@see test_update_with_form_data} method.
+     *
+     * @return array[] Arguments for the test method.
      */
-    public function test_save_config(): void {
-        global $DB, $USER;
-        $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new metric_settable_values());
-        // Set modification time in the past.
-        $creationtime = time() - 1000;
-        $metric->timecreated = $creationtime;
-        $metric->timemodified = $creationtime;
-        $metric->usermodified = 1;
-        // Insert record manually.
-        $data = (array) $metric;
-        $data['config'] = '{}';
-        $metric->id = $DB->insert_record(registered_metric::TABLE, $data);
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
-        // Do some sanity checks.
-        $expectedproperties = [
-            'id'           => $metric->id,
-            'component'    => $metric->component,
-            'name'         => $metric->name,
-            'enabled'      => $metric->enabled,
-            'config'       => '{}',
-            'timecreated'  => $creationtime,
-            'timemodified' => $creationtime,
-            'usermodified' => 1,
+    public static function test_update_with_form_data_provider(): array {
+        $metric = new metric_settable_values();
+        $metricwithconfig = new metric_with_custom_config();
+        return [
+            'Enabled basic metric, nothing changed' => [
+                'metric'   => registered_metric::from_metric($metric, enabled: true),
+                'formdata' => [
+                    'enabled' => true,
+                ],
+                'expected' => [
+                    'config'  => null,
+                    'enabled' => true,
+                ],
+                'events'   => [],
+            ],
+            'Enabled basic metric, being disabled, arbitrary form data present' => [
+                'metric'   => registered_metric::from_metric($metric, enabled: true),
+                'formdata' => [
+                    'enabled' => false,
+                    'some'    => 'data',
+                    'what'    => 'ever',
+                ],
+                'expected' => [
+                    'config'  => null,
+                    'enabled' => false,
+                ],
+                'events'   => [
+                    event\metric_disabled::class,
+                ],
+            ],
+            'Enabled configurable metric, nothing changed' => [
+                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{"foo":"baz","spam":0}'),
+                'formdata' => [
+                    'enabled' => true,
+                    'foo'     => 'baz',
+                    'spam'    => 0,
+                ],
+                'expected' => [
+                    'config'  => '{"foo":"baz","spam":0}',
+                    'enabled' => true,
+                ],
+                'events'   => [],
+            ],
+            'Enabled configurable metric, having config updated' => [
+                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{}'),
+                'formdata' => [
+                    'foo'  => 'baz',
+                    'spam' => 0,
+                ],
+                'expected' => [
+                    'config' => '{"foo":"baz","spam":0}',
+                ],
+                'events'   => [
+                    event\metric_config_updated::class,
+                ],
+            ],
+            'Enabled configurable metric, being disabled' => [
+                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{"foo":"baz","spam":0}'),
+                'formdata' => [
+                    'enabled' => false,
+                    'foo'     => 'baz',
+                    'spam'    => 0,
+                ],
+                'expected' => [
+                    'config'  => '{"foo":"baz","spam":0}',
+                    'enabled' => false,
+                ],
+                'events'   => [
+                    event\metric_disabled::class,
+                ],
+            ],
+            'Disabled configurable metric, being enabled' => [
+                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: false, config: '{"foo":"baz","spam":0}'),
+                'formdata' => [
+                    'enabled' => true,
+                    'foo'     => 'baz',
+                    'spam'    => 0,
+                ],
+                'expected' => [
+                    'config'  => '{"foo":"baz","spam":0}',
+                    'enabled' => true,
+                ],
+                'events'   => [
+                    event\metric_enabled::class,
+                ],
+            ],
+            'Disabled configurable metric, being enabled and having config updated' => [
+                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: false, config: '{"foo":"baz","spam":0}'),
+                'formdata' => [
+                    'enabled' => true,
+                    'foo'     => 'bar',
+                    'spam'    => 1,
+                ],
+                'expected' => [
+                    'config'  => '{"foo":"bar","spam":1}',
+                    'enabled' => true,
+                ],
+                'events'   => [
+                    event\metric_enabled::class,
+                    event\metric_config_updated::class,
+                ],
+            ],
         ];
-        foreach ($expectedproperties as $name => $value) {
-            self::assertEquals($value, $record->$name);
-        }
-        // We expect only this to be updated.
-        $metric->config = (object) ['foo' => 'bar', 'spam' => 'eggs'];
-        // We expect these to be ignored in the update.
-        $metric->component = 'spam';
-        $metric->name = 'eggs';
-        $metric->timecreated = 123;
-        $metric->timemodified = 0;
-        $metric->usermodified = 123456789;
-        unset($expectedproperties['timemodified']);
-        // Expect only `config` to match what we set above.
-        $expectedproperties['config'] = '{"foo":"bar","spam":"eggs"}';
-        // User should have been set to the current one.
-        $expectedproperties['usermodified'] = $USER->id;
-        // Intercept the event here.
-        $eventsink = $this->redirectEvents();
-        $metric->save_config();
-        $eventsink->close();
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
-        // Check the expected values.
-        foreach ($expectedproperties as $name => $value) {
-            self::assertEquals($value, $record->$name);
-        }
-        // Time modified should have been updated as well.
-        self::assertGreaterThan($creationtime, $record->timemodified);
-        // Check that the event was triggered as expected.
-        $events = $eventsink->get_events();
-        self::assertCount(1, $events);
-        $event = $events[0];
-        self::assertInstanceOf(event\metric_config_updated::class, $event);
     }
 }

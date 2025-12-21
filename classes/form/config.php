@@ -97,7 +97,7 @@ final class config extends moodleform {
         foreach (['metric', 'component', 'name', 'type', 'description', 'enabled', 'submitbutton'] as $key) {
             unset($data[$key]);
         }
-        $this->metric->config = $data ?: null;
+        $this->metric->config = $data ? (object) $data : null;
         $this->metric->save_config();
     }
 }

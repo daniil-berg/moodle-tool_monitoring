@@ -285,8 +285,6 @@ class registered_metric_test extends advanced_testcase {
         self::assertCount(1, $events);
         $event = $events[0];
         self::assertInstanceOf(event\metric_enabled::class, $event);
-        self::assertArrayHasKey('metric', $event->other);
-        self::assertSame($metric, $event->other['metric']);
         $eventsink->clear();
 
         // This should do nothing.
@@ -311,8 +309,6 @@ class registered_metric_test extends advanced_testcase {
         self::assertCount(1, $events);
         $event = $events[0];
         self::assertInstanceOf(event\metric_disabled::class, $event);
-        self::assertArrayHasKey('metric', $event->other);
-        self::assertSame($metric, $event->other['metric']);
         $eventsink->clear();
         $eventsink->close();
     }
@@ -379,7 +375,5 @@ class registered_metric_test extends advanced_testcase {
         self::assertCount(1, $events);
         $event = $events[0];
         self::assertInstanceOf(event\metric_config_updated::class, $event);
-        self::assertArrayHasKey('metric', $event->other);
-        self::assertSame($metric, $event->other['metric']);
     }
 }

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Displays a table of all available/registered metrics.
+ * Displays the configuration form for a single metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,25 +29,35 @@
  * {@noinspection PhpUnhandledExceptionInspection}
  */
 
-use tool_monitoring\output\overview;
+use core\exception\moodle_exception;
 use tool_monitoring\metrics_manager;
+use tool_monitoring\output\configure;
 
 require_once(__DIR__ . '/../../../config.php');
 
-global $PAGE, $OUTPUT;
+global $OUTPUT, $PAGE;
 
 require_login();
 
 $context = context_system::instance();
 require_capability('tool/monitoring:manage_metrics', $context);
 
-$PAGE->set_url('/admin/tool/monitoring/');
+$qualifiedname = required_param('metric', PARAM_ALPHAEXT);
+
+$PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
+
 $manager = new metrics_manager();
-$overview = new overview($manager->sync(delete: true)->metrics);
+$metric = $manager->sync(delete: true)->metrics[$qualifiedname] ?? null;
+if (is_null($metric)) {
+    throw new moodle_exception('invalidrecord', 'error', '', 'tool_monitoring_metrics');
+}
+$configure = new configure($metric);
+$configure->process_form();
+
 echo $OUTPUT->header();
-echo $OUTPUT->render($overview);
+echo $OUTPUT->render($configure);
 echo $OUTPUT->footer();

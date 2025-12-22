@@ -1,0 +1,103 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace tool_monitoring\form;
+
+global $CFG;
+
+use core\exception\coding_exception;
+use dml_exception;
+use JsonException;
+use moodleform;
+use tool_monitoring\registered_metric;
+
+require_once("$CFG->libdir/formslib.php");
+
+/**
+ * Configuration form for a metric.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+final class config extends moodleform {
+
+    private registered_metric $metric;
+
+    protected function definition(): void {
+        $this->metric = $this->_customdata['metric'];
+        $this->_form->addElement('hidden', 'metric', $this->metric->qualifiedname);
+        $this->_form->setType('metric', PARAM_ALPHAEXT);
+        $this->_form->addElement('static', 'component', get_string('component', 'tool_monitoring'), $this->metric->component);
+        $this->_form->addElement('static', 'name', get_string('name', 'tool_monitoring'), $this->metric->name);
+        $this->_form->addElement('static', 'type', get_string('type', 'tool_monitoring'), $this->metric->type->value);
+        $this->_form->addElement('static', 'description', get_string('description', 'tool_monitoring'), $this->metric->description);
+        $this->_form->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
+        $this->metric->extend_config_form($this->_form);
+    }
+
+    protected function after_definition(): void {
+        $this->add_action_buttons();
+        parent::after_definition();
+    }
+
+    /**
+     * Returns a new instance for configuring the specified metric.
+     *
+     * @param registered_metric $metric Metric for which to return the form.
+     * @return self New config form instance.
+     */
+    public static function for_metric(registered_metric $metric): self {
+        $form = new self(customdata: ['metric' => $metric]);
+        $formdata = (array) $metric->config;
+        $formdata['enabled'] = $metric->enabled;
+        $form->set_data($formdata);
+        return $form;
+    }
+
+    /**
+     * Updates the registered metric in the database with the submitted form data.
+     *
+     * If no form data is present, or it did not pass validation, this method does nothing.
+     *
+     * @throws coding_exception Should not happen.
+     * @throws dml_exception
+     * @throws JsonException The metric-specific config data could not be serialized.
+     */
+    public function save(): void {
+        if (is_null($formdata = $this->get_data())) {
+            return;
+        }
+        if ($formdata->enabled ?? false) {
+            $this->metric->enable();
+        } else {
+            $this->metric->disable();
+        }
+        // Only store actual metric-specific config.
+        // TODO: This is too brittle.
+        $data = (array) $formdata;
+        foreach (['metric', 'component', 'name', 'type', 'description', 'enabled', 'submitbutton'] as $key) {
+            unset($data[$key]);
+        }
+        $this->metric->config = $data ? (object) $data : null;
+        $this->metric->save_config();
+    }
+}

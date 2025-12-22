@@ -58,7 +58,7 @@ trait strict_label_names {
      * @return metric_value Valid metric value.
      * @throws coding_exception Label names do not match.
      */
-    protected static function validate_value(metric_value $metricvalue): metric_value {
+    public static function validate_value(metric_value $metricvalue): metric_value {
         $allowed = array_flip(static::get_label_names());
         if (!empty(array_diff_key($allowed, $metricvalue->label) + array_diff_key($metricvalue->label, $allowed))) {
             // TODO: Use custom exception class.

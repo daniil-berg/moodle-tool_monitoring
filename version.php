@@ -30,7 +30,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'tool_monitoring';
-$plugin->release = '0.1.0';
-$plugin->version = 2025090303;
+$plugin->release = '0.2.0';
+$plugin->version = 2025121900;
 $plugin->requires = 2025041400; // Moodle 5.0.
 $plugin->maturity = MATURITY_ALPHA;

@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_monitoring\local\hooks;
-
 /**
- * Implementing callbacks for the gather_metrics hook.
+ * Definition of the {@see metric_collection_test} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,26 +25,27 @@ namespace tool_monitoring\local\hooks;
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * {@noinspection PhpIllegalPsrClassPathInspection}
  */
 
-/**
- * Implementing callbacks for the gather_metrics hook.
- */
-class register_metrics {
+namespace tool_monitoring\hook;
 
-    /**
-     * Register our metrics.
-     *
-     * @param \tool_monitoring\hook\gather_metrics $hook
-     * @return void
-     */
-    public static function callback(\tool_monitoring\hook\gather_metrics $hook): void {
-        $hook->add_metric(new \tool_monitoring\local\metrics\num_user_count());
-        $hook->add_metric(new \tool_monitoring\local\metrics\num_overdue_tasks());
-        $hook->add_metric(new \tool_monitoring\local\metrics\num_quiz_attempts_in_progress());
-        $hook->add_metric(new \tool_monitoring\local\metrics\num_tasks_spawned_adhoc());
-        $hook->add_metric(new \tool_monitoring\local\metrics\num_tasks_spawned_scheduled());
-        $hook->add_metric(new \tool_monitoring\local\metrics\num_users_accessed());
-        $hook->add_metric(new \tool_monitoring\local\metrics\num_course_count());
+use advanced_testcase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use tool_monitoring\local\testing\metric_settable_values;
+
+#[CoversClass(metric_collection::class)]
+class metric_collection_test extends advanced_testcase {
+    public function test(): void {
+        $metric1 = new metric_settable_values();
+        $metric2 = new metric_settable_values();
+        $metric3 = new metric_settable_values();
+        $collection = new metric_collection();
+        $collection->add($metric1);
+        $collection->add($metric2);
+        $collection->add($metric3);
+        $metrics = iterator_to_array($collection);
+        self::assertSame([$metric1, $metric2, $metric3], $metrics);
     }
 }

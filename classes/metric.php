@@ -31,16 +31,25 @@ namespace tool_monitoring;
 
 use core\component;
 use core\lang_string;
-use IteratorAggregate;
+use MoodleQuickForm;
+use stdClass;
+use tool_monitoring\hook\metric_collection;
 use Traversable;
 
 /**
  * Base class for all metrics.
  *
- * Metric values can be retrieved by iterating over an instance of this class.
+ * Concrete subclasses only **need** to implement the {@see calculate}, {@see get_description} and {@see get_type} methods.
  *
- * Inheriting classes may override the {@see get_name} method to provide a custom identifier and the {@see validate_value} method to
- * perform simple checks on the {@see metric_value} objects yielded by an instance during iteration.
+ * Inheriting classes _may_ also override the {@see get_name} method to provide a custom identifier and the {@see validate_value}
+ * method to perform simple checks on the {@see metric_value} objects yielded by an instance during iteration.
+ *
+ * For advanced use cases, if the metric should allow specific custom configuration via the admin panel,
+ * the {@see add_config_form_elements} the {@see get_default_config_data} methods should also be overridden (in a compatible way).
+ * For these use cases, this base class is generic in the type of the `$config` parameter of {@see calculate}.
+ * Subclasses may narrow that type in an `extends` tag.
+ *
+ * @template ConfT of object|null = null
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -51,7 +60,28 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class metric implements IteratorAggregate {
+abstract class metric {
+
+    /**
+     * Constructor without any parameters.
+     */
+    final public function __construct() {}
+
+    /**
+     * Creates a new instance of the metric and adds it to the provided collection.
+     *
+     * Calls the hook's {@see metric_collection::add} method.
+     *
+     * @link https://moodledev.io/docs/apis/core/hooks#hook-callback Documentation: Hook callback
+     *
+     * @param metric_collection $hook Hook to pick up the metric.
+     * @return static New metric instance.
+     */
+    public static function collect(metric_collection $hook): static {
+        $instance = new static();
+        $hook->add($instance);
+        return $instance;
+    }
 
     /**
      * Produces the current metric value(s).
@@ -62,9 +92,12 @@ abstract class metric implements IteratorAggregate {
      *
      * This method will be called to export values to the configured monitoring service(s).
      *
+     * If the implementing class expects a specific `$config` type, it can be narrowed in an `extends` tag in the class' doc block.
+     *
+     * @param ConfT $config Current metric-specific config (if applicable).
      * @return iterable<metric_value>|metric_value Singular metric value or an array or traversable object of metric values.
      */
-    abstract protected function calculate(): iterable|metric_value;
+    abstract public function calculate(object|null $config): iterable|metric_value;
 
     /**
      * Returns the localized description of the metric.
@@ -84,7 +117,7 @@ abstract class metric implements IteratorAggregate {
      * Returns the name of the metric to be used as an identifier.
      *
      * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the defining component as returned by {@see get_component}.
+     * the defining component as returned by {@see get_component}; it _must_ be a maximum of 100 characters long.
      * Defaults to the unqualified class name.
      *
      * @return string Unique metric name/identifier.
@@ -100,12 +133,9 @@ abstract class metric implements IteratorAggregate {
     /**
      * Returns the name of the Moodle component, i.e. the plugin or core component, which defines this metric.
      *
-     * Subclasses may override this for special cases. The default implementation is the component name extracted
-     * from the metric class' namespace.
-     *
      * @return string Moodle component name.
      */
-    public static function get_component(): string {
+    final public static function get_component(): string {
         return component::get_component_from_classname(static::class);
     }
 
@@ -121,24 +151,34 @@ abstract class metric implements IteratorAggregate {
      * @param metric_value $metricvalue Metric value instance to be validated.
      * @return metric_value Valid metric value.
      */
-    protected static function validate_value(metric_value $metricvalue): metric_value {
+    public static function validate_value(metric_value $metricvalue): metric_value {
         return $metricvalue;
     }
 
     /**
-     * Produces the current {@see metric_value}s.
+     * If the metric requires custom configuration, this method can be overridden to extend a {@see MoodleQuickForm} object.
      *
-     * This allows the metric instance to be iterated over in a `foreach` loop.
+     * Implementations _should_ ensure that any added form fields are compatible with the default config data that is returned by
+     * the {@see get_default_config_data} method, i.e. the properties of the object correspond to the added form field names.
      *
-     * @return Traversable<metric_value> Values of the metric.
+     * By default, this does nothing.
+     *
+     * @param MoodleQuickForm $mform Configuration form for the metric.
      */
-    public function getIterator(): Traversable {
-        $values = $this->calculate();
-        if ($values instanceof metric_value) {
-            $values = [$values];
-        }
-        foreach ($values as $metricvalue) {
-            yield static::validate_value($metricvalue);
-        }
+    public static function add_config_form_elements(MoodleQuickForm $mform): void {
+        // Do nothing.
+    }
+
+    /**
+     * If the metric requires custom configuration, this method can be overridden to return a default config.
+     *
+     * Implementations _should_ ensure that the default config is compatible with the metric-specific config form fields added via
+     * the {@see add_config_form_elements} method, i.e. the properties of the object correspond to the added form field names.
+     * By default, returns `null`.
+     *
+     * @return ConfT Default config data for the metric; `null` if no specific config is available.
+     */
+    public static function get_default_config_data(): object|null {
+        return null;
     }
 }

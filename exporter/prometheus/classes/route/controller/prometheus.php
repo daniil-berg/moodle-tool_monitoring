@@ -29,6 +29,7 @@
 
 namespace monitoringexporter_prometheus\route\controller;
 
+use core\exception\coding_exception;
 use core\param;
 use core\router\route;
 use core\router\route_controller;
@@ -67,6 +68,8 @@ class prometheus {
      * @param Request $request Incoming, server-side HTTP request.
      * @param Response $response Outgoing, server-side response; returned response object is derived from this.
      * @return Response Plain text response in the Prometheus format.
+     * @throws coding_exception
+     * @throws dml_exception
      *
      * {@noinspection PhpUnused}
      */
@@ -101,8 +104,9 @@ class prometheus {
         if ($expectedtoken && $params['token'] !== $expectedtoken) {
             return $response->withStatus(403);
         }
+        // TODO: Allow passing multiple tags.
         $manager = new metrics_manager();
-        $metrics = $manager->get_metrics($params['tag']);
+        $metrics = $manager->fetch(tags: [$params['tag']])->metrics;
         $body = Utils::streamFor(prometheus_exporter::export($metrics));
         return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }

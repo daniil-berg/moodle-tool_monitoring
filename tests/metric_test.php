@@ -32,86 +32,110 @@
 namespace tool_monitoring;
 
 use advanced_testcase;
-use ArrayIterator;
-use core\lang_string;
+use MoodleQuickForm;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\metrics\num_overdue_tasks;
+use tool_monitoring\local\metrics\num_users_accessed;
+use tool_monitoring\local\testing\metric_strict_label_names;
+use tool_monitoring\local\testing\metric_settable_values;
 
 #[CoversClass(metric::class)]
 class metric_test extends advanced_testcase {
 
-    /**
-     * Returns an instance of a class that extends {@see metric} for testing purposes.
-     *
-     * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
-     * @return metric Anonymous class instance.
-     */
-    private static function get_test_metric(iterable|metric_value $testvalues): metric {
-        return new class($testvalues) extends metric {
-
-            /**
-             * Sets up the test metric instance.
-             *
-             * @param iterable<metric_value>|metric_value $values Metric values to be produced by the metric.
-             */
-            public function __construct(
-                private readonly iterable|metric_value $values,
-            ) {}
-
-            protected function calculate(): iterable|metric_value {
-                return $this->values;
-            }
-
-            public static function get_description(): lang_string {
-                // Just an arbitrary existing language string.
-                return new lang_string('tested');
-            }
-
-            public static function get_type(): metric_type {
-                return metric_type::COUNTER;
-            }
-        };
+    public function test_collect(): void {
+        $collection = new metric_collection();
+        // The collection should not yet have the test metric.
+        self::assertSame([], iterator_to_array($collection));
+        $metric = metric_settable_values::collect($collection);
+        // Now the collection should have the test metric.
+        self::assertSame([$metric], iterator_to_array($collection));
+        // Doing the same thing again should create a new instance and extend the collection.
+        $metric2 = metric_settable_values::collect($collection);
+        self::assertSame([$metric, $metric2], iterator_to_array($collection));
     }
 
     /**
-     * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
+     * @param class-string<metric> $class Metric class name.
+     * @param string $expected Expected return value name.
      */
-    #[DataProvider('test_iterator_provider')]
-    public function test_iterator(iterable|metric_value $testvalues): void {
-        $metric = self::get_test_metric($testvalues);
-        // Consume the metric iterator.
-        $metricvalues = iterator_to_array($metric);
-        if ($testvalues instanceof metric_value) {
-            self::assertEquals([$testvalues], $metricvalues);
-        } elseif (is_array($testvalues)) {
-            self::assertEquals($testvalues, $metricvalues);
-        } else {
-            self::assertEquals(iterator_to_array($testvalues), $metricvalues);
-        }
+    #[DataProvider('test_get_name_provider')]
+    public function test_get_name(string $class, string $expected): void {
+        self::assertSame($expected, $class::get_name());
     }
 
     /**
-     * Provides test data for the {@see test_iterator} method.
+     * Provides test data for the {@see test_get_name} method.
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_iterator_provider(): array {
+    public static function test_get_name_provider(): array {
         return [
-            'Single metric value returned by the `calculate` method' => [
-                'testvalues' => new metric_value(0),
+            [
+                'class'    => metric_settable_values::class,
+                'expected' => 'metric_settable_values',
             ],
-            'Multiple metric values returned by the `calculate` method in an array' => [
-                'testvalues' => [new metric_value(42), new metric_value(3.14)],
+            [
+                'class'    => metric_strict_label_names::class,
+                'expected' => 'metric_strict_label_names',
             ],
-            'Multiple metric values produced by an iterator returned by the `calculate` method' => [
-                'testvalues' => new ArrayIterator([new metric_value(-1), new metric_value(-2), new metric_value(-3)]),
+            [
+                'class'    => num_overdue_tasks::class,
+                'expected' => 'num_overdue_tasks',
+            ],
+            [
+                'class'    => num_users_accessed::class,
+                'expected' => 'num_users_accessed',
             ],
         ];
     }
 
-    public function test_get_name(): void {
-        $metric = self::get_test_metric([]);
-        $expected = preg_replace('/^tool_monitoring\\\metric@/', 'metric@', $metric::class);
-        self::assertSame($expected, $metric::get_name());
+    /**
+     * @param class-string<metric> $class Metric class name.
+     * @param string $expected Expected return value name.
+     */
+    #[DataProvider('test_get_component_provider')]
+    public function test_get_component(string $class, string $expected): void {
+        self::assertSame($expected, $class::get_component());
+    }
+
+    /**
+     * Provides test data for the {@see test_get_component} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function test_get_component_provider(): array {
+        return [
+            [
+                'class'    => metric_settable_values::class,
+                'expected' => 'tool_monitoring',
+            ],
+            [
+                'class'    => metric_strict_label_names::class,
+                'expected' => 'tool_monitoring',
+            ],
+            [
+                'class'    => num_overdue_tasks::class,
+                'expected' => 'tool_monitoring',
+            ],
+            [
+                'class'    => num_users_accessed::class,
+                'expected' => 'tool_monitoring',
+            ],
+        ];
+    }
+
+    public function test_validate_value(): void {
+        $value = new metric_value(0);
+        self::assertSame($value, metric::validate_value($value));
+    }
+
+    public function test_add_config_form_elements(): void {
+        metric::add_config_form_elements(new MoodleQuickForm('foo', 'POST', 'bar'));
+    }
+
+    public function test_get_default_config_data(): void {
+        self::assertNull(metric_settable_values::get_default_config_data());
     }
 }

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_course_count metric.
+ * Definition of the {@see metric_settable_values} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,28 +27,39 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring\local\testing;
 
 use core\lang_string;
-use tool_monitoring\metric_type;
 use tool_monitoring\metric;
+use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
 /**
- * Implements the num_course_count metric.
+ * Metric for testing purposes.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_course_count extends metric {
+class metric_settable_values extends metric {
+    /** @var iterable<metric_value>|metric_value Metric values to be produced by the metric. */
+    public iterable|metric_value $values = [];
 
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
+    public function calculate(object|null $config): iterable|metric_value {
+        return $this->values;
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('num_course_count_description', 'tool_monitoring');
+        // Just an arbitrary existing language string.
+        return new lang_string('pluginname', 'tool_monitoring');
     }
 
-    public function calculate(object|null $config): metric_value {
-        global $DB;
-        return new metric_value($DB->count_records('course'));
+    public static function get_type(): metric_type {
+        return metric_type::COUNTER;
     }
 }

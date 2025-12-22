@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see gather_metrics} hook.
+ * Definition of the {@see metric_enabled} event class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,17 +27,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\hook;
+namespace tool_monitoring\event;
 
-use core\attribute\label;
-use core\attribute\tags;
-use tool_monitoring\metric;
+use core\lang_string;
 
 /**
- * Linchpin of the monitoring API.
- *
- * Hook callbacks can register metrics via the {@see add_metric} method.
- * Registered metrics can be retrieved with the {@see get_metrics} method.
+ * Triggered when a metric is enabled.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -48,29 +43,23 @@ use tool_monitoring\metric;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[label('Provides the ability to register custom metrics.')]
-#[tags('metric', 'monitoring', 'tool_monitoring')]
-final class gather_metrics {
-
-    /** @var metric[] All registered metrics indexed by name. */
-    private array $metrics = [];
+class metric_enabled extends metric_event {
 
     /**
-     * Registers the provided metric.
+     * Returns localised event name.
      *
-     * @param metric $metric
+     * @return lang_string Name of the event as a lazy string.
      */
-    public function add_metric(metric $metric): void {
-        // TODO: Ensure unique names?
-        $this->metrics[$metric::get_name()] = $metric;
+    public static function get_name(): lang_string {
+        return new lang_string('event:metric_enabled', 'tool_monitoring');
     }
 
     /**
-     * Returns all registered metrics.
+     * Returns non-localised event description with IDs for admin use only.
      *
-     * @return metric[] Metrics indexed by name.
+     * @return string Short description.
      */
-    public function get_metrics(): array {
-        return $this->metrics;
+    public function get_description(): string {
+        return "User with ID '$this->userid' enabled the metric '$this->metric'.";
     }
 }

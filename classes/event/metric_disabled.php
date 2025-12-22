@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_course_count metric.
+ * Definition of the {@see metric_disabled} event class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,28 +27,39 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring\event;
 
 use core\lang_string;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric;
-use tool_monitoring\metric_value;
 
 /**
- * Implements the num_course_count metric.
+ * Triggered when a metric is enabled.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_course_count extends metric {
+class metric_disabled extends metric_event {
 
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
+    /**
+     * Returns localised event name.
+     *
+     * @return lang_string Name of the event as a lazy string.
+     */
+    public static function get_name(): lang_string {
+        return new lang_string('event:metric_disabled', 'tool_monitoring');
     }
 
-    public static function get_description(): lang_string {
-        return new lang_string('num_course_count_description', 'tool_monitoring');
-    }
-
-    public function calculate(object|null $config): metric_value {
-        global $DB;
-        return new metric_value($DB->count_records('course'));
+    /**
+     * Returns non-localised event description with IDs for admin use only.
+     *
+     * @return string Short description.
+     */
+    public function get_description(): string {
+        return "User with ID '$this->userid' disabled the metric '$this->metric'.";
     }
 }

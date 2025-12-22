@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the renderable {@see overview} class.
+ * Definition of the renderable {@see configure} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -33,11 +33,13 @@ use core\exception\moodle_exception;
 use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
+use JsonException;
 use moodle_url;
+use tool_monitoring\form\config as config_form;
 use tool_monitoring\registered_metric;
 
 /**
- * Provides information about all available metrics and links to their configuration pages.
+ * Provides a configuration form for a specified metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -48,32 +50,41 @@ use tool_monitoring\registered_metric;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final readonly class overview implements renderable, templatable {
+final readonly class configure implements renderable, templatable {
+
+    /** @var config_form Metric config form to be rendered. */
+    private config_form $form;
 
     /**
-     * Constructor without additional logic.
+     * Instantiates the underlying {@see config_form} for the specified metric.
      *
-     * @param array<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     * @param registered_metric $metric Metric for which to render the config form.
      */
-    public function __construct(
-        private array $metrics,
-    ) {}
+    public function __construct(registered_metric $metric) {
+        $this->form = config_form::for_metric($metric);
+    }
 
     /**
+     * Processes the form data if the form is submitted or canceled and issues HTTP redirects.
+     *
+     * This method must be called before any output is sent to the browser.
+     *
      * @throws moodle_exception
+     * @throws JsonException The {@see registered_metric::config} could not be serialized.
      */
-    public function export_for_template(renderer_base $output): array {
-        $lines = [];
-        foreach ($this->metrics as $qualifiedname => $metric) {
-            $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
-            $lines[] = [
-                'component'   => $metric->component,
-                'name'        => $metric->name,
-                'type'        => $metric->type->value,
-                'description' => $metric->description->out(),
-                'configurl'   => $configurl->out(false),
-            ];
+    public function process_form(): void {
+        if ($this->form->is_cancelled()) {
+            redirect(new moodle_url('/admin/tool/monitoring/'));
+        } else if ($this->form->is_submitted() && $this->form->is_validated()) {
+            $this->form->save();
+            redirect(new moodle_url('/admin/tool/monitoring/'));
         }
-        return ['metrics' => $lines];
+    }
+
+    public function export_for_template(renderer_base $output): array {
+        ob_start();
+        $this->form->display();
+        $html = ob_get_clean();
+        return ['form' => $html];
     }
 }

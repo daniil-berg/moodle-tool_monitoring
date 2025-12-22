@@ -30,11 +30,20 @@
 namespace tool_monitoring;
 
 use core\di;
-use core\hook\manager;
-use tool_monitoring\hook\gather_metrics;
+use core\exception\coding_exception;
+use core\hook\manager as hook_manager;
+use dml_exception;
+use Exception;
+use JsonException;
+use tool_monitoring\hook\metric_collection;
 
 /**
- * Metrics manager to gather all available metrics and operations.
+ * Linchpin of the monitoring API.
+ *
+ * Registers new {@see metric}s picked up by the {@see metric_collection} hook and provides access to already registered ones.
+ *
+ * @property-read array<string, registered_metric> $metrics Registered metrics indexed by their qualified name; must be populated
+ *                                                          by calling the {@see dispatch_hook} method.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -47,34 +56,216 @@ use tool_monitoring\hook\gather_metrics;
  */
 final class metrics_manager {
 
-    /** @var metric[] All available metrics in the system indexed by name. */
-    protected array $metrics = [];
+    /** @var array<string, registered_metric> Collected and registered metrics indexed by their qualified name. */
+    private array $metrics = [];
 
     /**
-     * Dispatches the {@see gather_metrics} hook and then stores all available metrics.
+     * Constructor without additional logic.
+     *
+     * @param metric_collection $collection Metric collection to manage; defaults to a new empty collection.
      */
-    public function __construct() {
-        $hook = new gather_metrics();
-        di::get(manager::class)->dispatch($hook);
-        $this->metrics = $hook->get_metrics();
+    public function __construct(
+        public readonly metric_collection $collection = new metric_collection()
+    ) {}
+
+    /**
+     * Special-case getter for the full array of registered metrics.
+     *
+     * TODO Replace this method with a nice property `get`-hook, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to return.
+     * @return mixed Property value.
+     */
+    public function __get(string $name): mixed {
+        if ($name === 'metrics') {
+            return $this->metrics;
+        }
+        return $this->$name; // @codeCoverageIgnore
     }
 
     /**
-     * Returns the registered metrics.
+     * Dispatches the managed {@see metric_collection} hook allowing callbacks to add metrics.
      *
-     * Optionally filters the metrics by tag.
+     * @link https://moodledev.io/docs/apis/core/hooks#hook-emitter Documentation: Hook emitter
      *
-     * @param string|null $tag If provided, only metrics with that tag will be returned.
-     * @return metric[] Metrics indexed by their name.
+     * @return $this Same instance.
      */
-    public function get_metrics(string|null $tag = null): array {
-        if (is_null($tag)) {
-            return $this->metrics;
+    public function dispatch_hook(): self {
+        di::get(hook_manager::class)->dispatch($this->collection);
+        return $this;
+    }
+
+    /**
+     * Fetches registered metrics from the database for the managed collection.
+     *
+     * Ignores database entries for previously registered metrics that are _not_ present in the currently managed collection.
+     * Issues a single `SELECT` query; does not perform any `INSERT`/`UPDATE`/`DELETE` queries.
+     *
+     * @param bool $collect If `true` (default), calls the {@see dispatch_hook} method first.
+     * @param bool|null $enabled If `true` (default), only enabled metrics are loaded; if `false`, only disabled ones are loaded;
+     *                           passing `null` (default) disables this filter.
+     * @param string[] $tags Only metrics that carry all the provided tags will be returned.
+     * @return $this Same instance.
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    public function fetch(bool $collect = true, bool|null $enabled = true, array $tags = []): self {
+        global $DB;
+        if ($collect) {
+            $this->dispatch_hook();
         }
-        // TODO: Implement configurable tags for metrics via settings and filter the metrics accordingly here.
-        return array_filter(
-            $this->metrics,
-            fn (metric $metric): bool => true,
+        // Store metrics indexed by qualified name for later.
+        $metrics = [];
+        // Construct the `IN` expression and parameters from the component-name-combinations present in the collection.
+        $inplaceholders = [];
+        $params = [];
+        foreach ($this->collection as $metric) {
+            $component = $metric::get_component();
+            $name = $metric::get_name();
+            $qname = registered_metric::get_qualified_name($component, $name);
+            if (array_key_exists($qname, $metrics)) {
+                trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                continue;
+            }
+            $metrics[$qname] = $metric;
+            $inplaceholders[] = '(?,?)';
+            $params[] = $component;
+            $params[] = $name;
+        }
+        // TODO: Filter by tags.
+        $where = '(component, name) IN (' . implode(',', $inplaceholders) . ')';
+        if (!is_null($enabled)) {
+            $where .= ' AND enabled = ?';
+            $params[] = $enabled;
+        }
+        // Issue a single `SELECT` query and construct the instances from the returned records.
+        $records = $DB->get_records_select(
+            table: registered_metric::TABLE,
+            select: $where,
+            params: $params,
+            fields: "{$this->get_qualified_name_sql()} AS qname, *",
         );
+        foreach ($records as $qname => $record) {
+            $this->metrics[$qname] = registered_metric::from_metric($metrics[$qname], ...(array) $record);
+        }
+        return $this;
+    }
+
+    /**
+     * Efficiently synchronizes the managed metric collection with the database.
+     *
+     * Ensures that a corresponding entry in the database exists for every unique metric in the collection (per qualified name).
+     * Optionally deletes every database entry that does not correspond to any metric in the collection.
+     *
+     * This function issues no more than two `SELECT`, exactly one `DELETE` (optional), and no more than two `INSERT` queries.
+     *
+     * @param bool $collect If `true` (default), calls the {@see dispatch_hook} method first. **WARNING**: Failing to collect
+     *                      all relevant metrics first will cause data loss, if `$delete` is set to `true`.
+     * @param bool $delete If `true`, deletes every database entry that does not correspond to any metric in the collection, and
+     *                     triggers individual deletion events for all deleted database records.
+     * @return $this Same instance.
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException
+     */
+    public function sync(bool $collect = true, bool $delete = false): self {
+        global $DB, $USER;
+        if ($collect) {
+            $this->dispatch_hook();
+        }
+        // Grab all existing records indexed by qualified name.
+        $sqlqname = self::get_qualified_name_sql();
+        try {
+            $transaction = $DB->start_delegated_transaction();
+            $existingrecords = $DB->get_records(registered_metric::TABLE, fields: "$sqlqname AS qname, *");
+            // For us to later know which records were inserted, we remember the existing IDs.
+            [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal(
+                items:        array_column($existingrecords, 'id'),
+                equal:        false,
+                onemptyitems: null,
+            );
+            // Iterate over the collection. Construct a new instance for every metric in the collection that has a DB record
+            // and add that instance to the `metrics`, making sure to remove the corresponding item from `$existingrecords`.
+            // Track all metrics _without_ a matching DB record in the `$unregistered` array.
+            $this->metrics = [];
+            $unregistered = [];
+            foreach ($this->collection as $metric) {
+                $qname = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());
+                if (array_key_exists($qname, $this->metrics)) {
+                    trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                    continue;
+                }
+                if (array_key_exists($qname, $existingrecords)) {
+                    $this->metrics[$qname] = registered_metric::from_metric($metric, ...(array) $existingrecords[$qname]);
+                    unset($existingrecords[$qname]);
+                } else {
+                    $unregistered[$qname] = $metric;
+                    // This is just a placeholder for the duplicate check above to work.
+                    $this->metrics[$qname] = registered_metric::from_metric($metric);
+                }
+            }
+            // At this point `$existingrecords` should only contain "orphans", i.e. entries for metrics not found in the collection,
+            // and `$unregistered` should contain those metrics from the collection that do not have a corresponding DB entry.
+            // Optionally delete the former and insert the latter.
+            if ($delete) {
+                [$oprphansql, $orphanparams] = $DB->get_in_or_equal(array_column($existingrecords, 'id'), onemptyitems: null);
+                $DB->delete_records_select(registered_metric::TABLE, "id $oprphansql", $orphanparams);
+                // TODO: Trigger individual deletion events here.
+            }
+            $toinsert = [];
+            $currenttime = time();
+            foreach ($unregistered as $qname => $metric) {
+                // Prepare the new instances here, then assign their new IDs after insertion.
+                $instance = registered_metric::from_metric(
+                    metric:       $metric,
+                    timecreated:  $currenttime,
+                    timemodified: $currenttime,
+                    usermodified: $USER->id,
+                );
+                $data = (array) $instance;
+                if (!is_null($data['config'])) {
+                    $data['config'] = json_encode($data['config'], JSON_THROW_ON_ERROR);
+                }
+                $toinsert[$qname] = $data;
+                $this->metrics[$qname] = $instance;
+            }
+            if (count($unregistered) > 2) {
+                // Insert in bulk, then grab the new IDs.
+                $DB->insert_records(registered_metric::TABLE, $toinsert);
+                $newids = $DB->get_records_select_menu(
+                    table:  registered_metric::TABLE,
+                    select: "id $notexistingsql",
+                    params: $notexistingparams,
+                    fields: "$sqlqname AS qname, id",
+                );
+                foreach ($newids as $qname => $id) {
+                    $this->metrics[$qname]->id = $id;
+                }
+            } else {
+                // Insert individually.
+                foreach ($toinsert as $qname => $data) {
+                    $this->metrics[$qname]->id = $DB->insert_record(registered_metric::TABLE, $data);
+                }
+            }
+            $transaction->allow_commit();
+        // @codeCoverageIgnoreStart
+        } catch (Exception $e) {
+            if (!empty($transaction) && !$transaction->is_disposed()) {
+                $transaction->rollback($e);
+            }
+            throw $e;
+        }
+        // @codeCoverageIgnoreEnd
+        return $this;
+    }
+
+    /**
+     * Returns the proper SQL snippet to construct the qualified name.
+     *
+     * @return string Qualified name SQL.
+     */
+    private static function get_qualified_name_sql(): string {
+        global $DB;
+        return $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }
 }

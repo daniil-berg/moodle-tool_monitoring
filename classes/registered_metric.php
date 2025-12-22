@@ -34,9 +34,12 @@ use core\lang_string;
 use dml_exception;
 use IteratorAggregate;
 use JsonException;
+use moodleform;
 use MoodleQuickForm;
 use stdClass;
+use tool_monitoring\form\config as config_form;
 use Traversable;
+use TypeError;
 
 /**
  * Represents a {@see metric} that is managed by the plugin and thus has a corresponding entry in the database.
@@ -44,12 +47,9 @@ use Traversable;
  * An instance of this class maps to a row in the {@see self::TABLE} database table.
  * Metric values can be retrieved by iterating over an instance of this class.
  *
- * For metrics with custom configurations, the class is generic in terms of the {@see config} type.
- *
  * @property-read string $qualifiedname Qualified name of the metric.
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
- * @template ConfT of object|null = null
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -77,8 +77,12 @@ final class registered_metric implements IteratorAggregate {
         'id',
     ];
 
-    /** @var metric<ConfT> */
     private metric $metric;
+
+    /**
+     * @var class-string<metric_config>|null
+     */
+    private string|null $configclass = null;
 
     /**
      * Constructor without additional logic.
@@ -86,7 +90,7 @@ final class registered_metric implements IteratorAggregate {
      * @param string $component Component defining the metric.
      * @param string $name Name of the metric.
      * @param bool $enabled If `false` the metric is currently not supposed to be calculated/exported.
-     * @param ConfT $config Metric-specific config data; `null` if no specific config is defined for the metric.
+     * @param string|null $config Metric-specific config as a JSON object; `null` if no specific config is defined for the metric.
      * @param int|null $timecreated Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet).
      * @param int|null $timemodified Timestamp when the DB table entry was last modified; `null` if not (yet) saved.
      * @param int|null $usermodified ID of the user that last modified the DB table entry; `null` if not (yet) saved.
@@ -96,7 +100,7 @@ final class registered_metric implements IteratorAggregate {
         public string      $component,
         public string      $name,
         public bool        $enabled      = false,
-        public object|null $config       = null,
+        public string|null $config       = null,
         public int|null    $timecreated  = null,
         public int|null    $timemodified = null,
         public int|null    $usermodified = null,
@@ -108,32 +112,38 @@ final class registered_metric implements IteratorAggregate {
      *
      * @param metric $metric Metric to wrap in the new instance; unless passed via `...$properties`, the `component`, `name`,
      *                       and `config` properties are derived from the {@see metric::get_component}, {@see metric::get_name},
-     *                       and {@see metric::get_default_config_data} methods respectively.
+     *                       and {@see metric::get_default_config} methods respectively.
      * @param mixed ...$properties Properties to set/overwrite on the new instance; non-property names are ignored.
      * @return self New instance from the provided metric and optional properties.
-     * @throws coding_exception A provided `config` string did not represent a valid JSON object.
      */
     public static function from_metric(metric $metric, mixed ...$properties): self {
+        // Figure out, if the metric class uses the `with_config` trait.
+        try {
+            $defaultconfig = call_user_func([$metric, 'get_default_config']);
+        } catch (TypeError) {
+            // Method does not exist; `with_config` trait is not used.
+            $defaultconfig = null;
+        }
         $arguments = [
             'component' => $metric::get_component(),
             'name'      => $metric::get_name(),
-            'config'    => $metric::get_default_config_data(),
         ];
         foreach (self::FIELDS as $name) {
             if (!array_key_exists($name, $properties)) {
                 continue;
             }
-            $value = $properties[$name];
-            if ($name == 'config' && is_string($value)) {
-                $value = json_decode($value);
-                if (!($value instanceof stdClass)) {
-                    // TODO: Use custom exception class.
-                    throw new coding_exception('The provided `config` string is not a valid JSON object.');
-                }
-            }
-            $arguments[$name] = $value;
+            $arguments[$name] = $properties[$name];
         }
         $instance = new self(...$arguments);
+        if ($defaultconfig instanceof metric_config && property_exists($metric, 'configjson')) {
+            // Assume the metric uses the `with_config` trait.
+            $instance->configclass = $defaultconfig::class;
+            if (!array_key_exists('config', $arguments)) {
+                // No config was passed to the constructor; fall back to the default.
+                $instance->config = json_encode($defaultconfig);
+            }
+            $metric->configjson = $instance->config;
+        }
         $instance->metric = $metric;
         return $instance;
     }
@@ -143,14 +153,11 @@ final class registered_metric implements IteratorAggregate {
      *
      * The data can then be passed as an argument to functions such as e.g. {@see \moodle_database::update_record}.
      *
-     * In the output array a non-`null` {@see config} value is serialized with {@see json_encode}.
-     *
      * @param string[]|null $fields The output array will only have entries that are properties of the object **and** that are
      *                              specified in this argument. An exception is the {@see id} property; if its value is not `null`
      *                              on the instance, it will always be included in the output. If this argument is `null`, all
      *                              properties will be included in the output array.
      * @return array<string, mixed> DB-friendly data taken from the instance.
-     * @throws JsonException The {@see config} object could not be serialized.
      */
     private function to_db(array|null $fields = null): array {
         $data = [];
@@ -163,10 +170,6 @@ final class registered_metric implements IteratorAggregate {
         }
         foreach ($returnfields as $field) {
             $data[$field] = $this->$field;
-            if ($field == 'config' && !is_null($this->config)) {
-                // TODO: Catch and wrap `JsonException` in custom exception.
-                $data[$field] = json_encode($this->$field, JSON_THROW_ON_ERROR);
-            }
         }
         return $data;
     }
@@ -178,7 +181,6 @@ final class registered_metric implements IteratorAggregate {
      *
      * @param string[]|null $fields If specified, only these fields will be updated.
      * @throws dml_exception
-     * @throws JsonException The {@see config} object could not be serialized.
      */
     private function update(array|null $fields = null): void {
         global $DB, $USER;
@@ -216,69 +218,71 @@ final class registered_metric implements IteratorAggregate {
     }
 
     /**
-     * Disables the metric making it unavailable for calculation and export.
+     * Returns config form data from the instance to set via {@see config_form::set_data}.
      *
-     * No-op if the metric is already disabled.
-     *
-     * @throws coding_exception Should never happen.
-     * @throws dml_exception
-     * @throws JsonException Should never happen.
+     * @return array<string, mixed> Associative array of form data.
      */
-    public function disable(): void {
-        global $DB;
-        if (!$this->enabled) {
-            return;
+    public function to_form_data(): array {
+        if (!is_null($this->configclass) && !is_null($this->config)) {
+            $formdata = $this->configclass::from_json($this->config)->to_form_data();
+        } else {
+            $formdata = [];
         }
-        $transaction = $DB->start_delegated_transaction();
-        $this->enabled = false;
-        $this->update(['enabled', 'timemodified', 'usermodified']);
-        event\metric_disabled::for_metric($this)->trigger();
-        $transaction->allow_commit();
+        $formdata['enabled'] = $this->enabled;
+        return $formdata;
     }
 
     /**
-     * Enables the metric making it available for calculation and export.
+     * Updates the instance with the (non-empty) output of {@see moodleform::get_data} and saves it to the database.
      *
-     * No-op if the metric is already enabled.
+     * Only performs an actual update, if {@see enabled} or {@see config} is different from the provided form data; no-op otherwise.
+     * Individual events are triggered, depending on what is updated.
      *
-     * @throws coding_exception Should never happen.
-     * @throws dml_exception
-     * @throws JsonException Should never happen.
-     */
-    public function enable(): void {
-        global $DB;
-        if ($this->enabled) {
-            return;
-        }
-        $transaction = $DB->start_delegated_transaction();
-        $this->enabled = true;
-        $this->update(['enabled', 'timemodified', 'usermodified']);
-        event\metric_enabled::for_metric($this)->trigger();
-        $transaction->allow_commit();
-    }
-
-    /**
-     * Saves the metric's current {@see config} to the database.
-     *
+     * @param stdClass $formdata Config form data to use for updating.
      * @throws coding_exception Should never happen.
      * @throws dml_exception
      * @throws JsonException The {@see config} object could not be serialized.
      */
-    public function save_config(): void {
+    public function update_with_form_data(stdClass $formdata): void {
         global $DB;
+        $events = [];
+        if (isset($formdata->enabled)) {
+            if ($formdata->enabled && !$this->enabled) {
+                $this->enabled = true;
+                $events[] = event\metric_enabled::for_metric($this);
+            } else if (!$formdata->enabled && $this->enabled) {
+                $this->enabled = false;
+                $events[] = event\metric_disabled::for_metric($this);
+            }
+        }
+        if (!is_null($this->configclass)) {
+            $config = json_encode($this->configclass::with_form_data($formdata), JSON_THROW_ON_ERROR);
+            if ($config !== $this->config) {
+                $this->config = $config;
+                $events[] = event\metric_config_updated::for_metric($this);
+            }
+        }
+        if (empty($events)) {
+            return;
+        }
         $transaction = $DB->start_delegated_transaction();
-        $this->update(['config', 'timemodified', 'usermodified']);
-        event\metric_config_updated::for_metric($this)->trigger();
+        $this->update(['enabled', 'config', 'timemodified', 'usermodified']);
+        foreach ($events as $event) {
+            $event->trigger();
+        }
         $transaction->allow_commit();
     }
 
     /**
-     * Calls the {@see metric::add_config_form_elements} on the provided form object.
+     * Calls the {@see config::extend_config_form} on the provided form object.
      *
      * @param MoodleQuickForm $mform Config form to extend.
      */
     public function extend_config_form(MoodleQuickForm $mform): void {
-        $this->metric::add_config_form_elements($mform);
+        if (is_null($this->configclass)) {
+            return;
+        }
+        $this->configclass::extend_config_form($mform);
     }
 
     /**
@@ -289,7 +293,7 @@ final class registered_metric implements IteratorAggregate {
      * @return Traversable<metric_value> Values of the metric.
      */
     public function getIterator(): Traversable {
-        $values = $this->metric->calculate($this->config);
+        $values = $this->metric->calculate();
         if ($values instanceof metric_value) {
             $values = [$values];
         }

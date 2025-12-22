@@ -222,11 +222,7 @@ final class metrics_manager {
                     timemodified: $currenttime,
                     usermodified: $USER->id,
                 );
-                $data = (array) $instance;
-                if (!is_null($data['config'])) {
-                    $data['config'] = json_encode($data['config'], JSON_THROW_ON_ERROR);
-                }
-                $toinsert[$qname] = $data;
+                $toinsert[$qname] = (array) $instance;
                 $this->metrics[$qname] = $instance;
             }
             if (count($unregistered) > 2) {

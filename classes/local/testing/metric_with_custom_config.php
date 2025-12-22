@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_user_count metric.
+ * Definition of the {@see metric_with_custom_config} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,28 +27,30 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics;
+namespace tool_monitoring\local\testing;
 
-use core\lang_string;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric;
-use tool_monitoring\metric_value;
+use tool_monitoring\with_config;
 
 /**
- * Implements the num_user_count metric.
+ * Example of a valid metric that has its own config.
+ *
+ * **TESTING ONLY: This exists purely for the purposes of running unit tests.**
+ *
+ * @codeCoverageIgnore
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_user_count extends metric {
+class metric_with_custom_config extends metric_settable_values {
+    use with_config;
 
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
-    }
-
-    public static function get_description(): lang_string {
-        return new lang_string('num_user_count_description', 'tool_monitoring');
-    }
-
-    public function calculate(): metric_value {
-        global $DB;
-        return new metric_value($DB->count_records('user'));
+    public static function get_default_config(): custom_metric_config {
+        return new custom_metric_config();
     }
 }

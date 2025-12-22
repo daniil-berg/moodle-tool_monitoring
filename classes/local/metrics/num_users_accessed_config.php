@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Implements the num_user_count metric.
+ * Definition of the {@see num_users_accessed_config} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,26 +29,12 @@
 
 namespace tool_monitoring\local\metrics;
 
-use core\lang_string;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric;
-use tool_monitoring\metric_value;
+use core\attribute\label;
+use tool_monitoring\simple_metric_config;
 
-/**
- * Implements the num_user_count metric.
- */
-class num_user_count extends metric {
-
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
-    }
-
-    public static function get_description(): lang_string {
-        return new lang_string('num_user_count_description', 'tool_monitoring');
-    }
-
-    public function calculate(): metric_value {
-        global $DB;
-        return new metric_value($DB->count_records('user'));
-    }
+class num_users_accessed_config extends simple_metric_config {
+    public function __construct(
+        #[label('Users online in the last seconds')]
+        public int $timewindow = 300,
+    ) {}
 }

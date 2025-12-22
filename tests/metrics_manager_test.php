@@ -157,9 +157,6 @@ class metrics_manager_test extends advanced_testcase {
             $record = $records[$metric->id];
             foreach ($properties as $name => $expectedvalue) {
                 self::assertEquals($expectedvalue, $record->$name);
-                if ($name === 'config' && !is_null($expectedvalue)) {
-                    $expectedvalue = json_decode($expectedvalue);
-                }
                 self::assertEquals($expectedvalue, $metric->$name);
             }
             $checkedids[] = $metric->id;
@@ -383,9 +380,6 @@ class metrics_manager_test extends advanced_testcase {
             $record = $records[$metric->id];
             foreach ($properties as $name => $expectedvalue) {
                 self::assertEquals($expectedvalue, $record->$name);
-                if ($name === 'config' && !is_null($expectedvalue)) {
-                    $expectedvalue = json_decode($expectedvalue);
-                }
                 self::assertEquals($expectedvalue, $metric->$name);
             }
             $checkedids[] = $metric->id;

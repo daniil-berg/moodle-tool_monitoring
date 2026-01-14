@@ -177,7 +177,7 @@ final class metrics_manager {
         $sqlqname = self::get_qualified_name_sql();
         try {
             $transaction = $DB->start_delegated_transaction();
-            $existingrecords = $DB->get_records(registered_metric::TABLE, fields: "$sqlqname AS qname, *");
+            $existingrecords = $DB->get_records_sql("SELECT $sqlqname AS qname, m.* FROM {" . registered_metric::TABLE . "} AS m");
             // For us to later know which records were inserted, we remember the existing IDs.
             [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal(
                 items:        array_column($existingrecords, 'id'),

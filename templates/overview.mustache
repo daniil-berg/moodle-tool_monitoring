@@ -42,6 +42,7 @@
       <th scope="col">{{#str}} name, tool_monitoring {{/str}}</th>
       <th scope="col">{{#str}} type, tool_monitoring {{/str}}</th>
       <th scope="col">{{#str}} description, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} tags, tool_monitoring {{/str}}</th>
       <th scope="col">{{#str}} actions, tool_monitoring {{/str}}</th>
     </tr>
   </thead>
@@ -52,6 +53,7 @@
         <td>{{name}}</td>
         <td>{{type}}</td>
         <td>{{description}}</td>
+        <td>{{{tagshtml}}}</td>
         <td><a href="{{{configurl}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
       </tr>
     {{/metrics}}

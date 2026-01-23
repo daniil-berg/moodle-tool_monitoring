@@ -295,6 +295,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric'   => registered_metric::from_metric($metric, enabled: true),
                 'formdata' => [
                     'enabled' => true,
+                    'tags' => [],
                 ],
                 'expected' => [
                     'config'  => null,
@@ -306,6 +307,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric'   => registered_metric::from_metric($metric, enabled: true),
                 'formdata' => [
                     'enabled' => false,
+                    'tags' => [],
                     'some'    => 'data',
                     'what'    => 'ever',
                 ],
@@ -321,6 +323,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
+                    'tags' => [],
                     'foo'     => 'baz',
                     'spam'    => 0,
                 ],
@@ -333,6 +336,8 @@ final class registered_metric_test extends advanced_testcase {
             'Enabled configurable metric, having config updated' => [
                 'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{}'),
                 'formdata' => [
+                    'enabled' => true,
+                    'tags' => [],
                     'foo'  => 'baz',
                     'spam' => 0,
                 ],
@@ -347,6 +352,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => false,
+                    'tags' => [],
                     'foo'     => 'baz',
                     'spam'    => 0,
                 ],
@@ -362,6 +368,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric'   => registered_metric::from_metric($metricwithconfig, enabled: false, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
+                    'tags' => [],
                     'foo'     => 'baz',
                     'spam'    => 0,
                 ],
@@ -377,6 +384,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric'   => registered_metric::from_metric($metricwithconfig, enabled: false, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
+                    'tags' => [],
                     'foo'     => 'bar',
                     'spam'    => 1,
                 ],

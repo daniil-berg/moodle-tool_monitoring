@@ -52,4 +52,7 @@ $string['num_user_count_description'] = 'Number of total registered users';
 $string['num_users_accessed_description'] = 'Number of users that have recently accessed the site';
 $string['pluginname'] = 'Monitoring';
 $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
+$string['tagarea_metrics'] = 'Metrics';
+$string['tagcollection_monitoring'] = 'Monitoring';
+$string['tags'] = 'Tags';
 $string['type'] = 'Type';

@@ -35,6 +35,7 @@ use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
 use tool_monitoring\registered_metric;
+use core_tag_tag;
 
 /**
  * Provides information about all available metrics and links to their configuration pages.
@@ -63,15 +64,22 @@ final readonly class overview implements renderable, templatable {
      * @throws moodle_exception
      */
     public function export_for_template(renderer_base $output): array {
+        global $OUTPUT;
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
+            $tagshtml = $OUTPUT->tag_list(
+                core_tag_tag::get_item_tags(
+                    'tool_monitoring',
+                    'metrics',
+                    $metric->id));
             $lines[] = [
                 'component'   => $metric->component,
                 'name'        => $metric->name,
                 'type'        => $metric->type->value,
                 'description' => $metric->description->out(),
                 'configurl'   => $configurl->out(false),
+                'tagshtml' => $tagshtml,
             ];
         }
         return ['metrics' => $lines];

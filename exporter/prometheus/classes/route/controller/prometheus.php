@@ -61,7 +61,7 @@ class prometheus {
      *
      * Resolves to `/monitoringexporter_prometheus/metrics`. Optional query parameters:
      * - `token` for authorization; must match the `prometheus_token` config value, if one was set.
-     * - `tag` for filtering specific metrics. TODO Currently does nothing. Implement filtering in metrics manager.
+     * - `tags` for filtering specific metrics.
      *
      * @see https://prometheus.io/docs/instrumenting/exposition_formats
      *
@@ -85,9 +85,9 @@ class prometheus {
                 default: '',
             ),
             new query_parameter(
-                name: 'tag',
-                description: 'If provided, only metrics that carry this tag are returned.',
-                type: param::ALPHANUM,
+                name: 'tags',
+                description: 'If provided, only metrics that carry this tags (comma separated) are returned.',
+                type: param::RAW,
                 default: null,
             ),
             // TODO: Consider providing an optional `lang` parameter for the `HELP` text.
@@ -104,9 +104,13 @@ class prometheus {
         if ($expectedtoken && $params['token'] !== $expectedtoken) {
             return $response->withStatus(403);
         }
-        // TODO: Allow passing multiple tags.
         $manager = new metrics_manager();
-        $metrics = $manager->fetch(tags: [$params['tag']])->metrics;
+        if ($params['tags']) {
+            $tags = explode(',', $params['tags']);
+        } else {
+            $tags = [];
+        }
+        $metrics = $manager->fetch(tags: $tags)->metrics;
         $body = Utils::streamFor(prometheus_exporter::export($metrics));
         return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }

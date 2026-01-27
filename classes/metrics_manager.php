@@ -32,6 +32,7 @@ namespace tool_monitoring;
 use core\di;
 use core\exception\coding_exception;
 use core\hook\manager as hook_manager;
+use core_tag_tag;
 use dml_exception;
 use Exception;
 use tool_monitoring\hook\metric_collection;
@@ -120,7 +121,7 @@ final class metrics_manager {
         // Construct the `IN` expression and parameters from the component-name-combinations present in the collection.
         $inplaceholders = [];
         $params = [];
-        foreach ($this->collection as $metric) {
+        foreach ($this->collection as $i => $metric) {
             $component = $metric::get_component();
             $name = $metric::get_name();
             $qname = registered_metric::get_qualified_name($component, $name);
@@ -129,22 +130,52 @@ final class metrics_manager {
                 continue;
             }
             $metrics[$qname] = $metric;
-            $inplaceholders[] = '(?,?)';
-            $params[] = $component;
-            $params[] = $name;
+            $inplaceholders[] = "(:component$i,:name$i)";
+            $params["component$i"] = $component;
+            $params["name$i"] = $name;
         }
-        // TODO: Filter by tags.
-        $where = '(component, name) IN (' . implode(',', $inplaceholders) . ')';
+        $where = '(m.component,m.name) IN (' . implode(',', $inplaceholders) . ')';
+        // Filter by tags.
+        $tags = core_tag_tag::normalize($tags);
+        $tags = array_values(array_unique($tags));
+        $tagcount = count($tags);
+        $tablename = registered_metric::TABLE;
+        $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ["m.component", "m.name"]);
+        if ($tagcount > 0) {
+            list($insql, $inparams) = $DB->get_in_or_equal($tags, SQL_PARAMS_NAMED, 'tag');
+            $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+            $sql = "SELECT {$sqlqname} AS qname, m.*
+                      FROM {{$tablename}} m
+                      JOIN (       SELECT ti.itemid
+                                     FROM {tag_instance} ti
+                                     JOIN {tag} t ON t.id = ti.tagid
+                                    WHERE ti.component = :tagcomponent
+                                      AND ti.itemtype  = :tagitemtype
+                                      AND t.tagcollid  = :tagcollid
+                                      AND t.name $insql
+                                 GROUP BY ti.itemid
+                             HAVING COUNT (DISTINCT t.id) = :tagcount
+                           ) x ON x.itemid = m.id
+                     WHERE $where";
+                $params += [
+                        'tagcomponent' => 'tool_monitoring',
+                        'tagitemtype' => 'metrics',
+                        'tagcollid' => $tagcollid,
+                        'tagcount' => $tagcount,
+                    ];
+                $params += $inparams;
+        } else {
+            $sql = "SELECT {$sqlqname} AS qname, *
+                      FROM {{$tablename}} m
+                     WHERE $where";
+        }
+        // Filter by enabled.
         if (!is_null($enabled)) {
-            $where .= ' AND enabled = ?';
-            $params[] = $enabled;
+            $sql .= ' AND enabled = :enabled';
+            $params['enabled'] = $enabled;
         }
         // Issue a single `SELECT` query and construct the instances from the returned records.
-        $sqlqname = self::get_qualified_name_sql();
-        $records = $DB->get_records_sql(
-            sql: "SELECT $sqlqname AS qname, m.* FROM {" . registered_metric::TABLE . "} AS m WHERE $where",
-            params: $params,
-        );
+        $records = $DB->get_records_sql($sql, $params);
         foreach ($records as $qname => $record) {
             $this->metrics[$qname] = registered_metric::from_metric($metrics[$qname], ...(array) $record);
         }

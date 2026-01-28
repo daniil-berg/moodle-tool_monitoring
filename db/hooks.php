@@ -35,7 +35,7 @@ use tool_monitoring\local\metrics;
 defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [
-    ['hook' => metric_collection::class, 'callback' => [metrics\num_course_count::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\num_courses::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\num_overdue_tasks::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\num_quiz_attempts_in_progress::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\num_tasks_spawned_adhoc::class, 'collect']],

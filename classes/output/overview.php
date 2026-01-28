@@ -70,23 +70,27 @@ final readonly class overview implements renderable, templatable {
     #[\Override]
     public function export_for_template(renderer_base $output): array {
         global $OUTPUT;
+        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
-            $tagshtml = $OUTPUT->tag_list(
-                core_tag_tag::get_item_tags(
-                    'tool_monitoring',
-                    'metrics',
-                    $metric->id));
-            $lines[] = [
+            $line = [
                 'component'   => $metric->component,
                 'name'        => $metric->name,
                 'type'        => $metric->type->value,
                 'description' => $metric->description->out(),
                 'configurl'   => $configurl->out(false),
-                'tagshtml' => $tagshtml,
             ];
+            if ($tagsenabled) {
+                $tagshtml = $OUTPUT->tag_list(
+                    core_tag_tag::get_item_tags(
+                        'tool_monitoring',
+                        'metrics',
+                        $metric->id));
+                $line['tagshtml'] = $tagshtml;
+            }
+            $lines[] = $line;
         }
-        return ['metrics' => $lines];
+        return ['metrics' => $lines, 'tagsenabled' => $tagsenabled];
     }
 }

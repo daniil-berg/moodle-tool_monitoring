@@ -141,7 +141,8 @@ final class metrics_manager {
         $tagcount = count($tags);
         $tablename = registered_metric::TABLE;
         $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ["m.component", "m.name"]);
-        if ($tagcount > 0) {
+        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
+        if ($tagcount > 0 && $tagsenabled) {
             list($insql, $inparams) = $DB->get_in_or_equal($tags, SQL_PARAMS_NAMED, 'tag');
             $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
             $sql = "SELECT {$sqlqname} AS qname, m.*

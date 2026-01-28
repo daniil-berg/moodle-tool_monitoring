@@ -17,7 +17,7 @@
 /**
  * Definition of the {@see prometheus} exporter class.
  *
- * @package    tool_monitoring
+ * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -37,7 +37,7 @@ use tool_monitoring\registered_metric;
  *
  * @see https://prometheus.io/docs/instrumenting/exposition_formats
  *
- * @package    tool_monitoring
+ * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>

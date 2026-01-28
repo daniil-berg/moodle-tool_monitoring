@@ -29,6 +29,7 @@
 
 namespace tool_monitoring\output;
 
+use core\exception\coding_exception;
 use core\exception\moodle_exception;
 use core\output\renderable;
 use core\output\renderer_base;
@@ -59,6 +60,21 @@ final readonly class overview implements renderable, templatable {
     public function __construct(
         private array $metrics,
     ) {}
+
+    /**
+     * Throws an exception if the provided tag collection ID does not match the tag collection configured in the
+     * db/tag.php of tool_monitoring.
+     *
+     * @param int $tagcollid
+     * @return void
+     */
+    public static function assert_tag_collection_id(int $tagcollid) {
+        global $DB;
+        $correctid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+        if ($tagcollid != $correctid) {
+            throw new coding_exception('Wrong tag collection ID');
+        }
+    }
 
     /**
      * @throws moodle_exception

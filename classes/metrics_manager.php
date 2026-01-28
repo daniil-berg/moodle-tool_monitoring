@@ -139,11 +139,10 @@ final class metrics_manager {
             $params[] = $enabled;
         }
         // Issue a single `SELECT` query and construct the instances from the returned records.
-        $records = $DB->get_records_select(
-            table: registered_metric::TABLE,
-            select: $where,
+        $sqlqname = self::get_qualified_name_sql();
+        $records = $DB->get_records_sql(
+            sql: "SELECT $sqlqname AS qname, m.* FROM {" . registered_metric::TABLE . "} AS m WHERE $where",
             params: $params,
-            fields: "{$this->get_qualified_name_sql()} AS qname, *",
         );
         foreach ($records as $qname => $record) {
             $this->metrics[$qname] = registered_metric::from_metric($metrics[$qname], ...(array) $record);

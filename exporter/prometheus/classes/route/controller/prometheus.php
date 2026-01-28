@@ -87,7 +87,7 @@ class prometheus {
             new query_parameter(
                 name: 'tags',
                 description: 'If provided, only metrics that carry this tags (comma separated) are returned.',
-                type: param::RAW,
+                type: param::TAGLIST,
                 default: null,
             ),
             // TODO: Consider providing an optional `lang` parameter for the `HELP` text.

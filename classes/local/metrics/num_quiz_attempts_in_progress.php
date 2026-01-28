@@ -56,7 +56,7 @@ class num_quiz_attempts_in_progress extends metric {
         $max_seconds_ago = 3600;
         $max_seconds_to_end = 4 * 3600;
         $where .= ' AND timemodified >= :time_modified';
-        $where .=' " AND timecheckstate <= :time_check_state"';
+        $where .= ' AND timecheckstate <= :time_check_state';
         $params['time_modified'] = $now - $max_seconds_ago;
         $params['time_check_state'] = $now + $max_seconds_to_end;
         return new metric_value($DB->count_records_select('quiz_attempts', $where, $params));

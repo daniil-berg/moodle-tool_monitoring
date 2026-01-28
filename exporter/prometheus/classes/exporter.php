@@ -47,7 +47,6 @@ use tool_monitoring\registered_metric;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class exporter {
-
     /**
      * Exports the provided metrics in the Prometheus text format.
      *

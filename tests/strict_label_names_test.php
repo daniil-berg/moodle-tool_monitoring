@@ -37,16 +37,28 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\testing\metric_strict_label_names;
 
+/**
+ * Unit tests for the {@see strict_label_names} trait.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 #[CoversClass(strict_label_names::class)]
-class strict_label_names_test extends advanced_testcase {
-
+final class strict_label_names_test extends advanced_testcase {
     /**
+     * Tests the {@see strict_label_names::validate_value} method.
+     *
      * @param string[] $labelnames Set of expected label names for the test metric.
      * @param metric_value[] $values Metric values to be produced by the test metric.
      * @param string|null $exception Name of exception class to expect; `null` (default) means no exception is expected.
-     * @throws coding_exception
      */
-    #[DataProvider('test_validate_value_provider')]
+    #[DataProvider('provider_test_validate_value')]
     public function test_validate_value(array $labelnames, array $values, string|null $exception = null): void {
         $testmetric = new metric_strict_label_names();
         $testmetric::$labelnames = $labelnames;
@@ -63,7 +75,7 @@ class strict_label_names_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_validate_value_provider(): array {
+    public static function provider_test_validate_value(): array {
         return [
             'Valid label names in different order' => [
                 'labelnames' => ['a', 'b', 'c'],

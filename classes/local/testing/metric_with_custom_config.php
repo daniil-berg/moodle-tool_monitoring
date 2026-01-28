@@ -34,7 +34,7 @@ use tool_monitoring\with_config;
 /**
  * Example of a valid metric that has its own config.
  *
- * **TESTING ONLY: This exists purely for the purposes of running unit tests.**
+ * **TESTING ONLY: This exists purely to run unit tests.**
  *
  * @codeCoverageIgnore
  *
@@ -50,6 +50,7 @@ use tool_monitoring\with_config;
 class metric_with_custom_config extends metric_settable_values {
     use with_config;
 
+    #[\Override]
     public static function get_default_config(): custom_metric_config {
         return new custom_metric_config();
     }

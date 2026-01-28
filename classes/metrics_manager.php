@@ -34,7 +34,6 @@ use core\exception\coding_exception;
 use core\hook\manager as hook_manager;
 use dml_exception;
 use Exception;
-use JsonException;
 use tool_monitoring\hook\metric_collection;
 
 /**
@@ -55,7 +54,6 @@ use tool_monitoring\hook\metric_collection;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class metrics_manager {
-
     /** @var array<string, registered_metric> Collected and registered metrics indexed by their qualified name. */
     private array $metrics = [];
 
@@ -63,8 +61,11 @@ final class metrics_manager {
      * Constructor without additional logic.
      *
      * @param metric_collection $collection Metric collection to manage; defaults to a new empty collection.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
+        /** @var metric_collection Metric collection to manage; defaults to a new empty collection. */
         public readonly metric_collection $collection = new metric_collection()
     ) {}
 
@@ -165,7 +166,6 @@ final class metrics_manager {
      * @return $this Same instance.
      * @throws coding_exception
      * @throws dml_exception
-     * @throws JsonException
      */
     public function sync(bool $collect = true, bool $delete = false): self {
         global $DB, $USER;
@@ -205,7 +205,7 @@ final class metrics_manager {
             }
             // At this point `$existingrecords` should only contain "orphans", i.e. entries for metrics not found in the collection,
             // and `$unregistered` should contain those metrics from the collection that do not have a corresponding DB entry.
-            // Optionally delete the former and insert the latter.
+            // Optionally, delete the former and insert the latter.
             if ($delete) {
                 [$oprphansql, $orphanparams] = $DB->get_in_or_equal(array_column($existingrecords, 'id'), onemptyitems: null);
                 $DB->delete_records_select(registered_metric::TABLE, "id $oprphansql", $orphanparams);
@@ -243,7 +243,7 @@ final class metrics_manager {
                 }
             }
             $transaction->allow_commit();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             if (!empty($transaction) && !$transaction->is_disposed()) {
                 $transaction->rollback($e);

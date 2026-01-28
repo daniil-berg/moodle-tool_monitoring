@@ -32,7 +32,9 @@ namespace tool_monitoring\local\testing;
 use tool_monitoring\strict_label_names;
 
 /**
- * Metric for testing purposes.
+ * Example of a metric enforcing strict label names.
+ *
+ * **TESTING ONLY: This exists purely to run unit tests.**
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -49,6 +51,7 @@ class metric_strict_label_names extends metric_settable_values {
     /** @var string[] Set of expected label names for the test metric. */
     public static array $labelnames = [];
 
+    #[\Override]
     protected static function get_label_names(): array {
         return self::$labelnames;
     }

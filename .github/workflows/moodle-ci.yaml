@@ -90,9 +90,10 @@ jobs:
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phpcs --max-warnings 0
 
-      - name: Moodle PHPDoc Checker
-        if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpdoc --max-warnings 0
+      # This has too many false positives and will be replaced completely by the Moodle Code Sniffer soon (hopefully).
+      #- name: Moodle PHPDoc Checker
+      #  if: ${{ !cancelled() }}
+      #  run: moodle-plugin-ci phpdoc --max-warnings 0
 
       - name: Validating
         if: ${{ !cancelled() }}

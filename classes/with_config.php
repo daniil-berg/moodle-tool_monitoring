@@ -55,8 +55,7 @@ trait with_config {
      *
      * @phpcs:disable moodle.Commenting.ValidTags.Invalid
      * @template ConfT of metric_config
-     * @param string $class Config class implementing {@see metric_config} to construct the object from.
-     * TODO: Replace `string` here with `class-string<ConfT>` when `local_moodlecheck` finally goes the way of the dodo.
+     * @param class-string<ConfT> $class Config class implementing {@see metric_config} to construct the object from.
      * @return ConfT Config object of the provided class.
      * @throws coding_exception The {@see configjson} is not set or `$class` does not implement the {@see metric_config}.
      */

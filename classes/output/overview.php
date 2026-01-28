@@ -52,8 +52,7 @@ final readonly class overview implements renderable, templatable {
     /**
      * Constructor without additional logic.
      *
-     * @param registered_metric[] $metrics Metrics for which to render the overview, indexed by qualified name.
-     * TODO: Replace `registered_metric[]` here with `array<string, registered_metric>` when `local_moodlecheck` finally goes.
+     * @param array<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
      *
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */

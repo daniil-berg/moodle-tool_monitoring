@@ -52,9 +52,10 @@ use Traversable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class metric {
-
     /**
      * Constructor without any parameters.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     final public function __construct() {}
 

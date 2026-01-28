@@ -42,8 +42,19 @@ namespace tool_monitoring;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final readonly class metric_value {
+    /**
+     * Constructor without additional logic.
+     *
+     * @param float|int $value Actual numeric value of the metric some moment in time.
+     * @param string[] $label Associative array of label names and label values.
+     * TODO: Replace `string[]` here with `array<string, string>` when `local_moodlecheck` finally goes the way of the dodo.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
+     */
     public function __construct(
+        /** @var float|int Actual numeric value of the metric some moment in time. */
         public float|int $value,
+        /** @var array<string, string> Associative array of label names and label values. */
         public array $label = [],
     ) {}
 }

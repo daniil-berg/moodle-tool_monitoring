@@ -35,7 +35,9 @@ use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
 /**
- * Metric for testing purposes.
+ * Example metric that allows setting arbitrary values to be returned by `calculate`.
+ *
+ * **TESTING ONLY: This exists purely to run unit tests.**
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -50,15 +52,18 @@ class metric_settable_values extends metric {
     /** @var iterable<metric_value>|metric_value Metric values to be produced by the metric. */
     public iterable|metric_value $values = [];
 
+    #[\Override]
     public function calculate(): iterable|metric_value {
         return $this->values;
     }
 
+    #[\Override]
     public static function get_description(): lang_string {
         // Just an arbitrary existing language string.
         return new lang_string('pluginname', 'tool_monitoring');
     }
 
+    #[\Override]
     public static function get_type(): metric_type {
         return metric_type::COUNTER;
     }

@@ -49,19 +49,25 @@ use tool_monitoring\registered_metric;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final readonly class overview implements renderable, templatable {
-
     /**
      * Constructor without additional logic.
      *
-     * @param array<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     * @param registered_metric[] $metrics Metrics for which to render the overview, indexed by qualified name.
+     * TODO: Replace `registered_metric[]` here with `array<string, registered_metric>` when `local_moodlecheck` finally goes.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
+        /** @var array<string, registered_metric> Metrics for which to render the overview, indexed by qualified name. */
         private array $metrics,
     ) {}
 
     /**
+     * {@inheritDoc}
+     *
      * @throws moodle_exception
      */
+    #[\Override]
     public function export_for_template(renderer_base $output): array {
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {

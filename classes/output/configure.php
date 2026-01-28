@@ -51,7 +51,6 @@ use tool_monitoring\registered_metric;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final readonly class configure implements renderable, templatable {
-
     /** @var config_form Metric config form to be rendered. */
     private config_form $form;
 
@@ -81,6 +80,7 @@ final readonly class configure implements renderable, templatable {
         }
     }
 
+    #[\Override]
     public function export_for_template(renderer_base $output): array {
         ob_start();
         $this->form->display();

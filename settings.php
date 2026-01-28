@@ -51,8 +51,8 @@ $overviewlink = new admin_externalpage(
 );
 $ADMIN->add('monitoringcategory', $overviewlink);
 
+/** @var monitoringexporter $subplugin */
 foreach (core_plugin_manager::instance()->get_plugins_of_type('monitoringexporter') as $subplugin) {
-    /** @var monitoringexporter $subplugin */
     $settings = new admin_settingpage(
         name: $subplugin->type . '_' . $subplugin->name,
         visiblename: $subplugin->displayname,

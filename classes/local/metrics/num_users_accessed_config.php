@@ -32,9 +32,29 @@ namespace tool_monitoring\local\metrics;
 use core\attribute\label;
 use tool_monitoring\simple_metric_config;
 
+/**
+ * Defines the config for the {@see num_users_accessed} metric.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class num_users_accessed_config extends simple_metric_config {
+    /**
+     * Constructor without additional logic.
+     *
+     * @param int $timewindow Number of seconds since the last user access for it to be counted.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
+     */
     public function __construct(
-        #[label('Users online in the last seconds')]
+        /** @var int Number of seconds since the last user access for it to be counted. */
+        #[label('Number of seconds since the last user access for it to be counted.')]
         public int $timewindow = 300,
     ) {}
 }

@@ -56,7 +56,6 @@ use Traversable;
 #[label('Provides the ability to register custom metrics.')]
 #[tags('metric', 'monitoring', 'tool_monitoring')]
 final class metric_collection implements IteratorAggregate {
-
     /** @var metric[] All added metrics. */
     private array $metrics = [];
 
@@ -74,6 +73,7 @@ final class metric_collection implements IteratorAggregate {
      *
      * @return Traversable<metric> Previously added metrics.
      */
+    #[\Override]
     public function getIterator(): Traversable {
         foreach ($this->metrics as $metric) {
             yield $metric;

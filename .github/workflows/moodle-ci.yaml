@@ -2,6 +2,8 @@ name: Moodle Plugin CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   schedule:
     # At 00:00 on the 1st of every month

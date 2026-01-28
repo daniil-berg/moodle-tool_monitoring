@@ -35,9 +35,24 @@ use advanced_testcase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use tool_monitoring\local\testing\metric_settable_values;
 
+/**
+ * Unit tests for the {@see metric_collection} hook.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 #[CoversClass(metric_collection::class)]
-class metric_collection_test extends advanced_testcase {
-    public function test(): void {
+final class metric_collection_test extends advanced_testcase {
+    /**
+     * Tests the {@see metric_collection::add} method and the {@see IteratorAggregate} implementation.
+     */
+    public function test_add_and_iterator(): void {
         $metric1 = new metric_settable_values();
         $metric2 = new metric_settable_values();
         $metric3 = new metric_settable_values();

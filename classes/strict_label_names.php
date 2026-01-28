@@ -49,7 +49,7 @@ trait strict_label_names {
      *
      * @return string[] Array of label names; order is not relevant.
      */
-    abstract static function get_label_names(): array;
+    abstract protected static function get_label_names(): array;
 
     /**
      * Ensures the metric value has the exact label names defined by {@see get_label_names}.

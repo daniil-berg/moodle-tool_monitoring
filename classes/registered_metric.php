@@ -61,7 +61,6 @@ use TypeError;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class registered_metric implements IteratorAggregate {
-
     /** @var string Name of the mapped DB table. */
     public const TABLE = 'tool_monitoring_metrics';
 
@@ -77,6 +76,9 @@ final class registered_metric implements IteratorAggregate {
         'id',
     ];
 
+    /**
+     * @var metric Underlying metric that the instance wraps.
+     */
     private metric $metric;
 
     /**
@@ -95,16 +97,26 @@ final class registered_metric implements IteratorAggregate {
      * @param int|null $timemodified Timestamp when the DB table entry was last modified; `null` if not (yet) saved.
      * @param int|null $usermodified ID of the user that last modified the DB table entry; `null` if not (yet) saved.
      * @param int|null $id Primary key of the corresponding DB table row; `null` if not (yet) saved.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     private function __construct(
-        public string      $component,
-        public string      $name,
-        public bool        $enabled      = false,
-        public string|null $config       = null,
-        public int|null    $timecreated  = null,
-        public int|null    $timemodified = null,
-        public int|null    $usermodified = null,
-        public int|null    $id           = null,
+        /** @var string Component defining the metric. */
+        public string $component,
+        /** @var string Name of the metric. */
+        public string $name,
+        /** @var bool If `false` the metric is currently not supposed to be calculated/exported. */
+        public bool $enabled = false,
+        /** @var string|null Metric-specific config as a JSON object; `null` if no specific config is defined for the metric. */
+        public string|null $config = null,
+        /** @var int|null Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet). */
+        public int|null $timecreated = null,
+        /** @var int|null Timestamp when the DB table entry was last modified; `null` if not (yet) saved. */
+        public int|null $timemodified = null,
+        /** @var int|null ID of the user that last modified the DB table entry; `null` if not (yet) saved. */
+        public int|null $usermodified = null,
+        /** @var int|null Primary key of the corresponding DB table row; `null` if not (yet) saved. */
+        public int|null $id = null,
     ) {}
 
     /**
@@ -292,6 +304,7 @@ final class registered_metric implements IteratorAggregate {
      *
      * @return Traversable<metric_value> Values of the metric.
      */
+    #[\Override]
     public function getIterator(): Traversable {
         $values = $this->metric->calculate();
         if ($values instanceof metric_value) {

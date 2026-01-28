@@ -42,8 +42,18 @@ namespace tool_monitoring;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final readonly class metric_value {
+    /**
+     * Constructor without additional logic.
+     *
+     * @param float|int $value Actual numeric value of the metric some moment in time.
+     * @param array<string, string> $label Associative array of label names and label values.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
+     */
     public function __construct(
+        /** @var float|int Actual numeric value of the metric some moment in time. */
         public float|int $value,
+        /** @var array<string, string> Associative array of label names and label values. */
         public array $label = [],
     ) {}
 }

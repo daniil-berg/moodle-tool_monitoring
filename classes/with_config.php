@@ -37,8 +37,6 @@ use core\exception\coding_exception;
  * For convenience and type safety, the {@see get_config} method allows subclasses to parse their configuration,
  * typically from within the {@see metric::calculate} method.
  *
- * @template ConfT of metric_config
- *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
@@ -49,13 +47,14 @@ use core\exception\coding_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 trait with_config {
-
     /** @var string|null Metric-specific config in JSON format. */
     public string|null $configjson = null;
 
     /**
      * Calls the {@see metric_config::from_json} method of the specified class to parse the config JSON.
      *
+     * @phpcs:disable moodle.Commenting.ValidTags.Invalid
+     * @template ConfT of metric_config
      * @param class-string<ConfT> $class Config class implementing {@see metric_config} to construct the object from.
      * @return ConfT Config object of the provided class.
      * @throws coding_exception The {@see configjson} is not set or `$class` does not implement the {@see metric_config}.

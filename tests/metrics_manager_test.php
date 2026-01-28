@@ -40,9 +40,20 @@ use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\metric_settable_values;
 
+/**
+ * Unit tests for the {@see metrics_manager} class.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 #[CoversClass(metrics_manager::class)]
-class metrics_manager_test extends advanced_testcase {
-
+final class metrics_manager_test extends advanced_testcase {
     /**
      * Returns an instance of an anonymous subclass of {@see metric_settable_values} with the specified name.
      *
@@ -50,6 +61,7 @@ class metrics_manager_test extends advanced_testcase {
      * @return metric_settable_values New metric instance.
      */
     private static function named_metric_factory(string $name): metric_settable_values {
+        // @phpcs:disable moodle.PHP.ForbiddenTokens.Found
         return eval("return new class() extends \\tool_monitoring\\local\\testing\\metric_settable_values {
             public static function get_name(): string {
                 return '$name';
@@ -92,6 +104,8 @@ class metrics_manager_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see metrics_manager::fetch} method.
+     *
      * @param metric[] $collected Metric instances to add to the collection beforehand.
      * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see registered_metric::TABLE}
      *                                           before calling the tested function.
@@ -102,7 +116,7 @@ class metrics_manager_test extends advanced_testcase {
      * @throws coding_exception
      * @throws dml_exception
      */
-    #[DataProvider('test_fetch_provider')]
+    #[DataProvider('provider_test_fetch')]
     public function test_fetch(
         array $collected,
         array $registered,
@@ -168,7 +182,7 @@ class metrics_manager_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_fetch_provider(): array {
+    public static function provider_test_fetch(): array {
         return [
             'Collection of 3 different metrics; no pre-existing DB entries' => [
                 'collected' => [
@@ -314,6 +328,8 @@ class metrics_manager_test extends advanced_testcase {
     }
 
     /**
+     * Test the {@see metrics_manager::sync} method with the `collect` parameter set to `false`.
+     *
      * @param metric[] $collected Metric instances to add to the collection beforehand.
      * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see registered_metric::TABLE}
      *                                           before calling the tested function.
@@ -325,7 +341,7 @@ class metrics_manager_test extends advanced_testcase {
      * @throws coding_exception
      * @throws dml_exception
      */
-    #[DataProvider('test_sync_provider')]
+    #[DataProvider('provider_test_sync')]
     public function test_sync(
         array $collected,
         array $registered,
@@ -347,7 +363,7 @@ class metrics_manager_test extends advanced_testcase {
         foreach ($registered as $toinsert) {
             $DB->insert_record(registered_metric::TABLE, $toinsert);
         }
-        // Get ready to intercept warnings.
+        // Prepare to intercept warnings.
         $lastwarning = null;
         set_error_handler(
             static function (int $errno, string $errstr) use (&$lastwarning): void {
@@ -391,7 +407,7 @@ class metrics_manager_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_sync_provider(): array {
+    public static function provider_test_sync(): array {
         global $USER;
         return [
             'Collection of 3 different metrics; no pre-existing DB entries' => [

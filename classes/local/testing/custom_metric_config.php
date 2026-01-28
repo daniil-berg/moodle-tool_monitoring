@@ -34,7 +34,7 @@ use tool_monitoring\simple_metric_config;
 /**
  * Example of a custom metric config class.
  *
- * **TESTING ONLY: This exists purely for the purposes of running unit tests.**
+ * **TESTING ONLY: This exists purely to run unit tests.**
  *
  * @codeCoverageIgnore
  *
@@ -48,8 +48,18 @@ use tool_monitoring\simple_metric_config;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class custom_metric_config extends simple_metric_config {
+    /**
+     * Constructor without additional logic.
+     *
+     * @param string $foo Foo
+     * @param int $spam Spam
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
+     */
     public function __construct(
+        /** @var string Foo */
         public readonly string $foo = 'bar',
+        /** @var int Spam */
         public readonly int $spam = 1234567,
     ) {}
 }

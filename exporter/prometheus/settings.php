@@ -17,8 +17,7 @@
 /**
  * Plugin administration pages are defined here.
  *
- * @package     tool_monitoring
- * @category    admin
+ * @package     monitoringexporter_prometheus
  * @copyright   2025 MootDACH DevCamp
  *              Daniel Fainberg <d.fainberg@tu-berlin.de>
  *              Martin Gauk <martin.gauk@tu-berlin.de>

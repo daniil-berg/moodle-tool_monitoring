@@ -17,7 +17,7 @@
 /**
  * Definition of the {@see prometheus} class.
  *
- * @package    tool_monitoring
+ * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -44,7 +44,7 @@ use tool_monitoring\metrics_manager;
 /**
  * Defines the route for Prometheus to pull the current metrics.
  *
- * @package    tool_monitoring
+ * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>

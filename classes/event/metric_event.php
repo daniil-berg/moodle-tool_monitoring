@@ -52,7 +52,7 @@ use tool_monitoring\registered_metric;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class metric_event extends base {
-
+    #[\Override]
     public function __get($name) {
         if ($name === 'metric') {
             return $this->data['other']['metric'];
@@ -65,6 +65,7 @@ abstract class metric_event extends base {
      *
      * @throws dml_exception
      */
+    #[\Override]
     protected function init(): void {
         $this->context = system::instance();
         $this->data['objecttable'] = registered_metric::TABLE;
@@ -78,6 +79,7 @@ abstract class metric_event extends base {
      * @return moodle_url URL to the config page.
      * @throws moodle_exception
      */
+    #[\Override]
     public function get_url(): moodle_url {
         return new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $this->metric]);
     }
@@ -87,6 +89,7 @@ abstract class metric_event extends base {
      *
      * @throws coding_exception
      */
+    #[\Override]
     public function validate_data(): void {
         if (!isset($this->other['metric'])) {
             throw new coding_exception('Metric name is required.');

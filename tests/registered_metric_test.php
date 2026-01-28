@@ -42,10 +42,28 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\testing\metric_settable_values;
 use tool_monitoring\local\testing\metric_with_custom_config;
 
+/**
+ * Unit tests for the {@see registered_metric} class.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 #[CoversClass(registered_metric::class)]
-class registered_metric_test extends advanced_testcase {
-
-    #[DataProvider('test_from_metric_provider')]
+final class registered_metric_test extends advanced_testcase {
+    /**
+     * Tests the {@see registered_metric::from_metric} method.
+     *
+     * @param metric $metric Metric instance to pass to the `from_metric` method.
+     * @param array $arguments Additional arguments to unpack into to the `from_metric` method.
+     * @param array|string $expected Expected properties of the returned object or exception class name.
+     */
+    #[DataProvider('provider_test_from_metric')]
     public function test_from_metric(metric $metric, array $arguments, array|string $expected): void {
         if (is_string($expected)) {
             $this->expectException($expected);
@@ -63,7 +81,7 @@ class registered_metric_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_from_metric_provider(): array {
+    public static function provider_test_from_metric(): array {
         $metric = new metric_settable_values();
         return [
             'No additional arguments' => [
@@ -107,9 +125,11 @@ class registered_metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see IteratorAggregate} implementation of the {@see registered_metric} class.
+     *
      * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
      */
-    #[DataProvider('test_iterator_provider')]
+    #[DataProvider('provider_test_iterator')]
     public function test_iterator(iterable|metric_value $testvalues): void {
         $this->resetAfterTest();
         $metric = new metric_settable_values();
@@ -119,7 +139,7 @@ class registered_metric_test extends advanced_testcase {
         $metricvalues = iterator_to_array($instance);
         if ($testvalues instanceof metric_value) {
             self::assertEquals([$testvalues], $metricvalues);
-        } elseif (is_array($testvalues)) {
+        } else if (is_array($testvalues)) {
             self::assertEquals($testvalues, $metricvalues);
         } else {
             self::assertEquals(iterator_to_array($testvalues), $metricvalues);
@@ -130,8 +150,10 @@ class registered_metric_test extends advanced_testcase {
      * Provides test data for the {@see test_iterator} method.
      *
      * @return array[] Arguments for the test method.
+     *
+     * @phpcs:disable moodle.Strings.ForbiddenStrings.Found
      */
-    public static function test_iterator_provider(): array {
+    public static function provider_test_iterator(): array {
         return [
             'Single metric value returned by the `calculate` method' => [
                 'testvalues' => new metric_value(0),
@@ -146,11 +168,13 @@ class registered_metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see registered_metric::get_qualified_name} method.
+     *
      * @param string $component Component input.
      * @param string $name Name input.
      * @param string $expected Expected return value name.
      */
-    #[DataProvider('test_get_qualified_name_provider')]
+    #[DataProvider('provider_test_get_qualified_name')]
     public function test_get_qualified_name(string $component, string $name, string $expected): void {
         self::assertSame($expected, registered_metric::get_qualified_name($component, $name));
     }
@@ -160,7 +184,7 @@ class registered_metric_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_get_qualified_name_provider(): array {
+    public static function provider_test_get_qualified_name(): array {
         return [
             [
                 'component' => 'tool_monitoring',
@@ -188,15 +212,17 @@ class registered_metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see registered_metric::update_with_form_data} method.
+     *
      * @param registered_metric $metric Instance on which to call the method.
-     * @param array<string, mixed> $formdata Passed as argument to the method.
+     * @param array<string, mixed> $formdata Passed as the argument to the method.
      * @param array<string, mixed> $expected Properties expected to be set after the call on both the instance and the DB record.
      * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
      * @throws coding_exception
      * @throws dml_exception
      * @throws JsonException
      */
-    #[DataProvider('test_update_with_form_data_provider')]
+    #[DataProvider('provider_test_update_with_form_data')]
     public function test_update_with_form_data(
         registered_metric $metric,
         array $formdata,
@@ -261,7 +287,7 @@ class registered_metric_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_update_with_form_data_provider(): array {
+    public static function provider_test_update_with_form_data(): array {
         $metric = new metric_settable_values();
         $metricwithconfig = new metric_with_custom_config();
         return [

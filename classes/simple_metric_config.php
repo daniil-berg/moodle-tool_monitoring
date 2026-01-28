@@ -57,10 +57,15 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class simple_metric_config implements metric_config {
+    /** @var array<string, array<string, ReflectionParameter>> Cache for config parameters indexed by config class name. */
     private static array $configparameters = [];
 
     /**
-     * @return array<string, ReflectionParameter>
+     * Reflects the class, analyzes the constructor of the config class, and returns all parameters indexed by name.
+     *
+     * Caches the result after the first call.
+     *
+     * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
      * @throws coding_exception
      */
     protected static function get_config_parameters(): array {
@@ -69,9 +74,11 @@ abstract class simple_metric_config implements metric_config {
         }
         $class = new ReflectionClass(static::class);
         if (is_null($constructor = $class->getConstructor())) {
+            // TODO: Use custom exception class.
             throw new coding_exception("No constructor defined for '{$class->getName()}'");
         }
         if ($constructor->isPrivate()) {
+            // TODO: Use custom exception class.
             throw new coding_exception("Constructor of '{$class->getName()}' is private");
         }
         $parameters = array_column(

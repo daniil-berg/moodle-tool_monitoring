@@ -34,8 +34,20 @@ namespace tool_monitoring;
 use advanced_testcase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+/**
+ * Unit tests for the {@see metric_value} class.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 #[CoversClass(metric_value::class)]
-class metric_value_test extends advanced_testcase {
+final class metric_value_test extends advanced_testcase {
     public function test___construct(): void {
         $instance = new metric_value(3.14);
         self::assertSame(3.14, $instance->value);

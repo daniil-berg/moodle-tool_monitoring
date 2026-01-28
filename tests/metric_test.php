@@ -40,9 +40,20 @@ use tool_monitoring\local\metrics\num_users_accessed;
 use tool_monitoring\local\testing\metric_strict_label_names;
 use tool_monitoring\local\testing\metric_settable_values;
 
+/**
+ * Unit tests for the {@see metric} class.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 #[CoversClass(metric::class)]
-class metric_test extends advanced_testcase {
-
+final class metric_test extends advanced_testcase {
     public function test_collect(): void {
         $collection = new metric_collection();
         // The collection should not yet have the test metric.
@@ -56,10 +67,12 @@ class metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see metric::get_name} method.
+     *
      * @param class-string<metric> $class Metric class name.
      * @param string $expected Expected return value name.
      */
-    #[DataProvider('test_get_name_provider')]
+    #[DataProvider('provider_test_get_name')]
     public function test_get_name(string $class, string $expected): void {
         self::assertSame($expected, $class::get_name());
     }
@@ -69,7 +82,7 @@ class metric_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_get_name_provider(): array {
+    public static function provider_test_get_name(): array {
         return [
             [
                 'class'    => metric_settable_values::class,
@@ -91,10 +104,12 @@ class metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see metric::get_component} method.
+     *
      * @param class-string<metric> $class Metric class name.
      * @param string $expected Expected return value name.
      */
-    #[DataProvider('test_get_component_provider')]
+    #[DataProvider('provider_test_get_component')]
     public function test_get_component(string $class, string $expected): void {
         self::assertSame($expected, $class::get_component());
     }
@@ -104,7 +119,7 @@ class metric_test extends advanced_testcase {
      *
      * @return array[] Arguments for the test method.
      */
-    public static function test_get_component_provider(): array {
+    public static function provider_test_get_component(): array {
         return [
             [
                 'class'    => metric_settable_values::class,

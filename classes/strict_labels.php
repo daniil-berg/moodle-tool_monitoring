@@ -49,14 +49,14 @@ trait strict_labels {
      *
      * @return array<array<string,string>> Array of labels (mapping label names to label values); order is not relevant.
      */
-    abstract static function get_labels(): array;
+    abstract protected static function get_labels(): array;
 
     /**
      * Ensures the metric value has one of the allowed labels defined by {@see get_labels}.
      *
      * @param metric_value $metricvalue Metric value instance to be validated.
      * @return metric_value Valid metric value.
-     * @throws coding_exception Label not allowed.
+     * @throws coding_exception Label is not allowed.
      */
     public static function validate_value(metric_value $metricvalue): metric_value {
         if (!in_array($metricvalue->label, static::get_labels())) {

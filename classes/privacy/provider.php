@@ -15,41 +15,38 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Privacy Subsystem implementation for tool_monitoring.
+ * Definition of the {@see provider} class.
  *
  * @package    tool_monitoring
- * @copyright   2025 MootDACH DevCamp
- *              Daniel Fainberg <d.fainberg@tu-berlin.de>
- *              Martin Gauk <martin.gauk@tu-berlin.de>
- *              Sebastian Rupp <sr@artcodix.com>
- *              Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring\privacy;
 
-defined('MOODLE_INTERNAL') || die();
+use core_privacy\local\metadata\null_provider;
 
 /**
- * Privacy Subsystem for tool_monitoring implementing null_provider.
+ * Privacy subsystem provider.
  *
- * @copyright   2025 MootDACH DevCamp
- *              Daniel Fainberg <d.fainberg@tu-berlin.de>
- *              Martin Gauk <martin.gauk@tu-berlin.de>
- *              Sebastian Rupp <sr@artcodix.com>
- *              Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @link https://moodledev.io/docs/apis/subsystems/privacy
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
-
-    /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
-     *
-     * @return  string
-     */
+class provider implements null_provider {
+    #[\Override]
     public static function get_reason(): string {
         return 'privacy:metadata';
     }

@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_monitoring\plugininfo;
-
 /**
- * Subplugin info class.
+ * Definition of the {@see monitoringexporter} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -28,6 +26,24 @@ namespace tool_monitoring\plugininfo;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class monitoringexporter extends \core\plugininfo\base {
-    
+
+namespace tool_monitoring\plugininfo;
+
+use core\plugininfo\base;
+
+/**
+ * Sub-plugin info class.
+ *
+ * @link https://docs.moodle.org/dev/Subplugins
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class monitoringexporter extends base {
 }

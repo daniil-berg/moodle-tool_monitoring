@@ -44,21 +44,22 @@ use core\lang_string;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class metric_config_updated extends metric_event {
-
     /**
-     * Returns localised event name.
+     * Returns localized event name.
      *
      * @return lang_string Name of the event as a lazy string.
      */
+    #[\Override]
     public static function get_name(): lang_string {
         return new lang_string('metricconfigupdated', 'tool_monitoring');
     }
 
     /**
-     * Returns non-localised event description with IDs for admin use only.
+     * Returns non-localized event description with IDs for admin use only.
      *
      * @return string Short description.
      */
+    #[\Override]
     public function get_description(): string {
         return "User with ID '$this->userid' updated the metric config for '$this->metric'.";
     }

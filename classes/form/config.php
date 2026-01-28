@@ -16,14 +16,15 @@
 
 namespace tool_monitoring\form;
 
-global $CFG;
-
 use core\exception\coding_exception;
 use dml_exception;
 use JsonException;
 use moodleform;
 use tool_monitoring\registered_metric;
 
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
 require_once("$CFG->libdir/formslib.php");
 
 /**
@@ -39,9 +40,10 @@ require_once("$CFG->libdir/formslib.php");
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class config extends moodleform {
-
+    /** @var registered_metric Metric for which this form is defined; set in the {@see definition} method. */
     private registered_metric $metric;
 
+    #[\Override]
     protected function definition(): void {
         $this->metric = $this->_customdata['metric'];
         $this->_form->addElement('hidden', 'metric', $this->metric->qualifiedname);
@@ -54,6 +56,7 @@ final class config extends moodleform {
         $this->metric->extend_config_form($this->_form);
     }
 
+    #[\Override]
     protected function after_definition(): void {
         $this->add_action_buttons();
         parent::after_definition();

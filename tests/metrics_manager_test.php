@@ -85,7 +85,7 @@ final class metrics_manager_test extends advanced_testcase {
         $manager = new metrics_manager($collection);
         $manager->dispatch_hook();
         $expected = [
-            metrics\num_course_count::class,
+            metrics\num_courses::class,
             metrics\num_overdue_tasks::class,
             metrics\num_quiz_attempts_in_progress::class,
             metrics\num_tasks_spawned_adhoc::class,

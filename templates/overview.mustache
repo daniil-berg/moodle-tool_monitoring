@@ -27,19 +27,43 @@
                 "name": "foo",
                 "type": "gauge",
                 "description": "number of foos",
-                "configurl": "/admin/tool/monitoring/configure.php?metric=local_plugin_foo",
+                "configurl": "http://moodle.org/admin/tool/monitoring/configure.php?metric=local_plugin_foo",
                 "tags": [
-                    {"id":1,"name":"Cats","viewurl":"http://moodle.org/tag/index.php?tag=Cats"},
-                    {"id":1,"name":"Dogs","viewurl":"http://moodle.org/tag/index.php?tag=Dogs"},
-                    {"id":1,"name":"Mice","viewurl":"http://moodle.org/tag/index.php?tag=Mice"}
+                    {"id":1,"name":"Cat","viewurl":"http://moodle.org/admin/tool/monitoring/?tags=Cat"},
+                    {"id":1,"name":"Dog","viewurl":"http://moodle.org/admin/tool/monitoring/?tags=Dog"},
+                    {"id":1,"name":"Mouse","viewurl":"http://moodle.org/admin/tool/monitoring/?tags=Mouse"}
                 ]
             }
         ],
-        "tagsenabled": true
+        "tagsenabled": true,
+        "managetagsurl": "http://moodle.org/tag/manage.php?tc=14",
+        "filtered": true,
+        "allmetricsurl": "http://moodle.org/admin/tool/monitoring/",
+        "tags": [
+            {
+                "name": "Cat",
+                "removeurl": "http://moodle.org/admin/tool/monitoring/",
+                "editurl": "http://moodle.org//tag/edit.php?id=42"
+            }
+        ]
     }
 }}
 
-<h2>{{#str}} metricsoverview, tool_monitoring {{/str}}</h2>
+<h2>
+    {{#str}} metricsoverview, tool_monitoring {{/str}}
+</h2>
+
+{{#filtered}}
+    <div class="mt-3">
+        {{#str}} tagfilter, tool_monitoring {{/str}}
+        {{#tags}}
+            <a href="{{removeurl}}" class="badge bg-secondary text-dark" style="font-size: 100%;"><span aria-hidden="true">× </span> {{name}}</a>
+        {{/tags}}
+    </div>
+    <div class="text-right mb-3">
+        <a href="{{allmetricsurl}}">{{#str}} metricsoverviewshowall, tool_monitoring {{/str}}</a>
+    </div>
+{{/filtered}}
 
 <table class="table table-sm table-hover">
   <thead>
@@ -62,7 +86,11 @@
         <td>{{type}}</td>
         <td>{{description}}</td>
         {{#tagsenabled}}
-          <td>{{#tags}}<a href="{{viewurl}}" class="badge bg-info text-white">{{name}}</a>{{/tags}}</td>
+          <td>
+            {{#tags}}
+              <a href="{{viewurl}}" class="badge bg-info text-white">{{name}}</a>
+            {{/tags}}
+          </td>
         {{/tagsenabled}}
         <td><a href="{{{configurl}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
       </tr>
@@ -72,6 +100,9 @@
 
 {{#tagsenabled}}
     <div class="my-5 text-right">
+        {{#tags}}
+            <a href="{{editurl}}" class="btn btn-secondary">{{#str}} edit_tag, tool_monitoring, {{name}} {{/str}}</a>
+        {{/tags}}
         <a href="{{managetagsurl}}" class="btn btn-secondary">{{#str}} manage_tags, tool_monitoring {{/str}}</a>
     </div>
 {{/tagsenabled}}

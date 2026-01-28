@@ -36,7 +36,7 @@ defined('MOODLE_INTERNAL') || die();
 $tagareas = [
     [
         'itemtype' => 'metrics',
-        'callback' => '\tool_monitoring\tag\tagged_metrics_helper::get_tagged_metrics',
+        'customurl' => '/admin/tool/monitoring/',
         'collection' => 'monitoring',
         'searchable' => false,
     ],

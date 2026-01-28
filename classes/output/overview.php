@@ -29,11 +29,13 @@
 
 namespace tool_monitoring\output;
 
+use core\exception\coding_exception;
 use core\exception\moodle_exception;
 use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
+use tool_monitoring\metrics_manager;
 use tool_monitoring\registered_metric;
 use core_tag_tag;
 
@@ -50,15 +52,38 @@ use core_tag_tag;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final readonly class overview implements renderable, templatable {
+    private metrics_manager $manager;
 
     /**
      * Constructor without additional logic.
      *
-     * @param array<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     * @param string @tagname TODO
      */
     public function __construct(
-        private array $metrics,
-    ) {}
+        private string $tagname,
+    ) {
+        $this->manager = new metrics_manager();
+        if ($this->tagname) {
+            $this->manager->fetch(enabled: null, tags: [$this->tagname]);
+        } else {
+            $this->manager->sync(delete: true);
+        }
+    }
+
+    /**
+     * Throws an exception if the provided tag collection ID does not match the tag collection configured in the
+     * db/tag.php of tool_monitoring.
+     *
+     * @param int $tagcollid
+     * @return void
+     */
+    public static function assert_tag_collection_id(int $tagcollid) {
+        global $DB;
+        $correctid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+        if ($tagcollid != $correctid) {
+            throw new coding_exception('Wrong tag collection ID');
+        }
+    }
 
     /**
      * @throws moodle_exception
@@ -69,7 +94,7 @@ final readonly class overview implements renderable, templatable {
         $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
         $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $tagcollid]);
         $lines = [];
-        foreach ($this->metrics as $qualifiedname => $metric) {
+        foreach ($this->manager->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
             $line = [
                 'component'   => $metric->component,
@@ -93,10 +118,17 @@ final readonly class overview implements renderable, templatable {
             }
             $lines[] = $line;
         }
+        // TODO show link to /tag/edit.php with params id (of the tag) and returnurl to index page
+        // TODO ignore filtering if tag area is disabled
+        // TODO better rendering of h2 header in case of active tag filtering
+        // TODO add back link to all metrics in case of active tag filtering
+        // TODO support filtering for multiple tags: clicking on a different tag adds that to the active filter
         return [
             'metrics' => $lines,
             'tagsenabled' => $tagsenabled,
-            'managetagsurl' => $managetagsurl
+            'managetagsurl' => $managetagsurl,
+            'filtered' => !empty($this->tagname),
+            'tagname' => $this->tagname,
         ];
     }
 }

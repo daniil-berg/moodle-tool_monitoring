@@ -39,7 +39,14 @@
     }
 }}
 
-<h2>{{#str}} metricsoverview, tool_monitoring {{/str}}</h2>
+<h2>
+    {{#filtered}}
+        {{#str}} metricsoverviewfiltered, tool_monitoring, {{tagname}} {{/str}}
+    {{/filtered}}
+    {{^filtered}}
+        {{#str}} metricsoverview, tool_monitoring {{/str}}
+    {{/filtered}}
+</h2>
 
 <table class="table table-sm table-hover">
   <thead>
@@ -62,7 +69,11 @@
         <td>{{type}}</td>
         <td>{{description}}</td>
         {{#tagsenabled}}
-          <td>{{#tags}}<a href="{{viewurl}}" class="badge bg-info text-white">{{name}}</a>{{/tags}}</td>
+          <td>
+            {{#tags}}
+              <a href="{{viewurl}}" class="badge bg-info text-white">{{name}}</a>
+            {{/tags}}
+          </td>
         {{/tagsenabled}}
         <td><a href="{{{configurl}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
       </tr>

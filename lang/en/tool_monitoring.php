@@ -41,6 +41,7 @@ $string['manage_tags'] = 'Manage tags';
 $string['metricconfigupdated'] = 'Metric configuration updated';
 $string['metricenabled'] = 'Metric enabled';
 $string['metricsoverview'] = 'Overview of Available Metrics';
+$string['metricsoverviewfiltered'] = 'Overview of Available Metrics With Tag {$a}';
 $string['monitoring:manage_metrics'] = 'Manage and configure monitoring metrics';
 $string['monitoring_metrics'] = 'Monitoring Metrics';
 $string['name'] = 'Name';

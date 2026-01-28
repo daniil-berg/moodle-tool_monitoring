@@ -84,7 +84,7 @@ abstract class simple_metric_config implements metric_config {
     }
 
     /**
-     * Returns the instance as is, in effect turing every public property into a key-value-pair in the resulting JSON object.
+     * Returns the instance as is, in effect turning every public property into a key-value-pair in the resulting JSON object.
      *
      * @return $this Same instance.
      */
@@ -139,7 +139,7 @@ abstract class simple_metric_config implements metric_config {
     /**
      * Transforms an instance into an associative array of data that can be passed to {@see moodleform::set_data}.
      *
-     * Simply casts the instance as an array, turing every public property into a key-value-pair in that array.
+     * Simply casts the instance as an array, turning every public property into a key-value-pair in that array.
      *
      * @return array<string, mixed> Data to set on the config form.
      */
@@ -173,7 +173,7 @@ abstract class simple_metric_config implements metric_config {
             /** @var label|null $labelattr */
             $labelattr = null;
             foreach ($param->getAttributes() as $attribute) {
-                if ($attribute->name === label::class) {
+                if ($attribute->getName() === label::class) {
                     $labelattr = $attribute->newInstance();
                     break;
                 }

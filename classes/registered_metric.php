@@ -63,10 +63,10 @@ use TypeError;
 final class registered_metric implements IteratorAggregate {
 
     /** @var string Name of the mapped DB table. */
-    public const string TABLE = 'tool_monitoring_metrics';
+    public const TABLE = 'tool_monitoring_metrics';
 
     /** @var string[] Names of all fields in the DB table, i.e. all constructor parameters. */
-    private const array FIELDS = [
+    private const FIELDS = [
         'component',
         'name',
         'enabled',

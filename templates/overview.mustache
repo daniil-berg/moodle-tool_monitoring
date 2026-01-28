@@ -69,3 +69,9 @@
     {{/metrics}}
   </tbody>
 </table>
+
+{{#tagsenabled}}
+    <div class="my-5 text-right">
+        <a href="{{managetagsurl}}" class="btn btn-secondary">{{#str}} manage_tags, tool_monitoring {{/str}}</a>
+    </div>
+{{/tagsenabled}}

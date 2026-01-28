@@ -69,7 +69,10 @@ final readonly class overview implements renderable, templatable {
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {
+        global $DB;
         $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
+        $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+        $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $tagcollid]);
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
@@ -95,6 +98,10 @@ final readonly class overview implements renderable, templatable {
             }
             $lines[] = $line;
         }
-        return ['metrics' => $lines, 'tagsenabled' => $tagsenabled];
+        return [
+            'metrics' => $lines,
+            'tagsenabled' => $tagsenabled,
+            'managetagsurl' => $managetagsurl
+        ];
     }
 }

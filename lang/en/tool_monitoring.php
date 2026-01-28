@@ -37,6 +37,7 @@ $string['description'] = 'Description';
 $string['edit'] = 'Edit';
 $string['event:metric_disabled'] = 'Metric disabled';
 $string['event:metric_enabled'] = 'Metric enabled';
+$string['manage_tags'] = 'Manage tags';
 $string['metricconfigupdated'] = 'Metric configuration updated';
 $string['metricenabled'] = 'Metric enabled';
 $string['metricsoverview'] = 'Overview of Available Metrics';

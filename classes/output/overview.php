@@ -69,7 +69,6 @@ final readonly class overview implements renderable, templatable {
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {
-        global $OUTPUT;
         $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
@@ -82,12 +81,17 @@ final readonly class overview implements renderable, templatable {
                 'configurl'   => $configurl->out(false),
             ];
             if ($tagsenabled) {
-                $tagshtml = $OUTPUT->tag_list(
-                    core_tag_tag::get_item_tags(
-                        'tool_monitoring',
-                        'metrics',
-                        $metric->id));
-                $line['tagshtml'] = $tagshtml;
+                $tags = core_tag_tag::get_item_tags(
+                    'tool_monitoring',
+                    'metrics',
+                    $metric->id);
+                $line['tags'] = array_map(function (core_tag_tag $tag) {
+                    return [
+                        'id' => $tag->id,
+                        'name' => $tag->rawname,
+                        'viewurl' => core_tag_tag::make_url($tag->tagcollid, $tag->rawname)->out(false),
+                    ];
+                }, array_values($tags));
             }
             $lines[] = $line;
         }

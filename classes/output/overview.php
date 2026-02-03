@@ -34,6 +34,7 @@ use core\exception\moodle_exception;
 use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
+use core_h5p\core;
 use moodle_url;
 use tool_monitoring\metrics_manager;
 use tool_monitoring\registered_metric;
@@ -64,18 +65,39 @@ final readonly class overview implements renderable, templatable {
     private bool $tagsenabled;
 
     /**
+     * @var array<core_tag_tag> We only show metrics with at least these tags.
+     */
+    private array $tags;
+
+    /**
+     * @var int The tag collection ID for our tag collection.
+     */
+    private int $tagcollid;
+
+    /**
      * The constructor fetches the metrics matching the given tags. An empty array loads all available metrics and
      *  starts a synchronization.
      *
-     * @param array<string> $tags tag names
+     * @param string[] $tagnames tag names
      */
-    public function __construct(
-        private array $tags,
-    ) {
+    public function __construct(array $tagnames) {
+        global $DB;
         $this->manager = new metrics_manager();
         $this->tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
+        $tags = [];
+        if ($this->tagsenabled) {
+            $this->tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+            foreach ($tagnames as $tagname) {
+                $tag = core_tag_tag::get_by_name($this->tagcollid, $tagname);
+                if ($tag) {
+                    $tags[] = $tag;
+                }
+            }
+        }
+        $this->tags = $tags;
         if (!empty($this->tags) && $this->tagsenabled) {
-            $this->manager->fetch(enabled: null, tags: $this->tags);
+            $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $this->tags);
+            $this->manager->fetch(enabled: null, tags: $tagnames);
         } else {
             $this->manager->sync(delete: true);
         }
@@ -100,34 +122,34 @@ final readonly class overview implements renderable, templatable {
     }
 
     /**
-     * Add the given tag name to the list of tags. Returns a new array without modifying this object.
+     * Generate a URL to the current overview with an additional tag in the filter.
      *
-     * @param string $tag The new tag name.
-     * @return string[] The resulting tag names.
+     * @param core_tag_tag $tag The new tag.
+     * @return moodle_url
      */
-    private function add_tag(string $tag) {
-        $normalized = core_tag_tag::normalize($this->tags);
-        $normtag = array_values(core_tag_tag::normalize([$tag]))[0];
-        if (!in_array($normtag, $normalized)) {
-            return [...$this->tags, $tag];
+    private function add_tag_url(core_tag_tag $tag) {
+        $tags = $this->tags;
+        if (!array_filter($this->tags, fn (core_tag_tag $t) => $t->id == $tag->id)) {
+            $tags[] = $tag;
         }
-        return $this->tags;
+        $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $tags);
+        return new moodle_url('/admin/tool/monitoring/', ['tags' => implode(',', $tagnames)]);
     }
 
     /**
-     * Remove the given tag name from the list of tags. Returns a new array without modifying this object.
+     * Generate a URL to the current overview with one tag removed from the filter.
      *
-     * @param string $tag The tag name to remove.
-     * @return string[] The resulting tag names.
+     * @param core_tag_tag $tag The tag to remove.
+     * @return moodle_url
      */
-    private function remove_tag(string $tag) {
-        $normalized = array_values(core_tag_tag::normalize($this->tags));
-        $normtag = array_values(core_tag_tag::normalize([$tag]))[0];
-        $key = array_search($normtag, $normalized);
-        if ($key !== false) {
-            return array_filter($this->tags, fn (string $k) => $k != $key, ARRAY_FILTER_USE_KEY);
+    private function remove_tag_url(core_tag_tag $tag) {
+        $tags = array_filter($this->tags, fn (core_tag_tag $t) => $t->id != $tag->id);
+        $params = [];
+        if (!empty($tags)) {
+            $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $tags);
+            $params['tags'] = implode(',', $tagnames);
         }
-        return $this->tags;
+        return new moodle_url('/admin/tool/monitoring/', $params);
     }
 
     /**
@@ -138,9 +160,7 @@ final readonly class overview implements renderable, templatable {
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {
-        global $DB;
-        $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
-        $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $tagcollid]);
+        $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $this->tagcollid]);
         $lines = [];
         foreach ($this->manager->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
@@ -157,11 +177,10 @@ final readonly class overview implements renderable, templatable {
                     'metrics',
                     $metric->id);
                 $line['tags'] = array_map(function (core_tag_tag $tag) {
-                    $url = new moodle_url('/admin/tool/monitoring/', ['tags' => implode(',', $this->add_tag($tag->rawname))]);
                     return [
                         'id' => $tag->id,
                         'name' => $tag->rawname,
-                        'viewurl' => $url->out(false),
+                        'viewurl' => $this->add_tag_url($tag)->out(false),
                     ];
                 }, array_values($tags));
             }
@@ -175,22 +194,14 @@ final readonly class overview implements renderable, templatable {
             'filtered' => $filtered,
         ];
         if ($filtered) {
-            $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
             $allmetricsurl = new moodle_url('/admin/tool/monitoring/');
             $data['allmetricsurl'] = $allmetricsurl->out(false);
             $data['tags'] = [];
-            foreach ($this->tags as $tagname) {
-                $othertags = $this->remove_tag($tagname);
-                $params = [];
-                if (!empty($othertags)) {
-                    $params['tags'] = $othertags;
-                }
-                $removeurl = new moodle_url('/admin/tool/monitoring/', ['tags' => implode(',', $othertags)]);
-                $tag = core_tag_tag::get_by_name($tagcollid, $tagname);
+            foreach ($this->tags as $tag) {
                 $editurl = new moodle_url('/tag/edit.php', ['id' => $tag->id]);
                 $data['tags'][] = [
-                    'name' => $tagname,
-                    'removeurl' => $removeurl->out(false),
+                    'name' => $tag->rawname,
+                    'removeurl' => $this->remove_tag_url($tag)->out(false),
                     'editurl' => $editurl->out(false),
                 ];
             }

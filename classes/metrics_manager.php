@@ -155,7 +155,7 @@ final class metrics_manager {
                                       AND t.tagcollid  = :tagcollid
                                       AND t.name $insql
                                  GROUP BY ti.itemid
-                             HAVING COUNT (DISTINCT t.id) = :tagcount
+                             HAVING COUNT(DISTINCT t.id) = :tagcount
                            ) x ON x.itemid = m.id
                      WHERE $where";
                 $params += [
@@ -166,7 +166,7 @@ final class metrics_manager {
                     ];
                 $params += $inparams;
         } else {
-            $sql = "SELECT {$sqlqname} AS qname, *
+            $sql = "SELECT {$sqlqname} AS qname, m.*
                       FROM {{$tablename}} m
                      WHERE $where";
         }

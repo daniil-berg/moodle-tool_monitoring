@@ -160,10 +160,11 @@ final readonly class overview implements renderable, templatable {
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {
+        $returnurl = $output->get_page()->url->out_as_local_url(false);
         $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $this->tagcollid]);
         $lines = [];
         foreach ($this->manager->metrics as $qualifiedname => $metric) {
-            $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
+            $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname, 'returnurl' => $returnurl]);
             $line = [
                 'component'   => $metric->component,
                 'name'        => $metric->name,
@@ -198,7 +199,7 @@ final readonly class overview implements renderable, templatable {
             $data['allmetricsurl'] = $allmetricsurl->out(false);
             $data['tags'] = [];
             foreach ($this->tags as $tag) {
-                $editurl = new moodle_url('/tag/edit.php', ['id' => $tag->id]);
+                $editurl = new moodle_url('/tag/edit.php', ['id' => $tag->id, 'returnurl' => $returnurl]);
                 $data['tags'][] = [
                     'name' => $tag->rawname,
                     'removeurl' => $this->remove_tag_url($tag)->out(false),

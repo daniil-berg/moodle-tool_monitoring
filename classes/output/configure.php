@@ -68,16 +68,20 @@ final readonly class configure implements renderable, templatable {
      *
      * This method must be called before any output is sent to the browser.
      *
+     * @return bool true if the form was processed (either submit or cancel), false if the form was neither submitted
+     * nor canceled.
+     *
      * @throws moodle_exception
      * @throws JsonException The {@see registered_metric::config} could not be serialized.
      */
-    public function process_form(): void {
+    public function process_form(): bool {
         if ($this->form->is_cancelled()) {
-            redirect(new moodle_url('/admin/tool/monitoring/'));
+            return true;
         } else if ($this->form->is_submitted() && $this->form->is_validated()) {
             $this->form->save();
-            redirect(new moodle_url('/admin/tool/monitoring/'));
+            return true;
         }
+        return false;
     }
 
     #[\Override]

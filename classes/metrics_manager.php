@@ -127,6 +127,7 @@ final class metrics_manager {
         if ($collect) {
             $this->dispatch_hook();
         }
+        $this->metrics = [];
         // Store metrics indexed by qualified name for later.
         $metrics = [];
         // Construct the `IN` expression and parameters from the component-name-combinations present in the collection.
@@ -241,6 +242,7 @@ final class metrics_manager {
         if ($collect) {
             $this->dispatch_hook();
         }
+        $this->metrics = [];
         // Grab all existing records indexed by qualified name.
         $sqlqname = self::get_qualified_name_sql();
         try {
@@ -255,7 +257,6 @@ final class metrics_manager {
             // Iterate over the collection. Construct a new instance for every metric in the collection that has a DB record
             // and add that instance to the `metrics`, making sure to remove the corresponding item from `$existingrecords`.
             // Track all metrics _without_ a matching DB record in the `$unregistered` array.
-            $this->metrics = [];
             $unregistered = [];
             foreach ($this->collection as $metric) {
                 $qname = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());

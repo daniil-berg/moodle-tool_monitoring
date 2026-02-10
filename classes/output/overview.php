@@ -65,24 +65,6 @@ final readonly class overview implements renderable, templatable {
     ) {}
 
     /**
-     * Issue an HTTP redirect to either the Moodle tag manager or (if the tag collection ID matches) to the overview
-     * filtered by the given tag name.
-     *
-     * @param mixed $tagcollid
-     * @param mixed $tagname
-     * @return void
-     */
-    public static function redirect_tagname(mixed $tagcollid, mixed $tagname) {
-        global $DB;
-        $correctid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
-        if ($tagcollid != $correctid) {
-            redirect(new moodle_url('/tag/index.php', ['tc' => $tagcollid, 'tag' => $tagname]));
-        } else {
-            redirect(new moodle_url('/admin/tool/monitoring/', ['tags' => $tagname]));
-        }
-    }
-
-    /**
      * Generate a URL to the current overview with an additional tag in the filter.
      *
      * @param core_tag_tag $tag The new tag.
@@ -94,7 +76,7 @@ final readonly class overview implements renderable, templatable {
             $tags[] = $tag;
         }
         $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $tags);
-        return new moodle_url('/admin/tool/monitoring/', ['tags' => implode(',', $tagnames)]);
+        return new moodle_url('/admin/tool/monitoring/', ['tag' => implode(',', $tagnames)]);
     }
 
     /**
@@ -108,7 +90,7 @@ final readonly class overview implements renderable, templatable {
         $params = [];
         if (!empty($tags)) {
             $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $tags);
-            $params['tags'] = implode(',', $tagnames);
+            $params['tag'] = implode(',', $tagnames);
         }
         return new moodle_url('/admin/tool/monitoring/', $params);
     }

@@ -56,7 +56,7 @@ $manager->sync(delete: true);
 if ($taglist) {
     $tags = explode(',', $taglist);
     $params['tags'] = $taglist;
-    $manager->fetch(collect: false, enabled: null, tagnames: $tags, storetags: true);
+    $manager->fetch(collect: false, enabled: null, tagnames: $tags);
 } else {
     $tags = [];
 }

@@ -29,6 +29,7 @@
  * {@noinspection PhpUnhandledExceptionInspection}
  */
 
+use tool_monitoring\metrics_manager;
 use tool_monitoring\output\overview;
 
 require_once(__DIR__ . '/../../../config.php');
@@ -50,18 +51,24 @@ if ($tagname) {
 // Handle tags parameter for filtering of multiple tags.
 $taglist = optional_param('tags', '', PARAM_TAGLIST);
 $params = [];
+$manager = new metrics_manager();
 if ($taglist) {
     $tags = explode(',', $taglist);
     $params['tags'] = $taglist;
+    $manager->fetch(enabled: null, tagnames: $tags, storetags: true);
 } else {
     $tags = [];
+    $manager->sync(delete: true);
 }
 
 $PAGE->set_url('/admin/tool/monitoring/', $params);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
-$overview = new overview($tags);
+
+$overview = new overview(
+    metrics: $manager->metrics,
+    tags: $manager->tags);
 echo $OUTPUT->header();
 echo $OUTPUT->render($overview);
 echo $OUTPUT->footer();

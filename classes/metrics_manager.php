@@ -44,6 +44,8 @@ use tool_monitoring\hook\metric_collection;
  *
  * @property-read array<string, registered_metric> $metrics Registered metrics indexed by their qualified name; must be populated
  *                                                          by calling the {@see dispatch_hook} method.
+ * @property-read core_tag_tag[] $tags Tags used to filter the metrics. This attribute is only used if this feature is
+ *                                     enabled in {@see fetch}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -57,6 +59,12 @@ use tool_monitoring\hook\metric_collection;
 final class metrics_manager {
     /** @var array<string, registered_metric> Collected and registered metrics indexed by their qualified name. */
     private array $metrics = [];
+
+    /**
+     * @var core_tag_tag[] Tags used to filter the metrics. This attribute is only used if this feature is
+     * enabled in {@see fetch}.
+     */
+    private array $tags = [];
 
     /**
      * Constructor without additional logic.
@@ -81,6 +89,8 @@ final class metrics_manager {
     public function __get(string $name): mixed {
         if ($name === 'metrics') {
             return $this->metrics;
+        } else if ($name === 'tags') {
+            return $this->tags;
         }
         return $this->$name; // @codeCoverageIgnore
     }
@@ -106,12 +116,13 @@ final class metrics_manager {
      * @param bool $collect If `true` (default), calls the {@see dispatch_hook} method first.
      * @param bool|null $enabled If `true` (default), only enabled metrics are loaded; if `false`, only disabled ones are loaded;
      *                           passing `null` (default) disables this filter.
-     * @param string[] $tags Only metrics that carry all the provided tags will be returned.
+     * @param string[] $tagnames Only metrics that carry tags with all the provided tag names will be returned.
+     * @param bool $storetags Convert tag names to core_tag_tag objects and store those in the {@see tags} attribute.
      * @return $this Same instance.
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function fetch(bool $collect = true, bool|null $enabled = true, array $tags = []): self {
+    public function fetch(bool $collect = true, bool|null $enabled = true, array $tagnames = [], bool $storetags = false): self {
         global $DB;
         if ($collect) {
             $this->dispatch_hook();
@@ -136,40 +147,66 @@ final class metrics_manager {
         }
         $where = '(m.component,m.name) IN (' . implode(',', $inplaceholders) . ')';
         // Filter by tags.
-        $tags = core_tag_tag::normalize($tags);
-        $tags = array_values(array_unique($tags));
-        $tagcount = count($tags);
+        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
+        $tagcount = 0;
+        if (!empty($tagnames) && $tagsenabled) {
+            $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+            $tagnames = core_tag_tag::normalize($tagnames);
+            $tagnames = array_values(array_unique($tagnames));
+            if ($storetags) {
+                $this->tags = [];
+                // TODO: Use core_tag_tag::get_by_name_bulk
+                foreach ($tagnames as $tagname) {
+                    $tag = core_tag_tag::get_by_name($tagcollid, $tagname);
+                    if ($tag) {
+                        // TODO: What is the correct error handling if the tag does not exist? With $storetags == false
+                        // the fetch would not load any metrics for an invalid tag name.
+                        $this->tags[] = $tag;
+                    }
+                }
+                $tagids = array_map(fn (core_tag_tag $t) => $t->id, $this->tags);
+                $tagcount = count($tagids);
+            } else {
+                $tagcount = count($tagnames);
+            }
+        }
+        $join = '';
+        if ($tagcount > 0 && $tagsenabled) {
+            list($insql, $inparams) = $DB->get_in_or_equal($storetags ? $tagids : $tagnames, SQL_PARAMS_NAMED, 'tag');
+            $params += $inparams;
+            $params += [
+                'tagcomponent' => 'tool_monitoring',
+                'tagitemtype' => 'metrics',
+                'tagcount' => $tagcount,
+            ];
+            if ($storetags) {
+                $subselect = "SELECT ti.itemid
+                            FROM {tag_instance} ti
+                           WHERE ti.tagid $insql
+                             AND ti.component = :tagcomponent
+                             AND ti.itemtype  = :tagitemtype
+                        GROUP BY ti.itemid
+                    HAVING COUNT(DISTINCT ti.tagid) = :tagcount";
+            } else {
+                $subselect = "SELECT ti.itemid
+                            FROM {tag_instance} ti
+                            JOIN {tag} t ON t.id = ti.tagid
+                           WHERE ti.component = :tagcomponent
+                             AND ti.itemtype  = :tagitemtype
+                             AND t.tagcollid  = :tagcollid
+                             AND t.name $insql
+                        GROUP BY ti.itemid
+                    HAVING COUNT(DISTINCT t.id) = :tagcount";
+                $params['tagcollid'] = $tagcollid;
+            }
+            $join = "JOIN ($subselect) x ON x.itemid = m.id";
+        }
         $tablename = registered_metric::TABLE;
         $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ["m.component", "m.name"]);
-        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
-        if ($tagcount > 0 && $tagsenabled) {
-            list($insql, $inparams) = $DB->get_in_or_equal($tags, SQL_PARAMS_NAMED, 'tag');
-            $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
-            $sql = "SELECT {$sqlqname} AS qname, m.*
-                      FROM {{$tablename}} m
-                      JOIN (       SELECT ti.itemid
-                                     FROM {tag_instance} ti
-                                     JOIN {tag} t ON t.id = ti.tagid
-                                    WHERE ti.component = :tagcomponent
-                                      AND ti.itemtype  = :tagitemtype
-                                      AND t.tagcollid  = :tagcollid
-                                      AND t.name $insql
-                                 GROUP BY ti.itemid
-                             HAVING COUNT(DISTINCT t.id) = :tagcount
-                           ) x ON x.itemid = m.id
-                     WHERE $where";
-                $params += [
-                        'tagcomponent' => 'tool_monitoring',
-                        'tagitemtype' => 'metrics',
-                        'tagcollid' => $tagcollid,
-                        'tagcount' => $tagcount,
-                    ];
-                $params += $inparams;
-        } else {
-            $sql = "SELECT {$sqlqname} AS qname, m.*
-                      FROM {{$tablename}} m
-                     WHERE $where";
-        }
+        $sql = "SELECT {$sqlqname} AS qname, m.*
+                  FROM {{$tablename}} m
+                 $join
+                 WHERE $where";
         // Filter by enabled.
         if (!is_null($enabled)) {
             $sql .= ' AND enabled = :enabled';

@@ -29,14 +29,10 @@
 
 namespace tool_monitoring\output;
 
-use core\exception\coding_exception;
-use core\exception\moodle_exception;
 use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
-use core_h5p\core;
 use moodle_url;
-use tool_monitoring\metrics_manager;
 use tool_monitoring\registered_metric;
 use core_tag_tag;
 
@@ -55,53 +51,18 @@ use core_tag_tag;
 final readonly class overview implements renderable, templatable {
     /**
      * Constructor without additional logic.
-     * @var metrics_manager The metrics manager used to load and sync the metrics.
-     */
-    private metrics_manager $manager;
-
-    /**
-     * @var bool Is our tag area enabled?
-     */
-    private bool $tagsenabled;
-
-    /**
-     * @var array<core_tag_tag> We only show metrics with at least these tags.
-     */
-    private array $tags;
-
-    /**
-     * @var int The tag collection ID for our tag collection.
-     */
-    private int $tagcollid;
-
-    /**
-     * The constructor fetches the metrics matching the given tags. An empty array loads all available metrics and
-     *  starts a synchronization.
      *
-     * @param string[] $tagnames tag names
+     * @param array<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     * @param array<core_tag_tag> $tags Metrics were filtered with these tags.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
-    public function __construct(array $tagnames) {
-        global $DB;
-        $this->manager = new metrics_manager();
-        $this->tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
-        $tags = [];
-        if ($this->tagsenabled) {
-            $this->tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
-            foreach ($tagnames as $tagname) {
-                $tag = core_tag_tag::get_by_name($this->tagcollid, $tagname);
-                if ($tag) {
-                    $tags[] = $tag;
-                }
-            }
-        }
-        $this->tags = $tags;
-        if (!empty($this->tags) && $this->tagsenabled) {
-            $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $this->tags);
-            $this->manager->fetch(enabled: null, tags: $tagnames);
-        } else {
-            $this->manager->sync(delete: true);
-        }
-    }
+    public function __construct(
+        /** @var array<string, registered_metric> Metrics for which to render the overview, indexed by qualified name. */
+        private array $metrics,
+        /** @var array<core_tag_tag> Metrics were filtered with these tags. */
+        private array $tags
+    ) {}
 
     /**
      * Issue an HTTP redirect to either the Moodle tag manager or (if the tag collection ID matches) to the overview
@@ -160,10 +121,13 @@ final readonly class overview implements renderable, templatable {
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {
+        global $DB;
+        $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
         $returnurl = $output->get_page()->url->out_as_local_url(false);
-        $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $this->tagcollid]);
+        $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $tagcollid]);
         $lines = [];
-        foreach ($this->manager->metrics as $qualifiedname => $metric) {
+        foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname, 'returnurl' => $returnurl]);
             $line = [
                 'component'   => $metric->component,
@@ -172,7 +136,7 @@ final readonly class overview implements renderable, templatable {
                 'description' => $metric->description->out(),
                 'configurl'   => $configurl->out(false),
             ];
-            if ($this->tagsenabled) {
+            if ($tagsenabled) {
                 $tags = core_tag_tag::get_item_tags(
                     'tool_monitoring',
                     'metrics',
@@ -187,10 +151,10 @@ final readonly class overview implements renderable, templatable {
             }
             $lines[] = $line;
         }
-        $filtered = !empty($this->tags) && $this->tagsenabled;
+        $filtered = !empty($this->tags) && $tagsenabled;
         $data = [
             'metrics' => $lines,
-            'tagsenabled' => $this->tagsenabled,
+            'tagsenabled' => $tagsenabled,
             'managetagsurl' => $managetagsurl,
             'filtered' => $filtered,
         ];

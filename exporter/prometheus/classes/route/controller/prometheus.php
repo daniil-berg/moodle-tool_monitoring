@@ -110,7 +110,7 @@ class prometheus {
         } else {
             $tags = [];
         }
-        $metrics = $manager->fetch(tags: $tags)->metrics;
+        $metrics = $manager->fetch(tagnames: $tags)->metrics;
         $body = Utils::streamFor(prometheus_exporter::export($metrics));
         return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }

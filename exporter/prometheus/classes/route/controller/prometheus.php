@@ -85,7 +85,7 @@ class prometheus {
                 default: '',
             ),
             new query_parameter(
-                name: 'tags',
+                name: 'tag',
                 description: 'If provided, only metrics that carry this tags (comma separated) are returned.',
                 type: param::TAGLIST,
                 default: null,
@@ -105,8 +105,8 @@ class prometheus {
             return $response->withStatus(403);
         }
         $manager = new metrics_manager();
-        if ($params['tags']) {
-            $tags = explode(',', $params['tags']);
+        if ($params['tag']) {
+            $tags = explode(',', $params['tag']);
         } else {
             $tags = [];
         }

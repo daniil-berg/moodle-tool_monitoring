@@ -161,7 +161,7 @@ final class metrics_manager {
                 $tagids = array_map(fn (core_tag_tag $t) => $t->id, $this->tags);
             }
             if (!empty($tagids)) {
-                list($insql, $inparams) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
+                [$insql, $inparams] = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
                 $params += $inparams;
                 $params += [
                     'tagcomponent' => 'tool_monitoring',

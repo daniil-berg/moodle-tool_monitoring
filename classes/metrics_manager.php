@@ -91,7 +91,7 @@ final class metrics_manager {
         } else if ($name === 'tags') {
             return $this->tags;
         }
-        return $this->$name; // @codeCoverageIgnore
+        throw new coding_exception("Property \"$name\" not found.");
     }
 
     /**

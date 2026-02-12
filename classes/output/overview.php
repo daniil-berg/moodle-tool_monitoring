@@ -105,11 +105,10 @@ final readonly class overview implements renderable, templatable {
         global $DB;
         $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
         $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
-        $returnurl = $output->get_page()->url->out_as_local_url(escaped: false);
         $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $tagcollid]);
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
-            $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname, 'returnurl' => $returnurl]);
+            $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
             $line = [
                 'component' => $metric->component,
                 'name' => $metric->name,
@@ -142,7 +141,7 @@ final readonly class overview implements renderable, templatable {
             $data['all_metrics_url'] = $allmetricsurl->out(escaped: false);
             $data['tags'] = [];
             foreach ($this->tags as $tag) {
-                $editurl = new moodle_url('/tag/edit.php', ['id' => $tag->id, 'returnurl' => $returnurl]);
+                $editurl = new moodle_url('/tag/edit.php', ['id' => $tag->id]);
                 $data['tags'][] = [
                     'name' => $tag->rawname,
                     'remove_url' => $this->remove_tag_url($tag)->out(escaped: false),

@@ -60,7 +60,7 @@ final readonly class overview implements renderable, templatable {
     public function __construct(
         /** @var array<string, registered_metric> Metrics for which to render the overview, indexed by qualified name. */
         private array $metrics,
-        /** @var array<core_tag_tag> Metrics were filtered with these tags. */
+        /** @var array<string, core_tag_tag> Metrics were filtered with these tags, indexed by normalized tag name. */
         private array $tags
     ) {}
 
@@ -72,11 +72,10 @@ final readonly class overview implements renderable, templatable {
      */
     private function add_tag_url(core_tag_tag $tag): moodle_url {
         $tags = $this->tags;
-        if (!array_filter($this->tags, fn (core_tag_tag $t) => $t->id == $tag->id)) {
-            $tags[] = $tag;
+        if (!array_key_exists($tag->name, $tags)) {
+            $tags[$tag->name] = $tag;
         }
-        $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $tags);
-        return new moodle_url('/admin/tool/monitoring/', ['tag' => implode(',', $tagnames)]);
+        return new moodle_url('/admin/tool/monitoring/', ['tag' => implode(',', array_keys($tags))]);
     }
 
     /**
@@ -86,11 +85,11 @@ final readonly class overview implements renderable, templatable {
      * @return moodle_url
      */
     private function remove_tag_url(core_tag_tag $tag): moodle_url {
-        $tags = array_filter($this->tags, fn (core_tag_tag $t) => $t->id != $tag->id);
+        $tags = $this->tags;
+        unset($tags[$tag->name]);
         $params = [];
         if (!empty($tags)) {
-            $tagnames = array_map(fn (core_tag_tag $t) => $t->rawname, $tags);
-            $params['tag'] = implode(',', $tagnames);
+            $params['tag'] = implode(',', array_keys($tags));
         }
         return new moodle_url('/admin/tool/monitoring/', $params);
     }

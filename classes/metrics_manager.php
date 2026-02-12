@@ -32,6 +32,7 @@ namespace tool_monitoring;
 use core\di;
 use core\exception\coding_exception;
 use core\hook\manager as hook_manager;
+use core_tag_tag;
 use dml_exception;
 use Exception;
 use tool_monitoring\hook\metric_collection;
@@ -43,6 +44,8 @@ use tool_monitoring\hook\metric_collection;
  *
  * @property-read array<string, registered_metric> $metrics Registered metrics indexed by their qualified name; must be populated
  *                                                          by calling the {@see dispatch_hook} method.
+ * @property-read core_tag_tag[] $tags Tags used to filter the metrics. This attribute is only used if this feature is
+ *                                     enabled in {@see fetch}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -56,6 +59,11 @@ use tool_monitoring\hook\metric_collection;
 final class metrics_manager {
     /** @var array<string, registered_metric> Collected and registered metrics indexed by their qualified name. */
     private array $metrics = [];
+
+    /**
+     * @var core_tag_tag[] Tags used to filter the metrics.
+     */
+    private array $tags = [];
 
     /**
      * Constructor without additional logic.
@@ -80,8 +88,10 @@ final class metrics_manager {
     public function __get(string $name): mixed {
         if ($name === 'metrics') {
             return $this->metrics;
+        } else if ($name === 'tags') {
+            return $this->tags;
         }
-        return $this->$name; // @codeCoverageIgnore
+        throw new coding_exception("Property \"$name\" not found.");
     }
 
     /**
@@ -105,22 +115,23 @@ final class metrics_manager {
      * @param bool $collect If `true` (default), calls the {@see dispatch_hook} method first.
      * @param bool|null $enabled If `true` (default), only enabled metrics are loaded; if `false`, only disabled ones are loaded;
      *                           passing `null` (default) disables this filter.
-     * @param string[] $tags Only metrics that carry all the provided tags will be returned.
+     * @param string[] $tagnames Only metrics that carry tags with all the provided tag names will be returned.
      * @return $this Same instance.
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function fetch(bool $collect = true, bool|null $enabled = true, array $tags = []): self {
+    public function fetch(bool $collect = true, bool|null $enabled = true, array $tagnames = []): self {
         global $DB;
         if ($collect) {
             $this->dispatch_hook();
         }
+        $this->metrics = [];
         // Store metrics indexed by qualified name for later.
         $metrics = [];
         // Construct the `IN` expression and parameters from the component-name-combinations present in the collection.
         $inplaceholders = [];
         $params = [];
-        foreach ($this->collection as $metric) {
+        foreach ($this->collection as $i => $metric) {
             $component = $metric::get_component();
             $name = $metric::get_name();
             $qname = registered_metric::get_qualified_name($component, $name);
@@ -129,22 +140,56 @@ final class metrics_manager {
                 continue;
             }
             $metrics[$qname] = $metric;
-            $inplaceholders[] = '(?,?)';
-            $params[] = $component;
-            $params[] = $name;
+            $inplaceholders[] = "(:component$i,:name$i)";
+            $params["component$i"] = $component;
+            $params["name$i"] = $name;
         }
-        // TODO: Filter by tags.
-        $where = '(component, name) IN (' . implode(',', $inplaceholders) . ')';
+        $where = '(m.component,m.name) IN (' . implode(',', $inplaceholders) . ')';
+        $join = '';
+        // Filter by tags.
+        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
+        if ($tagsenabled) {
+            if (!empty($tagnames)) {
+                $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
+                $this->tags = core_tag_tag::get_by_name_bulk($tagcollid, $tagnames);
+                $badtagname = array_search(null, $this->tags, true);
+                if ($badtagname) {
+                    // TODO: Better error handling?
+                    throw new coding_exception("Tag not found: " . $badtagname);
+                }
+                $tagids = array_column($this->tags, 'id');
+            }
+            if (!empty($tagids)) {
+                [$insql, $inparams] = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
+                $params += $inparams;
+                $params += [
+                    'tagcomponent' => 'tool_monitoring',
+                    'tagitemtype' => 'metrics',
+                    'tagcount' => count($tagids),
+                ];
+                $subselect = "SELECT ti.itemid
+                        FROM {tag_instance} ti
+                       WHERE ti.tagid $insql
+                         AND ti.component = :tagcomponent
+                         AND ti.itemtype  = :tagitemtype
+                    GROUP BY ti.itemid
+                HAVING COUNT(DISTINCT ti.tagid) = :tagcount";
+                $join = "JOIN ($subselect) x ON x.itemid = m.id";
+            }
+        }
+        $tablename = registered_metric::TABLE;
+        $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ["m.component", "m.name"]);
+        $sql = "SELECT $sqlqname AS qname, m.*
+                  FROM {{$tablename}} m
+                 $join
+                 WHERE $where";
+        // Filter by enabled.
         if (!is_null($enabled)) {
-            $where .= ' AND enabled = ?';
-            $params[] = $enabled;
+            $sql .= ' AND enabled = :enabled';
+            $params['enabled'] = $enabled;
         }
         // Issue a single `SELECT` query and construct the instances from the returned records.
-        $sqlqname = self::get_qualified_name_sql();
-        $records = $DB->get_records_sql(
-            sql: "SELECT $sqlqname AS qname, m.* FROM {" . registered_metric::TABLE . "} AS m WHERE $where",
-            params: $params,
-        );
+        $records = $DB->get_records_sql($sql, $params);
         foreach ($records as $qname => $record) {
             $this->metrics[$qname] = registered_metric::from_metric($metrics[$qname], ...(array) $record);
         }
@@ -172,6 +217,7 @@ final class metrics_manager {
         if ($collect) {
             $this->dispatch_hook();
         }
+        $this->metrics = [];
         // Grab all existing records indexed by qualified name.
         $sqlqname = self::get_qualified_name_sql();
         try {
@@ -186,7 +232,6 @@ final class metrics_manager {
             // Iterate over the collection. Construct a new instance for every metric in the collection that has a DB record
             // and add that instance to the `metrics`, making sure to remove the corresponding item from `$existingrecords`.
             // Track all metrics _without_ a matching DB record in the `$unregistered` array.
-            $this->metrics = [];
             $unregistered = [];
             foreach ($this->collection as $metric) {
                 $qname = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());

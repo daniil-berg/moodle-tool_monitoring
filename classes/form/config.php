@@ -46,13 +46,21 @@ final class config extends moodleform {
     #[\Override]
     protected function definition(): void {
         $this->metric = $this->_customdata['metric'];
-        $this->_form->addElement('hidden', 'metric', $this->metric->qualifiedname);
         $this->_form->setType('metric', PARAM_ALPHAEXT);
         $this->_form->addElement('static', 'component', get_string('component', 'tool_monitoring'), $this->metric->component);
         $this->_form->addElement('static', 'name', get_string('name', 'tool_monitoring'), $this->metric->name);
         $this->_form->addElement('static', 'type', get_string('type', 'tool_monitoring'), $this->metric->type->value);
         $this->_form->addElement('static', 'description', get_string('description', 'tool_monitoring'), $this->metric->description);
         $this->_form->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
+        $this->_form->addElement(
+            'tags',
+            'tags',
+            get_string('tags'),
+            [
+                'itemtype' => 'metrics',
+                'component' => 'tool_monitoring',
+            ]
+        );
         $this->metric->extend_config_form($this->_form);
     }
 
@@ -69,7 +77,8 @@ final class config extends moodleform {
      * @return self New config form instance.
      */
     public static function for_metric(registered_metric $metric): self {
-        $form = new self(customdata: ['metric' => $metric]);
+        global $PAGE;
+        $form = new self(action: $PAGE->url, customdata: ['metric' => $metric]);
         $form->set_data($metric->to_form_data());
         return $form;
     }

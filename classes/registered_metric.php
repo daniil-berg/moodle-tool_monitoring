@@ -29,8 +29,10 @@
 
 namespace tool_monitoring;
 
+use context_system;
 use core\exception\coding_exception;
 use core\lang_string;
+use core_tag_tag;
 use dml_exception;
 use IteratorAggregate;
 use JsonException;
@@ -241,6 +243,7 @@ final class registered_metric implements IteratorAggregate {
             $formdata = [];
         }
         $formdata['enabled'] = $this->enabled;
+        $formdata['tags'] = core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $this->id);
         return $formdata;
     }
 
@@ -274,6 +277,14 @@ final class registered_metric implements IteratorAggregate {
                 $events[] = event\metric_config_updated::for_metric($this);
             }
         }
+        // This only actually performs DB queries, if tags were either added, removed, or their order changed.
+        core_tag_tag::set_item_tags(
+            component: 'tool_monitoring',
+            itemtype: 'metrics',
+            itemid: $this->id,
+            context: context_system::instance(),
+            tagnames: $formdata->tags
+        );
         if (empty($events)) {
             return;
         }

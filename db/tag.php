@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Displays a table of all available/registered metrics.
+ * Tag area definitions for Monitoring.
+ *
+ * @link https://moodledev.io/docs/apis/subsystems/tag API Documentation
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -25,41 +27,15 @@
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- *
- * {@noinspection PhpUnhandledExceptionInspection}
  */
 
-use tool_monitoring\metrics_manager;
-use tool_monitoring\output\overview;
+defined('MOODLE_INTERNAL') || die();
 
-require_once(__DIR__ . '/../../../config.php');
-
-global $PAGE, $OUTPUT;
-
-require_login();
-
-$context = context_system::instance();
-require_capability('tool/monitoring:manage_metrics', $context);
-
-// Handle tags parameter for filtering of multiple tags.
-$taglist = optional_param('tag', '', PARAM_TAGLIST);
-$params = [];
-$manager = new metrics_manager();
-$manager->sync(delete: true);
-if ($taglist) {
-    $tags = explode(',', $taglist);
-    $params['tag'] = $taglist;
-    $manager->fetch(collect: false, enabled: null, tagnames: $tags);
-} else {
-    $tags = [];
-}
-
-$PAGE->set_url('/admin/tool/monitoring/', $params);
-$PAGE->set_context($context);
-$PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
-$PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
-
-$overview = new overview(metrics: $manager->metrics, tags: $manager->tags);
-echo $OUTPUT->header();
-echo $OUTPUT->render($overview);
-echo $OUTPUT->footer();
+$tagareas = [
+    [
+        'itemtype' => 'metrics',
+        'customurl' => '/admin/tool/monitoring/',
+        'collection' => 'monitoring',
+        'searchable' => false,
+    ],
+];

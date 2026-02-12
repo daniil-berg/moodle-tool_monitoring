@@ -43,12 +43,7 @@ $context = context_system::instance();
 require_capability('tool/monitoring:manage_metrics', $context);
 
 $qualifiedname = required_param('metric', PARAM_ALPHAEXT);
-$params = ['metric' => $qualifiedname];
-$returnurl = optional_param('returnurl', '', PARAM_LOCALURL);
-if ($returnurl) {
-    $params['returnurl'] = $returnurl;
-}
-$PAGE->set_url('/admin/tool/monitoring/configure.php', $params);
+$PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
@@ -61,7 +56,7 @@ if (is_null($metric)) {
 }
 $configure = new configure($metric);
 if ($configure->process_form()) {
-    redirect(new moodle_url($returnurl ?: '/admin/tool/monitoring/'));
+    redirect(new moodle_url('/admin/tool/monitoring/'));
 }
 
 echo $OUTPUT->header();

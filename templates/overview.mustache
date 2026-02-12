@@ -27,23 +27,35 @@
                 "name": "foo",
                 "type": "gauge",
                 "description": "number of foos",
-                "configurl": "http://moodle.org/admin/tool/monitoring/configure.php?metric=local_plugin_foo",
+                "config_url": "http://moodle.org/admin/tool/monitoring/configure.php?metric=local_plugin_foo",
                 "tags": [
-                    {"id":1,"name":"Cat","viewurl":"http://moodle.org/admin/tool/monitoring/?tags=Cat"},
-                    {"id":1,"name":"Dog","viewurl":"http://moodle.org/admin/tool/monitoring/?tags=Dog"},
-                    {"id":1,"name":"Mouse","viewurl":"http://moodle.org/admin/tool/monitoring/?tags=Mouse"}
+                    {
+                        "id": 1,
+                        "name": "Cat",
+                        "view_url": "http://moodle.org/admin/tool/monitoring/?tag=Cat"
+                    },
+                    {
+                        "id" :1,
+                        "name": "Dog",
+                        "view_url": "http://moodle.org/admin/tool/monitoring/?tag=Dog"
+                    },
+                    {
+                        "id": 1,
+                        "name": "Mouse",
+                        "view_url": "http://moodle.org/admin/tool/monitoring/?tag=Mouse"
+                    }
                 ]
             }
         ],
-        "tagsenabled": true,
-        "managetagsurl": "http://moodle.org/tag/manage.php?tc=14",
-        "filtered": true,
-        "allmetricsurl": "http://moodle.org/admin/tool/monitoring/",
+        "is_tagging_enabled": true,
+        "manage_tags_url": "http://moodle.org/tag/manage.php?tc=14",
+        "has_tags": true,
+        "all_metrics_url": "http://moodle.org/admin/tool/monitoring/",
         "tags": [
             {
                 "name": "Cat",
-                "removeurl": "http://moodle.org/admin/tool/monitoring/",
-                "editurl": "http://moodle.org//tag/edit.php?id=42"
+                "remove_url": "http://moodle.org/admin/tool/monitoring/",
+                "edit_url": "http://moodle.org//tag/edit.php?id=42"
             }
         ]
     }
@@ -53,17 +65,17 @@
     {{#str}} metricsoverview, tool_monitoring {{/str}}
 </h2>
 
-{{#filtered}}
+{{#has_tags}}
     <div class="mt-3">
         {{#str}} tagfilter, tool_monitoring {{/str}}
         {{#tags}}
-            <a href="{{removeurl}}" class="badge bg-secondary text-dark" style="font-size: 100%;"><span aria-hidden="true">× </span> {{name}}</a>
+            <a href="{{remove_url}}" class="badge bg-secondary text-dark" style="font-size: 100%;"><span aria-hidden="true">× </span> {{name}}</a>
         {{/tags}}
     </div>
     <div class="text-right mb-3">
-        <a href="{{allmetricsurl}}">{{#str}} metricsoverviewshowall, tool_monitoring {{/str}}</a>
+        <a href="{{all_metrics_url}}">{{#str}} metricsoverviewshowall, tool_monitoring {{/str}}</a>
     </div>
-{{/filtered}}
+{{/has_tags}}
 
 <table class="table table-sm table-hover">
   <thead>
@@ -72,9 +84,9 @@
       <th scope="col">{{#str}} name, tool_monitoring {{/str}}</th>
       <th scope="col">{{#str}} type, tool_monitoring {{/str}}</th>
       <th scope="col">{{#str}} description, tool_monitoring {{/str}}</th>
-      {{#tagsenabled}}
+      {{#is_tagging_enabled}}
         <th scope="col">{{#str}} tags, tool_monitoring {{/str}}</th>
-      {{/tagsenabled}}
+      {{/is_tagging_enabled}}
       <th scope="col">{{#str}} actions, tool_monitoring {{/str}}</th>
     </tr>
   </thead>
@@ -85,24 +97,24 @@
         <td>{{name}}</td>
         <td>{{type}}</td>
         <td>{{description}}</td>
-        {{#tagsenabled}}
+        {{#is_tagging_enabled}}
           <td>
             {{#tags}}
-              <a href="{{viewurl}}" class="badge bg-info text-white">{{name}}</a>
+              <a href="{{view_url}}" class="badge bg-info text-white">{{name}}</a>
             {{/tags}}
           </td>
-        {{/tagsenabled}}
-        <td><a href="{{{configurl}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
+        {{/is_tagging_enabled}}
+        <td><a href="{{{config_url}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
       </tr>
     {{/metrics}}
   </tbody>
 </table>
 
-{{#tagsenabled}}
+{{#is_tagging_enabled}}
     <div class="my-5 text-right">
         {{#tags}}
-            <a href="{{editurl}}" class="btn btn-secondary">{{#str}} edit_tag, tool_monitoring, {{name}} {{/str}}</a>
+            <a href="{{edit_url}}" class="btn btn-secondary">{{#str}} edit_tag, tool_monitoring, {{name}} {{/str}}</a>
         {{/tags}}
-        <a href="{{managetagsurl}}" class="btn btn-secondary">{{#str}} manage_tags, tool_monitoring {{/str}}</a>
+        <a href="{{manage_tags_url}}" class="btn btn-secondary">{{#str}} manage_tags, tool_monitoring {{/str}}</a>
     </div>
-{{/tagsenabled}}
+{{/is_tagging_enabled}}

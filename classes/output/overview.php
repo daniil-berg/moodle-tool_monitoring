@@ -111,11 +111,11 @@ final readonly class overview implements renderable, templatable {
         foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname, 'returnurl' => $returnurl]);
             $line = [
-                'component'   => $metric->component,
-                'name'        => $metric->name,
-                'type'        => $metric->type->value,
+                'component' => $metric->component,
+                'name' => $metric->name,
+                'type' => $metric->type->value,
                 'description' => $metric->description->out(),
-                'configurl'   => $configurl->out(escaped: false),
+                'config_url' => $configurl->out(escaped: false),
             ];
             if ($tagsenabled) {
                 $tags = core_tag_tag::get_item_tags('tool_monitoring', 'metrics', $metric->id);
@@ -123,30 +123,30 @@ final readonly class overview implements renderable, templatable {
                     fn (core_tag_tag $tag): array => [
                         'id' => $tag->id,
                         'name' => $tag->rawname,
-                        'viewurl' => $this->add_tag_url($tag)->out(escaped: false),
+                        'view_url' => $this->add_tag_url($tag)->out(escaped: false),
                     ],
                     array_values($tags),
                 );
             }
             $lines[] = $line;
         }
-        $filtered = !empty($this->tags) && $tagsenabled;
+        $hastags = !empty($this->tags) && $tagsenabled;
         $data = [
             'metrics' => $lines,
-            'tagsenabled' => $tagsenabled,
-            'managetagsurl' => $managetagsurl,
-            'filtered' => $filtered,
+            'is_tagging_enabled' => $tagsenabled,
+            'manage_tags_url' => $managetagsurl,
+            'has_tags' => $hastags,
         ];
-        if ($filtered) {
+        if ($hastags) {
             $allmetricsurl = new moodle_url('/admin/tool/monitoring/');
-            $data['allmetricsurl'] = $allmetricsurl->out(escaped: false);
+            $data['all_metrics_url'] = $allmetricsurl->out(escaped: false);
             $data['tags'] = [];
             foreach ($this->tags as $tag) {
                 $editurl = new moodle_url('/tag/edit.php', ['id' => $tag->id, 'returnurl' => $returnurl]);
                 $data['tags'][] = [
                     'name' => $tag->rawname,
-                    'removeurl' => $this->remove_tag_url($tag)->out(escaped: false),
-                    'editurl' => $editurl->out(escaped: false),
+                    'remove_url' => $this->remove_tag_url($tag)->out(escaped: false),
+                    'edit_url' => $editurl->out(escaped: false),
                 ];
             }
         }

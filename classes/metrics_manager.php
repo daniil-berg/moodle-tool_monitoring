@@ -158,7 +158,7 @@ final class metrics_manager {
                     throw new coding_exception("Tag not found: " . $badtagname);
                 }
                 $this->tags = array_values($tags);
-                $tagids = array_map(fn (core_tag_tag $t) => $t->id, $this->tags);
+                $tagids = array_column($this->tags, 'id');
             }
             if (!empty($tagids)) {
                 [$insql, $inparams] = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');

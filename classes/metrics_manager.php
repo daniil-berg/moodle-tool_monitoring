@@ -152,7 +152,7 @@ final class metrics_manager {
             if (!empty($tagnames)) {
                 $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
                 $tags = core_tag_tag::get_by_name_bulk($tagcollid, $tagnames);
-                $badtagname = array_key_first(array_filter($tags, fn ($t) => $t === null));
+                $badtagname = array_search(null, $tags, true);
                 if ($badtagname) {
                     // TODO: Better error handling?
                     throw new coding_exception("Tag not found: " . $badtagname);

@@ -88,8 +88,6 @@ final class metrics_manager_test extends advanced_testcase {
             metrics\num_courses::class,
             metrics\num_overdue_tasks::class,
             metrics\num_quiz_attempts_in_progress::class,
-            metrics\num_tasks_spawned_adhoc::class,
-            metrics\num_tasks_spawned_scheduled::class,
             metrics\num_user_count::class,
             metrics\num_users_accessed::class,
         ];

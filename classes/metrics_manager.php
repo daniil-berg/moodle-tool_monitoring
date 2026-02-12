@@ -180,7 +180,7 @@ final class metrics_manager {
         }
         $tablename = registered_metric::TABLE;
         $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ["m.component", "m.name"]);
-        $sql = "SELECT {$sqlqname} AS qname, m.*
+        $sql = "SELECT $sqlqname AS qname, m.*
                   FROM {{$tablename}} m
                  $join
                  WHERE $where";

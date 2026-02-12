@@ -277,18 +277,19 @@ final class registered_metric implements IteratorAggregate {
                 $events[] = event\metric_config_updated::for_metric($this);
             }
         }
+        // This only actually performs DB queries, if tags were either added, removed, or their order changed.
         core_tag_tag::set_item_tags(
-            'tool_monitoring',
-            'metrics',
-            $this->id,
-            context_system::instance(),
-            $formdata->tags
+            component: 'tool_monitoring',
+            itemtype: 'metrics',
+            itemid: $this->id,
+            context: context_system::instance(),
+            tagnames: $formdata->tags
         );
         if (empty($events)) {
             return;
         }
         $transaction = $DB->start_delegated_transaction();
-            $this->update(['enabled', 'config', 'timemodified', 'usermodified']);
+        $this->update(['enabled', 'config', 'timemodified', 'usermodified']);
         foreach ($events as $event) {
             $event->trigger();
         }

@@ -15,18 +15,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Tag area definitions for Monitoring
+ * Tag area definitions for Monitoring.
  *
- * Documentation: {@link https://moodledev.io/docs/apis/subsystems/tag}
+ * @link https://moodledev.io/docs/apis/subsystems/tag API Documentation
  *
- * @package   tool_monitoring
+ * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
- * Daniel Fainberg <d.fainberg@tu-berlin.de>
- * Martin Gauk <martin.gauk@tu-berlin.de>
- * Sebastian Rupp <sr@artcodix.com>
- * Malte Schmitz <mal.schmitz@uni-luebeck.de>
- * Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();

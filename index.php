@@ -59,9 +59,7 @@ $PAGE->set_context($context);
 $PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
 $PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
 
-$overview = new overview(
-    metrics: $manager->metrics,
-    tags: $manager->tags);
+$overview = new overview(metrics: $manager->metrics, tags: $manager->tags);
 echo $OUTPUT->header();
 echo $OUTPUT->render($overview);
 echo $OUTPUT->footer();

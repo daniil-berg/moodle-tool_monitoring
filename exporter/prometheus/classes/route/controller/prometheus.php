@@ -86,7 +86,7 @@ class prometheus {
             ),
             new query_parameter(
                 name: 'tag',
-                description: 'If provided, only metrics that carry this tags (comma separated) are returned.',
+                description: 'If provided, only metrics that carry these tags (comma separated) are returned.',
                 type: param::TAGLIST,
                 default: null,
             ),

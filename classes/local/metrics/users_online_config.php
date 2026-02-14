@@ -67,6 +67,11 @@ final readonly class users_online_config implements metric_config {
         }
         sort($timewindows, SORT_NUMERIC);
         $this->timewindows = array_values(array_unique($timewindows));
+        foreach ($this->timewindows as $timewindow) {
+            if ($timewindow <= 0) {
+                throw new coding_exception("Invalid time window value: $timewindow");
+            }
+        }
     }
 
     /**

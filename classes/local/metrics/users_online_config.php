@@ -144,5 +144,6 @@ final readonly class users_online_config implements metric_config {
     public static function extend_config_form(MoodleQuickForm $mform): void {
         $mform->addElement('text', 'timewindows', new lang_string('users_online_time_windows', 'tool_monitoring'));
         $mform->setType('timewindows', PARAM_TEXT);
+        $mform->addHelpButton('timewindows', 'users_online_time_windows', 'tool_monitoring');
     }
 }

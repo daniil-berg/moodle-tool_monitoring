@@ -53,6 +53,13 @@ use stdClass;
  */
 #[CoversClass(users_online_config::class)]
 final class users_online_config_test extends advanced_testcase {
+    public static function setUpBeforeClass(): void {
+        global $CFG;
+        parent::setUpBeforeClass();
+        // We are using the `MoodleQuickForm` class. Hopefully, requiring the `formslib.php` will not be needed soon.
+        require_once("$CFG->libdir/formslib.php");
+    }
+
     /**
      * @param array $timewindows Arguments to unpack into the {@see users_online_config} constructor.
      * @param array<float|int>|string $expected Expected value of the {@see users_online_config::timewindows} property;

@@ -39,5 +39,5 @@ $callbacks = [
     ['hook' => metric_collection::class, 'callback' => [metrics\num_overdue_tasks::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\num_quiz_attempts_in_progress::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\num_user_count::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\num_users_accessed::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\users_online::class, 'collect']],
 ];

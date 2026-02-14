@@ -60,17 +60,17 @@ interface metric_config extends JsonSerializable {
      * Should be the inverse of the {@see JsonSerializable::jsonSerialize} method.
      *
      * @param string $json String of a valid JSON object (not an array or any other type).
-     * @return static New instance of the config class.
+     * @return self New instance of the config class.
      */
-    public static function from_json(string $json): static;
+    public static function from_json(string $json): self;
 
     /**
      * Constructs a new instance from the (non-empty) output of {@see moodleform::get_data}.
      *
      * @param stdClass $formdata Form data to use for construction.
-     * @return static New instance of the config class.
+     * @return self New instance of the config class.
      */
-    public static function with_form_data(stdClass $formdata): static;
+    public static function with_form_data(stdClass $formdata): self;
 
     /**
      * Transforms an instance into an associative array of data that can be passed to {@see moodleform::set_data}.

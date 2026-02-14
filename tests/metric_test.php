@@ -36,7 +36,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics\num_overdue_tasks;
-use tool_monitoring\local\metrics\num_users_accessed;
+use tool_monitoring\local\metrics\users_online;
 use tool_monitoring\local\testing\metric_strict_label_names;
 use tool_monitoring\local\testing\metric_settable_values;
 
@@ -97,8 +97,8 @@ final class metric_test extends advanced_testcase {
                 'expected' => 'num_overdue_tasks',
             ],
             [
-                'class'    => num_users_accessed::class,
-                'expected' => 'num_users_accessed',
+                'class'    => users_online::class,
+                'expected' => 'users_online',
             ],
         ];
     }
@@ -134,7 +134,7 @@ final class metric_test extends advanced_testcase {
                 'expected' => 'tool_monitoring',
             ],
             [
-                'class'    => num_users_accessed::class,
+                'class'    => users_online::class,
                 'expected' => 'tool_monitoring',
             ],
         ];

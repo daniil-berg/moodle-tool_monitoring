@@ -87,16 +87,24 @@ final class users_online_config_test extends advanced_testcase {
                 'timewindows' => [1, 2, 3, 4, 3, 2, 1, 1],
                 'expected'    => [1, 2, 3, 4],
             ],
-            [
+            'Named arguments' => [
                 'timewindows' => ['foo' => 1, 'bar' => 3, 'baz' => 2],
                 'expected'    => [1, 2, 3],
             ],
-            [
+            'Mix of numeric strings, integers and floats' => [
                 'timewindows' => ['1', '3.14', 2, 0.69],
                 'expected'    => [0.69, 1, 2, 3.14],
             ],
-            [
+            'No arguments' => [
                 'timewindows' => [],
+                'expected'    => coding_exception::class,
+            ],
+            'Negative time window' => [
+                'timewindows' => [1, 2, -3],
+                'expected'    => coding_exception::class,
+            ],
+            'Zero time window' => [
+                'timewindows' => [1, 2, 0],
                 'expected'    => coding_exception::class,
             ],
         ];

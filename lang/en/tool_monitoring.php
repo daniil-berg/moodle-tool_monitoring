@@ -51,4 +51,5 @@ $string['pluginname'] = 'Monitoring';
 $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
 $string['type'] = 'Type';
 $string['users_online_description'] = 'Number of users that have recently accessed the site';
-$string['users_online_time_windows'] = 'Maximum time since last access';
+$string['users_online_time_windows'] = 'Time window (seconds)';
+$string['users_online_time_windows_help'] = 'Number of seconds since the last user access for that user to be counted as online. Multiple values can be specified, separated by commas; the metric will produce a separate metric value for each time window.';

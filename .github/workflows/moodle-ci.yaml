@@ -88,7 +88,10 @@ jobs:
 
       - name: Moodle Code Checker
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpcs --max-warnings 0
+        # As of now, moodle-cs incorrectly analyzes `readonly` classes and complains about the `MOODLE_INTERNAL` check missing for `final readonly` class definitions.
+        # Until https://github.com/moodlehq/moodle-cs/pull/224 is merged (or the issue is fixed in another way), we have to ignore that sniff.
+        run: moodle-plugin-ci phpcs --exclude='moodle.Files.MoodleInternal' --max-warnings 0
+        #run: moodle-plugin-ci phpcs --max-warnings 0
 
       # This has too many false positives and will be replaced completely by the Moodle Code Sniffer soon (hopefully).
       #- name: Moodle PHPDoc Checker

@@ -61,6 +61,8 @@ final class users_online_config_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see users_online_config} constructor.
+     *
      * @param array $timewindows Arguments to unpack into the {@see users_online_config} constructor.
      * @param array<float|int>|string $expected Expected value of the {@see users_online_config::timewindows} property;
      *                                          exception class name if an exception is expected.

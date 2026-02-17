@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_courses} metric class.
+ * Definition of the {@see courses} metric class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -47,7 +47,7 @@ use tool_monitoring\metric_value;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_courses extends metric {
+class courses extends metric {
     /**
      * {@inheritDoc}
      */
@@ -59,7 +59,7 @@ class num_courses extends metric {
      * {@inheritDoc}
      */
     public static function get_description(): lang_string {
-        return new lang_string('num_courses_description', 'tool_monitoring');
+        return new lang_string('courses_description', 'tool_monitoring');
     }
 
     /**

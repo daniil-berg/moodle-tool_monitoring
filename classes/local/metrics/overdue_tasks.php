@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_overdue_tasks} class.
+ * Definition of the {@see overdue_tasks} metric class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -40,7 +40,7 @@ use tool_monitoring\strict_labels;
 /**
  * Calculates the number of tasks that should have already executed but did not.
  *
- * The `task_type` label is used to distinguish between the number of overdue _adhoc_ tasks and overdue _scheduled_ tasks.
+ * The `type` label is used to distinguish between the number of overdue _adhoc_ tasks and overdue _scheduled_ tasks.
  * In the latter case disabled tasks are not counted.
  *
  * @package    tool_monitoring
@@ -52,24 +52,35 @@ use tool_monitoring\strict_labels;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_overdue_tasks extends metric {
+class overdue_tasks extends metric {
     use strict_labels;
 
+    /**
+     * {@inheritDoc}
+     */
     public static function get_description(): lang_string {
-        return new lang_string('num_overdue_tasks_description', 'tool_monitoring');
+        return new lang_string('overdue_tasks_description', 'tool_monitoring');
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public static function get_labels(): array {
-        return [['task_type' => 'adhoc'], ['task_type' => 'scheduled']];
+        return [['type' => 'adhoc'], ['type' => 'scheduled']];
     }
 
     /**
-     * @return Generator<metric_value>
-     * @throws dml_exception Database query failed.
+     * {@inheritDoc}
+     *
+     * @return Generator<metric_value> Yields one {@see metric_value} for adhoc and then one for scheduled tasks.
+     * @throws dml_exception
      */
     public function calculate(): Generator {
         global $DB;
@@ -77,13 +88,13 @@ class num_overdue_tasks extends metric {
         $params = ['next_runtime' => time()];
         yield new metric_value(
             value: $DB->count_records_select('task_adhoc', $where, $params),
-            label: ['task_type' => 'adhoc'],
+            label: ['type' => 'adhoc'],
         );
         $where .= ' AND disabled = :disabled';
-        $params['disabled'] = 0;
+        $params['disabled'] = false;
         yield new metric_value(
             value: $DB->count_records_select('task_scheduled', $where, $params),
-            label: ['task_type' => 'scheduled'],
+            label: ['type' => 'scheduled'],
         );
     }
 }

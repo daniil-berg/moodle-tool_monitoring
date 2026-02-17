@@ -38,6 +38,6 @@ $callbacks = [
     ['hook' => metric_collection::class, 'callback' => [metrics\courses::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\overdue_tasks::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\num_quiz_attempts_in_progress::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\num_user_count::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\user_accounts::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\users_online::class, 'collect']],
 ];

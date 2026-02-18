@@ -61,6 +61,6 @@ class metric_enabled extends metric_event {
      */
     #[\Override]
     public function get_description(): string {
-        return "User with ID '$this->userid' enabled the metric '$this->metric'.";
+        return get_string('event:metric_enabled_description', 'tool_monitoring', $this->userid, $this->metric);
     }
 }

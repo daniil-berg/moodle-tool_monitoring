@@ -30,24 +30,36 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['actions'] = 'Actions';
-$string['component'] = 'Component';
-$string['configure_metric'] = 'Configure Metric';
-$string['description'] = 'Description';
-$string['edit'] = 'Edit';
-$string['event:metric_disabled'] = 'Metric disabled';
-$string['event:metric_enabled'] = 'Metric enabled';
-$string['metricconfigupdated'] = 'Metric configuration updated';
-$string['metricenabled'] = 'Metric enabled';
-$string['metricsoverview'] = 'Overview of Available Metrics';
-$string['monitoring:manage_metrics'] = 'Manage and configure monitoring metrics';
-$string['monitoring_metrics'] = 'Monitoring Metrics';
-$string['name'] = 'Name';
-$string['num_courses_description'] = 'Current number of courses';
-$string['num_overdue_tasks_description'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
-$string['num_quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts';
-$string['num_user_count_description'] = 'Number of total registered users';
-$string['num_users_accessed_description'] = 'Number of users that have recently accessed the site';
 $string['pluginname'] = 'Monitoring';
 $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
-$string['type'] = 'Type';
+
+$string['action:edit'] = 'Edit';
+
+$string['event:metric_config_updated'] = 'Metric configuration updated';
+$string['event:metric_config_updated_description'] = 'User with ID {$a} updated the metric config for {$b}.';
+$string['event:metric_disabled'] = 'Metric disabled';
+$string['event:metric_disabled_description'] = 'User with ID {$a} disabled the metric {$b}.';
+$string['event:metric_enabled'] = 'Metric enabled';
+
+
+$string['metric:num_courses_description'] = 'Current number of courses';
+$string['metric:num_overdue_tasks_description'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
+$string['metric:num_quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts';
+$string['metric:num_user_count_description'] = 'Number of total registered users';
+$string['metric:num_users_accessed_description'] = 'Number of users that have recently accessed the site';
+
+$string['settings:actions'] = 'Actions';
+$string['settings:component'] = 'Component';
+$string['settings:configure_metric'] = 'Configure Metric';
+$string['settings:description'] = 'Description';
+$string['settings:manage_metrics'] = 'Manage and configure monitoring metrics';
+$string['settings:metric_enabled'] = 'Metric enabled';
+$string['settings:metric_overview'] = 'Overview of Available Metrics';
+$string['settings:monitoring_metrics'] = 'Monitoring Metrics';
+$string['settings:name'] = 'Name';
+$string['settings:type'] = 'Type';
+
+
+
+
+

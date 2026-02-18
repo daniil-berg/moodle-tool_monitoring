@@ -33,16 +33,16 @@
     }
 }}
 
-<h2>{{#str}} metricsoverview, tool_monitoring {{/str}}</h2>
+<h2>{{#str}} settings:metric_overview, tool_monitoring {{/str}}</h2>
 
 <table class="table table-sm table-hover">
   <thead>
     <tr>
-      <th scope="col">{{#str}} component, tool_monitoring {{/str}}</th>
-      <th scope="col">{{#str}} name, tool_monitoring {{/str}}</th>
-      <th scope="col">{{#str}} type, tool_monitoring {{/str}}</th>
-      <th scope="col">{{#str}} description, tool_monitoring {{/str}}</th>
-      <th scope="col">{{#str}} actions, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:component, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:name, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:type, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:description, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:actions, tool_monitoring {{/str}}</th>
     </tr>
   </thead>
   <tbody>
@@ -52,7 +52,7 @@
         <td>{{name}}</td>
         <td>{{type}}</td>
         <td>{{description}}</td>
-        <td><a href="{{{configurl}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
+        <td><a href="{{{configurl}}}">{{#str}} action:edit, tool_monitoring {{/str}}</a></td>
       </tr>
     {{/metrics}}
   </tbody>

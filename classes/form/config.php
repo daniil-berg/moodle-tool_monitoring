@@ -39,25 +39,28 @@ require_once("$CFG->libdir/formslib.php");
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class config extends moodleform {
+final class config extends moodleform
+{
     /** @var registered_metric Metric for which this form is defined; set in the {@see definition} method. */
     private registered_metric $metric;
 
     #[\Override]
-    protected function definition(): void {
+    protected function definition(): void
+    {
         $this->metric = $this->_customdata['metric'];
         $this->_form->addElement('hidden', 'metric', $this->metric->qualifiedname);
         $this->_form->setType('metric', PARAM_ALPHAEXT);
-        $this->_form->addElement('static', 'component', get_string('component', 'tool_monitoring'), $this->metric->component);
-        $this->_form->addElement('static', 'name', get_string('name', 'tool_monitoring'), $this->metric->name);
-        $this->_form->addElement('static', 'type', get_string('type', 'tool_monitoring'), $this->metric->type->value);
-        $this->_form->addElement('static', 'description', get_string('description', 'tool_monitoring'), $this->metric->description);
-        $this->_form->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
+        $this->_form->addElement('static', 'component', get_string('settings:component', 'tool_monitoring'), $this->metric->component);
+        $this->_form->addElement('static', 'name', get_string('settings:name', 'tool_monitoring'), $this->metric->name);
+        $this->_form->addElement('static', 'type', get_string('settings:type', 'tool_monitoring'), $this->metric->type->value);
+        $this->_form->addElement('static', 'description', get_string('settings:description', 'tool_monitoring'), $this->metric->description);
+        $this->_form->addElement('advcheckbox', 'enabled', get_string('settings:metric_enabled', 'tool_monitoring'));
         $this->metric->extend_config_form($this->_form);
     }
 
     #[\Override]
-    protected function after_definition(): void {
+    protected function after_definition(): void
+    {
         $this->add_action_buttons();
         parent::after_definition();
     }
@@ -68,7 +71,8 @@ final class config extends moodleform {
      * @param registered_metric $metric Metric for which to return the form.
      * @return self New config form instance.
      */
-    public static function for_metric(registered_metric $metric): self {
+    public static function for_metric(registered_metric $metric): self
+    {
         $form = new self(customdata: ['metric' => $metric]);
         $form->set_data($metric->to_form_data());
         return $form;
@@ -83,7 +87,8 @@ final class config extends moodleform {
      * @throws dml_exception
      * @throws JsonException The metric-specific config data could not be serialized.
      */
-    public function save(): void {
+    public function save(): void
+    {
         if (is_null($formdata = $this->get_data())) {
             return;
         }

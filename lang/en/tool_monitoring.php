@@ -35,10 +35,23 @@ $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
 
 $string['action:edit'] = 'Edit';
 
+$string['error:unique_metric_name'] = 'Collected more than one metric with the qualified name ${a}';
+$string['error:metric_name_required'] = 'Metric name is required';
+$string['error:no_constructor'] = 'No constructor defined for {$a}';
+$string['error:private_constructor'] = 'Constructor of {$a} is private';
+$string['error:json_decode'] = 'Json decode error';
+$string['error:missing_value_json'] = 'Missing {$a} in JSON';
+$string['error:missing_value_form_data'] = 'Missing {$a} in form data';
+$string['error:invalid_label_names'] = 'Invalid label names: {$a}';
+$string['error:label_not_allowed'] = 'Label not allowed: {$a}';
+$string['error:metric_config'] = 'Metric config JSON is not set';
+$string['error:class_not_implemented'] = 'Provided class {$a->class} does not implement {$a->configclass}';
+
 $string['event:metric_config_updated'] = 'Metric configuration updated';
-$string['event:metric_config_updated_description'] = 'User with ID {$a} updated the metric config for {$b}.';
+$string['event:metric_config_updated_description'] = 'User with ID {$a->userid} updated the metric config for {$a->metric}.';
 $string['event:metric_disabled'] = 'Metric disabled';
-$string['event:metric_disabled_description'] = 'User with ID {$a} disabled the metric {$b}.';
+$string['event:metric_disabled_description'] = 'User with ID {$a->userid} disabled the metric {$a->metric}.';
+$string['event:metric_enabled_description'] = 'User with ID {$a->userid} enabled the metric {$a->metric}.';
 $string['event:metric_enabled'] = 'Metric enabled';
 
 
@@ -47,6 +60,7 @@ $string['metric:num_overdue_tasks_description'] = 'Number of tasks (excluding di
 $string['metric:num_quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts';
 $string['metric:num_user_count_description'] = 'Number of total registered users';
 $string['metric:num_users_accessed_description'] = 'Number of users that have recently accessed the site';
+$string['metric:num_users_accessed_timewindow'] = 'Number of seconds since the last user access for it to be counted.';
 
 $string['settings:actions'] = 'Actions';
 $string['settings:component'] = 'Component';

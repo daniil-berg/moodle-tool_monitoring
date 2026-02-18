@@ -44,7 +44,7 @@ class num_quiz_attempts_in_progress extends metric {
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('num_quiz_attempts_in_progress_description', 'tool_monitoring');
+        return new lang_string('metric:num_quiz_attempts_in_progress_description', 'tool_monitoring');
     }
 
     public function calculate(): metric_value {

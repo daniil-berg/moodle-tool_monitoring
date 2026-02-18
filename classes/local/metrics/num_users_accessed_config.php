@@ -44,7 +44,8 @@ use tool_monitoring\simple_metric_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_users_accessed_config extends simple_metric_config {
+class num_users_accessed_config extends simple_metric_config
+{
     /**
      * Constructor without additional logic.
      *
@@ -53,8 +54,9 @@ class num_users_accessed_config extends simple_metric_config {
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
-        /** @var int Number of seconds since the last user access for it to be counted. */
-        #[label('Number of seconds since the last user access for it to be counted.')]
+            /** @var int Number of seconds since the last user access for it to be counted. */
+        #[label(get_string('metric:num_users_accessed_timewindow', 'tool_monitoring'))]
         public int $timewindow = 300,
-    ) {}
+    ) {
+    }
 }

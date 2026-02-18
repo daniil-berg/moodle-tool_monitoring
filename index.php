@@ -43,8 +43,8 @@ require_capability('tool/monitoring:manage_metrics', $context);
 
 $PAGE->set_url('/admin/tool/monitoring/');
 $PAGE->set_context($context);
-$PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
-$PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
+$PAGE->set_title(get_string('settings:monitoring_metrics', 'tool_monitoring'));
+$PAGE->set_heading(get_string('settings:monitoring_metrics', 'tool_monitoring'));
 $PAGE->add_body_class('limitedwidth');
 $manager = new metrics_manager();
 $overview = new overview($manager->sync(delete: true)->metrics);

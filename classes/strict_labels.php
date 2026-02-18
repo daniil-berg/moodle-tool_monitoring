@@ -30,6 +30,7 @@
 namespace tool_monitoring;
 
 use core\exception\coding_exception;
+use core_table\external\dynamic\get;
 
 /**
  * Enforces an allowed set of labels for the {@see metric} exhibiting this trait.
@@ -43,7 +44,8 @@ use core\exception\coding_exception;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-trait strict_labels {
+trait strict_labels
+{
     /**
      * Returns the set of allowed labels expected for the metric exhibiting this trait.
      *
@@ -58,10 +60,11 @@ trait strict_labels {
      * @return metric_value Valid metric value.
      * @throws coding_exception Label is not allowed.
      */
-    public static function validate_value(metric_value $metricvalue): metric_value {
+    public static function validate_value(metric_value $metricvalue): metric_value
+    {
         if (!in_array($metricvalue->label, static::get_labels())) {
             // TODO: Use custom exception class.
-            throw new coding_exception('Label not allowed: ' . json_encode($metricvalue->label));
+            throw new coding_exception(get_string('error:label_not_allowed', 'tool_monitoring', json_encode(static::get_labels())));
         }
         return $metricvalue;
     }

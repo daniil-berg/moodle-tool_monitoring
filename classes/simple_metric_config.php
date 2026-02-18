@@ -56,7 +56,8 @@ use stdClass;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class simple_metric_config implements metric_config {
+abstract class simple_metric_config implements metric_config
+{
     /** @var array<string, array<string, ReflectionParameter>> Cache for config parameters indexed by config class name. */
     private static array $configparameters = [];
 
@@ -68,23 +69,24 @@ abstract class simple_metric_config implements metric_config {
      * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
      * @throws coding_exception
      */
-    protected static function get_config_parameters(): array {
+    protected static function get_config_parameters(): array
+    {
         if (isset(self::$configparameters[static::class])) {
             return self::$configparameters[static::class];
         }
         $class = new ReflectionClass(static::class);
         if (is_null($constructor = $class->getConstructor())) {
             // TODO: Use custom exception class.
-            throw new coding_exception("No constructor defined for '{$class->getName()}'");
+            throw new coding_exception(get_string('error:no_constructor', 'tool_monitoring', $class->getName()));
         }
         if ($constructor->isPrivate()) {
             // TODO: Use custom exception class.
-            throw new coding_exception("Constructor of '{$class->getName()}' is private");
+            throw new coding_exception(get_string('error:constructor_private', 'tool_monitoring', $class->getName()));
         }
         $parameters = array_column(
-            array:      $constructor->getParameters(),
+            array: $constructor->getParameters(),
             column_key: null,
-            index_key:  'name',
+            index_key: 'name',
         );
         self::$configparameters[static::class] = $parameters;
         return $parameters;
@@ -95,7 +97,8 @@ abstract class simple_metric_config implements metric_config {
      *
      * @return $this Same instance.
      */
-    public function jsonSerialize(): static {
+    public function jsonSerialize(): static
+    {
         return $this;
     }
 
@@ -108,15 +111,16 @@ abstract class simple_metric_config implements metric_config {
      * @return static New instance of the config class.
      * @throws coding_exception JSON is not valid or not an object or missing config parameters.
      */
-    public static function from_json(string $json): static {
+    public static function from_json(string $json): static
+    {
         $data = json_decode($json, associative: true);
         if (empty($data) || !is_array($data) || array_is_list($data)) {
-            throw new coding_exception("PLACEHOLDER");
+            throw new coding_exception(get_string('error:json_decode', 'tool_monitoring'));
         }
         $args = [];
         foreach (array_keys(self::get_config_parameters()) as $name) {
             if (!array_key_exists($name, $data)) {
-                throw new coding_exception("Missing '$name' in JSON");
+                throw new coding_exception(get_string('error:missing_value_json', 'tool_monitoring', $name));
             }
             $args[$name] = $data[$name];
         }
@@ -132,11 +136,12 @@ abstract class simple_metric_config implements metric_config {
      * @return static New instance of the config class.
      * @throws coding_exception
      */
-    public static function with_form_data(stdClass $formdata): static {
+    public static function with_form_data(stdClass $formdata): static
+    {
         $args = [];
         foreach (array_keys(self::get_config_parameters()) as $name) {
             if (!property_exists($formdata, $name)) {
-                throw new coding_exception("Missing '$name' in form data");
+                throw new coding_exception(get_string('error:missing_value_form_data', 'tool_monitoring', $name));
             }
             $args[$name] = $formdata->$name;
         }
@@ -150,7 +155,8 @@ abstract class simple_metric_config implements metric_config {
      *
      * @return array<string, mixed> Data to set on the config form.
      */
-    public function to_form_data(): array {
+    public function to_form_data(): array
+    {
         return (array) $this;
     }
 
@@ -165,7 +171,8 @@ abstract class simple_metric_config implements metric_config {
      * @param MoodleQuickForm $mform Configuration form.
      * @throws coding_exception
      */
-    public static function extend_config_form(MoodleQuickForm $mform): void {
+    public static function extend_config_form(MoodleQuickForm $mform): void
+    {
         foreach (self::get_config_parameters() as $name => $param) {
             $paramtype = $param->getType();
             if ($paramtype instanceof ReflectionNamedType) {

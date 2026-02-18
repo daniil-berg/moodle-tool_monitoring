@@ -43,14 +43,16 @@ use core\lang_string;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_enabled extends metric_event {
+class metric_enabled extends metric_event
+{
     /**
      * Returns localized event name.
      *
      * @return lang_string Name of the event as a lazy string.
      */
     #[\Override]
-    public static function get_name(): lang_string {
+    public static function get_name(): lang_string
+    {
         return new lang_string('event:metric_enabled', 'tool_monitoring');
     }
 
@@ -60,7 +62,8 @@ class metric_enabled extends metric_event {
      * @return string Short description.
      */
     #[\Override]
-    public function get_description(): string {
-        return get_string('event:metric_enabled_description', 'tool_monitoring', $this->userid, $this->metric);
+    public function get_description(): string
+    {
+        return get_string('event:metric_enabled_description', 'tool_monitoring', ['userid' => $this->userid, 'metric' => $this->metric]);
     }
 }

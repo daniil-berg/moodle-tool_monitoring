@@ -53,7 +53,8 @@ use tool_monitoring\hook\metric_collection;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class metrics_manager {
+final class metrics_manager
+{
     /** @var array<string, registered_metric> Collected and registered metrics indexed by their qualified name. */
     private array $metrics = [];
 
@@ -67,7 +68,8 @@ final class metrics_manager {
     public function __construct(
         /** @var metric_collection Metric collection to manage; defaults to a new empty collection. */
         public readonly metric_collection $collection = new metric_collection()
-    ) {}
+    ) {
+    }
 
     /**
      * Special-case getter for the full array of registered metrics.
@@ -77,7 +79,8 @@ final class metrics_manager {
      * @param string $name Name of the property to return.
      * @return mixed Property value.
      */
-    public function __get(string $name): mixed {
+    public function __get(string $name): mixed
+    {
         if ($name === 'metrics') {
             return $this->metrics;
         }
@@ -91,7 +94,8 @@ final class metrics_manager {
      *
      * @return $this Same instance.
      */
-    public function dispatch_hook(): self {
+    public function dispatch_hook(): self
+    {
         di::get(hook_manager::class)->dispatch($this->collection);
         return $this;
     }
@@ -110,7 +114,8 @@ final class metrics_manager {
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function fetch(bool $collect = true, bool|null $enabled = true, array $tags = []): self {
+    public function fetch(bool $collect = true, bool|null $enabled = true, array $tags = []): self
+    {
         global $DB;
         if ($collect) {
             $this->dispatch_hook();
@@ -125,7 +130,7 @@ final class metrics_manager {
             $name = $metric::get_name();
             $qname = registered_metric::get_qualified_name($component, $name);
             if (array_key_exists($qname, $metrics)) {
-                trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                trigger_error(get_string('error:unique_metric_name', 'tool_monitoring', $qname), E_USER_WARNING);
                 continue;
             }
             $metrics[$qname] = $metric;
@@ -167,7 +172,8 @@ final class metrics_manager {
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function sync(bool $collect = true, bool $delete = false): self {
+    public function sync(bool $collect = true, bool $delete = false): self
+    {
         global $DB, $USER;
         if ($collect) {
             $this->dispatch_hook();
@@ -179,8 +185,8 @@ final class metrics_manager {
             $existingrecords = $DB->get_records_sql("SELECT $sqlqname AS qname, m.* FROM {" . registered_metric::TABLE . "} AS m");
             // For us to later know which records were inserted, we remember the existing IDs.
             [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal(
-                items:        array_column($existingrecords, 'id'),
-                equal:        false,
+                items: array_column($existingrecords, 'id'),
+                equal: false,
                 onemptyitems: null,
             );
             // Iterate over the collection. Construct a new instance for every metric in the collection that has a DB record
@@ -191,7 +197,7 @@ final class metrics_manager {
             foreach ($this->collection as $metric) {
                 $qname = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());
                 if (array_key_exists($qname, $this->metrics)) {
-                    trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                    trigger_error(get_string('error:unique_metric_name', 'tool_monitoring', $qname), E_USER_WARNING);
                     continue;
                 }
                 if (array_key_exists($qname, $existingrecords)) {
@@ -216,8 +222,8 @@ final class metrics_manager {
             foreach ($unregistered as $qname => $metric) {
                 // Prepare the new instances here, then assign their new IDs after insertion.
                 $instance = registered_metric::from_metric(
-                    metric:       $metric,
-                    timecreated:  $currenttime,
+                    metric: $metric,
+                    timecreated: $currenttime,
                     timemodified: $currenttime,
                     usermodified: $USER->id,
                 );
@@ -228,7 +234,7 @@ final class metrics_manager {
                 // Insert in bulk, then grab the new IDs.
                 $DB->insert_records(registered_metric::TABLE, $toinsert);
                 $newids = $DB->get_records_select_menu(
-                    table:  registered_metric::TABLE,
+                    table: registered_metric::TABLE,
                     select: "id $notexistingsql",
                     params: $notexistingparams,
                     fields: "$sqlqname AS qname, id",
@@ -259,7 +265,8 @@ final class metrics_manager {
      *
      * @return string Qualified name SQL.
      */
-    private static function get_qualified_name_sql(): string {
+    private static function get_qualified_name_sql(): string
+    {
         global $DB;
         return $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }

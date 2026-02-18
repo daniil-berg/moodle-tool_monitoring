@@ -92,7 +92,7 @@ abstract class metric_event extends base {
     #[\Override]
     public function validate_data(): void {
         if (!isset($this->other['metric'])) {
-            throw new coding_exception('Metric name is required.');
+            throw new coding_exception(get_string('error:metric_name_required', 'tool_monitoring'));
         }
     }
 

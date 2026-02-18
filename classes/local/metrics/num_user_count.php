@@ -44,7 +44,7 @@ class num_user_count extends metric {
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('num_user_count_description', 'tool_monitoring');
+        return new lang_string('metric:num_user_count_description', 'tool_monitoring');
     }
 
     public function calculate(): metric_value {

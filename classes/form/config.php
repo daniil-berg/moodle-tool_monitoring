@@ -39,7 +39,8 @@ require_once("$CFG->libdir/formslib.php");
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class config extends moodleform {
+final class config extends moodleform
+{
     /** @var registered_metric Metric for which this form is defined; set in the {@see definition} method. */
     private registered_metric $metric;
 
@@ -48,11 +49,11 @@ final class config extends moodleform {
         $this->metric = $this->_customdata['metric'];
         $this->_form->addElement('hidden', 'metric', $this->metric->qualifiedname);
         $this->_form->setType('metric', PARAM_ALPHAEXT);
-        $this->_form->addElement('static', 'component', get_string('component', 'tool_monitoring'), $this->metric->component);
-        $this->_form->addElement('static', 'name', get_string('name', 'tool_monitoring'), $this->metric->name);
-        $this->_form->addElement('static', 'type', get_string('type', 'tool_monitoring'), $this->metric->type->value);
-        $this->_form->addElement('static', 'description', get_string('description', 'tool_monitoring'), $this->metric->description);
-        $this->_form->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
+        $this->_form->addElement('static', 'component', get_string('settings:component', 'tool_monitoring'), $this->metric->component);
+        $this->_form->addElement('static', 'name', get_string('settings:name', 'tool_monitoring'), $this->metric->name);
+        $this->_form->addElement('static', 'type', get_string('settings:type', 'tool_monitoring'), $this->metric->type->value);
+        $this->_form->addElement('static', 'description', get_string('settings:description', 'tool_monitoring'), $this->metric->description);
+        $this->_form->addElement('advcheckbox', 'enabled', get_string('settings:metric_enabled', 'tool_monitoring'));
         $this->metric->extend_config_form($this->_form);
     }
 

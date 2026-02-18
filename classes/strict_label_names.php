@@ -43,7 +43,8 @@ use core\exception\coding_exception;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-trait strict_label_names {
+trait strict_label_names
+{
     /**
      * Returns the exact set of label names expected for the metric exhibiting this trait.
      *
@@ -62,7 +63,8 @@ trait strict_label_names {
         $allowed = array_flip(static::get_label_names());
         if (!empty(array_diff_key($allowed, $metricvalue->label) + array_diff_key($metricvalue->label, $allowed))) {
             // TODO: Use custom exception class.
-            throw new coding_exception('Invalid label names: ' . json_encode($metricvalue->label));
+            throw new coding_exception(
+                get_string('error:invalid_label_names', 'tool_monitoring', json_encode($metricvalue->label)));
         }
         return $metricvalue;
     }

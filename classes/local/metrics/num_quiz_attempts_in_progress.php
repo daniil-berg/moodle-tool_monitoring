@@ -38,13 +38,12 @@ use tool_monitoring\metric_value;
  * Implements the num_quiz_attempts_in_progress metric.
  */
 class num_quiz_attempts_in_progress extends metric {
-
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('num_quiz_attempts_in_progress_description', 'tool_monitoring');
+        return new lang_string('metric:num_quiz_attempts_in_progress_description', 'tool_monitoring');
     }
 
     public function calculate(): metric_value {

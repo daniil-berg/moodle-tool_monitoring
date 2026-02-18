@@ -67,7 +67,8 @@ final class metrics_manager {
     public function __construct(
         /** @var metric_collection Metric collection to manage; defaults to a new empty collection. */
         public readonly metric_collection $collection = new metric_collection()
-    ) {}
+    ) {
+    }
 
     /**
      * Special-case getter for the full array of registered metrics.
@@ -125,7 +126,7 @@ final class metrics_manager {
             $name = $metric::get_name();
             $qname = registered_metric::get_qualified_name($component, $name);
             if (array_key_exists($qname, $metrics)) {
-                trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                trigger_error(get_string('error:unique_metric_name', 'tool_monitoring', $qname), E_USER_WARNING);
                 continue;
             }
             $metrics[$qname] = $metric;
@@ -179,8 +180,8 @@ final class metrics_manager {
             $existingrecords = $DB->get_records_sql("SELECT $sqlqname AS qname, m.* FROM {" . registered_metric::TABLE . "} AS m");
             // For us to later know which records were inserted, we remember the existing IDs.
             [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal(
-                items:        array_column($existingrecords, 'id'),
-                equal:        false,
+                items: array_column($existingrecords, 'id'),
+                equal: false,
                 onemptyitems: null,
             );
             // Iterate over the collection. Construct a new instance for every metric in the collection that has a DB record
@@ -191,7 +192,7 @@ final class metrics_manager {
             foreach ($this->collection as $metric) {
                 $qname = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());
                 if (array_key_exists($qname, $this->metrics)) {
-                    trigger_error("Collected more than one metric with the qualified name '$qname'", E_USER_WARNING);
+                    trigger_error(get_string('error:unique_metric_name', 'tool_monitoring', $qname), E_USER_WARNING);
                     continue;
                 }
                 if (array_key_exists($qname, $existingrecords)) {
@@ -216,8 +217,8 @@ final class metrics_manager {
             foreach ($unregistered as $qname => $metric) {
                 // Prepare the new instances here, then assign their new IDs after insertion.
                 $instance = registered_metric::from_metric(
-                    metric:       $metric,
-                    timecreated:  $currenttime,
+                    metric: $metric,
+                    timecreated: $currenttime,
                     timemodified: $currenttime,
                     usermodified: $USER->id,
                 );
@@ -228,7 +229,7 @@ final class metrics_manager {
                 // Insert in bulk, then grab the new IDs.
                 $DB->insert_records(registered_metric::TABLE, $toinsert);
                 $newids = $DB->get_records_select_menu(
-                    table:  registered_metric::TABLE,
+                    table: registered_metric::TABLE,
                     select: "id $notexistingsql",
                     params: $notexistingparams,
                     fields: "$sqlqname AS qname, id",

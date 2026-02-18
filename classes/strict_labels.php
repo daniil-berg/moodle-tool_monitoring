@@ -44,8 +44,7 @@ use core_table\external\dynamic\get;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-trait strict_labels
-{
+trait strict_labels {
     /**
      * Returns the set of allowed labels expected for the metric exhibiting this trait.
      *

@@ -53,8 +53,7 @@ use tool_monitoring\hook\metric_collection;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class metrics_manager
-{
+final class metrics_manager {
     /** @var array<string, registered_metric> Collected and registered metrics indexed by their qualified name. */
     private array $metrics = [];
 
@@ -79,8 +78,7 @@ final class metrics_manager
      * @param string $name Name of the property to return.
      * @return mixed Property value.
      */
-    public function __get(string $name): mixed
-    {
+    public function __get(string $name): mixed {
         if ($name === 'metrics') {
             return $this->metrics;
         }
@@ -94,8 +92,7 @@ final class metrics_manager
      *
      * @return $this Same instance.
      */
-    public function dispatch_hook(): self
-    {
+    public function dispatch_hook(): self {
         di::get(hook_manager::class)->dispatch($this->collection);
         return $this;
     }
@@ -114,8 +111,7 @@ final class metrics_manager
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function fetch(bool $collect = true, bool|null $enabled = true, array $tags = []): self
-    {
+    public function fetch(bool $collect = true, bool|null $enabled = true, array $tags = []): self {
         global $DB;
         if ($collect) {
             $this->dispatch_hook();
@@ -172,8 +168,7 @@ final class metrics_manager
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function sync(bool $collect = true, bool $delete = false): self
-    {
+    public function sync(bool $collect = true, bool $delete = false): self {
         global $DB, $USER;
         if ($collect) {
             $this->dispatch_hook();
@@ -265,8 +260,7 @@ final class metrics_manager
      *
      * @return string Qualified name SQL.
      */
-    private static function get_qualified_name_sql(): string
-    {
+    private static function get_qualified_name_sql(): string {
         global $DB;
         return $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }

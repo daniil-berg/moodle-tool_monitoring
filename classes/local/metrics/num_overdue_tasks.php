@@ -56,7 +56,7 @@ class num_overdue_tasks extends metric {
     use strict_labels;
 
     public static function get_description(): lang_string {
-        return new lang_string('metrics:num_overdue_tasks_description', 'tool_monitoring');
+        return new lang_string('metric:num_overdue_tasks_description', 'tool_monitoring');
     }
 
     public static function get_type(): metric_type {

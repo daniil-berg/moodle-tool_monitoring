@@ -45,8 +45,7 @@ final class config extends moodleform
     private registered_metric $metric;
 
     #[\Override]
-    protected function definition(): void
-    {
+    protected function definition(): void {
         $this->metric = $this->_customdata['metric'];
         $this->_form->addElement('hidden', 'metric', $this->metric->qualifiedname);
         $this->_form->setType('metric', PARAM_ALPHAEXT);
@@ -59,8 +58,7 @@ final class config extends moodleform
     }
 
     #[\Override]
-    protected function after_definition(): void
-    {
+    protected function after_definition(): void {
         $this->add_action_buttons();
         parent::after_definition();
     }
@@ -71,8 +69,7 @@ final class config extends moodleform
      * @param registered_metric $metric Metric for which to return the form.
      * @return self New config form instance.
      */
-    public static function for_metric(registered_metric $metric): self
-    {
+    public static function for_metric(registered_metric $metric): self {
         $form = new self(customdata: ['metric' => $metric]);
         $form->set_data($metric->to_form_data());
         return $form;
@@ -87,8 +84,7 @@ final class config extends moodleform
      * @throws dml_exception
      * @throws JsonException The metric-specific config data could not be serialized.
      */
-    public function save(): void
-    {
+    public function save(): void {
         if (is_null($formdata = $this->get_data())) {
             return;
         }

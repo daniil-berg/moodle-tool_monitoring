@@ -54,8 +54,8 @@ class num_users_accessed_config extends simple_metric_config
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
-            /** @var int Number of seconds since the last user access for it to be counted. */
-        #[label(get_string('metric:num_users_accessed_timewindow', 'tool_monitoring'))]
+        /** @var int Number of seconds since the last user access for it to be counted. */
+        #[label('Number of seconds since the last user access for it to be counted.')]
         public int $timewindow = 300,
     ) {
     }

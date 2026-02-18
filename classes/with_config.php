@@ -46,8 +46,7 @@ use core\exception\coding_exception;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-trait with_config
-{
+trait with_config {
     /** @var string|null Metric-specific config in JSON format. */
     public string|null $configjson = null;
 

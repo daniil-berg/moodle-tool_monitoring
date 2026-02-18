@@ -60,7 +60,6 @@ $string['metric:num_overdue_tasks_description'] = 'Number of tasks (excluding di
 $string['metric:num_quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts';
 $string['metric:num_user_count_description'] = 'Number of total registered users';
 $string['metric:num_users_accessed_description'] = 'Number of users that have recently accessed the site';
-$string['metric:num_users_accessed_timewindow'] = 'Number of seconds since the last user access for it to be counted.';
 
 $string['settings:actions'] = 'Actions';
 $string['settings:component'] = 'Component';
@@ -72,8 +71,3 @@ $string['settings:metric_overview'] = 'Overview of Available Metrics';
 $string['settings:monitoring_metrics'] = 'Monitoring Metrics';
 $string['settings:name'] = 'Name';
 $string['settings:type'] = 'Type';
-
-
-
-
-

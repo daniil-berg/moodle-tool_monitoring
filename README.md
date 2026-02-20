@@ -6,9 +6,8 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
 
 📈 ==**TODO: Screenshot Grafana Dashboard**==
 
----
-
-## Contents
+<details open>
+  <summary><strong>Table of Contents</strong> (Click to expand/collapse)</summary>
 
 - [Features](#features)
 - [Installation](#installation)
@@ -33,7 +32,7 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
   - [Exporter sub-plugins](#exporter-sub-plugins)
 - [Copyright](#copyright)
 
----
+</details>
 
 ## Features
 
@@ -150,11 +149,10 @@ It distinguishes between ad-hoc and scheduled tasks by using the `type` label.
 
 Let's say there is a `local_example` plugin and the metric class is supposed to live in its `classes/metrics` directory.
 
-`classes/metrics/tasks_total.php`
+<details open>
+  <summary><code>classes/metrics/tasks_total.php</code> (Click to expand/collapse)</summary>
 
 ```php
-<?php
-
 namespace local_example\metrics;
 
 use core\lang_string;
@@ -192,6 +190,8 @@ class tasks_total extends metric {
 }
 ```
 
+</details>
+
 #### Adding a localized metric description
 
 The description is what is shown in the admin dashboard.
@@ -200,15 +200,16 @@ It is also what the `monitoringexporter_prometheus` exporter uses to generate it
 In our example above, we return the [localized string][moodle docs string api] with the ID `tasks_total_description`.
 We just need to actually add the text to be displayed to the plugin's language file.
 
-`lang/en/local_example.php`
+<details open>
+  <summary><code>lang/en/local_example.php</code> (Click to expand/collapse)</summary>
 
 ```php
-<?php
-
 defined('MOODLE_INTERNAL') || die();
 // ...
 $string['tasks_total_description'] = 'Total number of tasks that have spawned since the Moodle instance was started.';
 ```
+
+</details>
 
 #### Registering the metric
 
@@ -216,11 +217,10 @@ The new metric class needs to be picked up by the `metric_collection` hook.
 For this, we can use the `metric::collect` method as a hook callback function.
 All we need to do is [register that callback][moodle docs hooks.db].
 
-`db/hooks.php`
+<details open>
+  <summary><code>db/hooks.php</code> (Click to expand/collapse)</summary>
 
 ```php
-<?php
-
 use local_example\metrics\tasks_total;
 use tool_monitoring\hook\metric_collection;
 
@@ -230,6 +230,8 @@ $callbacks = [
     ['hook' => metric_collection::class, 'callback' => [tasks_total::class, 'collect']],
 ];
 ```
+
+</details>
 
 #### Enabling the metric
 
@@ -253,6 +255,9 @@ The table row should no longer be greyed out and the metric should now be export
 
 ### Metric
 
+<details>
+  <summary>Click to expand/collapse</summary>
+  
 A **metric** by popular definition, is a measure of something.
 This is also true in `tool_monitoring`, but here a metric also
 
@@ -260,13 +265,23 @@ This is also true in `tool_monitoring`, but here a metric also
 2. calculates/produces one or more _values_ (see "metric value") when called upon, and
 3. has a name, description, and _type_ (see "metric type").
 
+</details>
+
 ### Metric value
+
+<details>
+  <summary>Click to expand/collapse</summary>
 
 Any single scalar (i.e. `float|int`) value produced by a _metric_ is called a **metric value**.
 
 Metric values can carry _labels_ (see "label") and are encapsulated by the [`metric_value`][. metric_value] class.
 
+</details>
+
 ### Metric type
+
+<details>
+  <summary>Click to expand/collapse</summary>
 
 There are currently only two types of metrics that `tool_monitoring` supports, **gauges** and **counters**.
 
@@ -275,7 +290,12 @@ There are currently only two types of metrics that `tool_monitoring` supports, *
 
 The metric type is static and encapsulated by the [`metric_type`][. metric_type] enum.
 
+</details>
+
 ### Label
+
+<details>
+  <summary>Click to expand/collapse</summary>
 
 A key-value-pair associated with a metric is referred to as a **label**.
 The pair is also referred to as **label name** and **label value**; both are strings.
@@ -288,7 +308,12 @@ Labels can also be used to supplement a metric with structured meta-data/informa
 
 Although the labels are stored in the `metric_value` object, they are conceptually closely associated with a `metric` because they are typically not expected to change from one measurement/calculation to the next (or at least very rarely).
 
+</details>
+
 ### Exporter
+
+<details>
+  <summary>Click to expand/collapse</summary>
 
 An **exporter** is a sub-plugin for `tool_monitoring` that provides metrics to a monitoring backend.
 
@@ -298,6 +323,8 @@ The included `monitoringexporter_prometheus` sub-plugin is implemented in this w
 
 There are also push-based monitoring backends that expect metrics to be sent to them periodically.
 Exporters for those need to implement a way to stream metrics to the backend in the required format.
+
+</details>
 
 ## Architecture
 

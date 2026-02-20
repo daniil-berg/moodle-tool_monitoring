@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   schedule:
     # At 00:00 on the 1st of every month
     - cron: '0 0 1 * *'

@@ -38,10 +38,10 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
 ## Features
 
 - 🍱 **Just works**: Ready-made with [sensible Moodle metrics](#pre-installed-metrics) and a [Prometheus endpoint][prometheus docs instances] out of the box.
-- 🏗️ **Extensible**: Defining your own metrics is as simple as extending the [`metric`][. metric] base class and [registering it for collection](#registering-the-metric).
-- 🗃️ **Generic**: The core is agnostic towards the monitoring software used; supports custom [exporters](#exporter-sub-plugins) for different monitoring backends.
-- 🧑‍💻 **Admin-friendly**: Convenient [admin dashboard](#admin-settings) to view, enable/disable, and configure individual metrics and exporters.
-- 🔧 **Customizable**: For advanced use, metrics can be made [configurable](#configurable-metrics-advanced), as well as tagged via the [Moodle Tag API][moodle docs tag api].
+- 🏗️ **Extensible**: To define your own metric, simply extend the [`metric`][. metric] class and [register it for collection](#registering-the-metric).
+- 🗃️ **Generic**: Agnostic towards the monitoring software used; supports custom [exporters](#exporter-sub-plugins).
+- 🧑‍💻 **Admin-friendly**: Convenient [admin dashboard](#admin-settings) to view and configure individual metrics and exporters.
+- 🔧 **Customizable**: For advanced use, metrics can be [configured](#configurable-metrics-advanced) and even tagged via the [Moodle Tag API][moodle docs tag api].
 
 ## Installation
 

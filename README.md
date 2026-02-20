@@ -359,6 +359,10 @@ It uses Moodle's [Routing API][moodle docs routing api] to expose the Prometheus
 
 You should have received a copy of the GNU General Public License along with `tool_monitoring`. If not, see <https://www.gnu.org/licenses/>.
 
+---
+
+**Code, tests, and documentation written by and for humans.** 🚫🤖
+
 [. hook/metric_collection]: classes/hook/metric_collection.php
 [. metric]: classes/metric.php
 [. metric_config]: classes/metric_config.php

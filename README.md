@@ -44,11 +44,18 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
 
 ## Installation
 
-Just like any other Moodle plugin. It belongs in the `public/admin/tool/monitoring` directory.
-For example, using `git`:
+The minimum supported Moodle version is [**5.0**][moodle docs release 5.0] (build 2025041400).
+
+You install `tool_monitoring` just like any other Moodle plugin.
+Starting with Moodle [**5.1**][moodle docs release 5.1], it belongs in the `public/admin/tool/monitoring` directory.
+(For Moodle 5.0 it goes into `admin/tool/monitoring`.)
+
+For example, using `git` from the root directory of your Moodle 5.1+ installation:
 
 ```shell
-$ git clone https://github.com/daniil-berg/moodle-tool_monitoring.git public/admin/tool/monitoring
+$ git clone \
+      https://github.com/daniil-berg/moodle-tool_monitoring.git \
+      public/admin/tool/monitoring
 ```
 
 For other options and general plugin installation instructions, see the [official Moodle documentation][moodle docs plugin install].
@@ -94,6 +101,7 @@ The actual Prometheus endpoint is immediately accessible and can be reached at `
 
 That endpoint can be secured by specifying an access token in the `monitoringexporter_prometheus | prometheus_token` setting, which then must be provided in the `token` query parameter.
 So if your Moodle web root is `https://example.com` and you set the `prometheus_token` to be `super-secure-secret`, the full URL will look like this:
+
 `https://example.com/r.php/monitoringexporter_prometheus/metrics?token=super-secure-secret`
 
 ### Prometheus configuration
@@ -405,6 +413,8 @@ You should have received a copy of the GNU General Public License along with `to
 [moodle docs hook instance]: https://moodledev.io/docs/apis/core/hooks#hook-instance
 [moodle docs hooks.db]: https://moodledev.io/docs/apis/core/hooks#registering-of-hook-callbacks
 [moodle docs plugin install]: https://docs.moodle.org/en/Installing_plugins#Installing_a_plugin
+[moodle docs release 5.0]: https://moodledev.io/general/releases/5.0
+[moodle docs release 5.1]: https://moodledev.io/general/releases/5.1
 [moodle docs routing api]: https://moodledev.io/docs/apis/subsystems/routing
 [moodle docs string api]: https://docs.moodle.org/dev/String_API
 [moodle docs tag api]: https://moodledev.io/docs/apis/subsystems/tag

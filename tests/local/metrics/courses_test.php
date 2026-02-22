@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_courses_test} class.
+ * Definition of the {@see courses_test} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -37,7 +37,7 @@ use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
 /**
- * Unit tests for the {@see num_courses} class.
+ * Unit tests for the {@see courses} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -48,17 +48,17 @@ use tool_monitoring\metric_value;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[CoversClass(num_courses::class)]
-final class num_courses_test extends advanced_testcase {
+#[CoversClass(courses::class)]
+final class courses_test extends advanced_testcase {
     public function test_get_type(): void {
-        $metric = new num_courses();
+        $metric = new courses();
         self::assertSame(metric_type::GAUGE, $metric->get_type());
     }
 
     public function test_get_description(): void {
-        $metric = new num_courses();
+        $metric = new courses();
         $description = $metric->get_description();
-        self::assertSame('num_courses_description', $description->get_identifier());
+        self::assertSame('courses_description', $description->get_identifier());
         self::assertSame('tool_monitoring', $description->get_component());
     }
 
@@ -71,7 +71,7 @@ final class num_courses_test extends advanced_testcase {
         $generator->create_course(['visible' => true]);
         $generator->create_course(['visible' => false]);
         $generator->create_course(['visible' => false]);
-        $metric = new num_courses();
+        $metric = new courses();
         $values = $metric->calculate();
         self::assertCount(2, $values);
         [$numvisible, $numhidden] = $values;

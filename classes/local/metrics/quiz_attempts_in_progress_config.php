@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see num_courses} metric class.
+ * Definition of the {@see quiz_attempts_in_progress_config} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,14 +29,12 @@
 
 namespace tool_monitoring\local\metrics;
 
-use core\lang_string;
-use dml_exception;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric;
-use tool_monitoring\metric_value;
+use core\attribute\label;
+use core\exception\coding_exception;
+use tool_monitoring\simple_metric_config;
 
 /**
- * Gauges the current number of courses.
+ * Defines the config for the {@see quiz_attempts_in_progress} metric.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -47,36 +45,26 @@ use tool_monitoring\metric_value;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class num_courses extends metric {
+final class quiz_attempts_in_progress_config extends simple_metric_config {
     /**
-     * {@inheritDoc}
-     */
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('num_courses_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
+     * Constructor without additional logic.
      *
-     * @return metric_value[]
-     * @throws dml_exception
+     * @param int $maxidleseconds Do not count attempts that are idle longer than this number of seconds.
+     * @param int $maxdeadlineseconds Do not count attempts that have a deadline in more than this number of seconds.
+     * @throws coding_exception
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
-    public function calculate(): array {
-        global $DB;
-        $sql = "SELECT SUM(visible)                                 AS numvisible,
-                       SUM(CASE WHEN visible = 0 THEN 1 ELSE 0 END) AS numhidden
-                  FROM {course}";
-        $record = $DB->get_record_sql($sql, strictness: MUST_EXIST);
-        return [
-            new metric_value($record->numvisible, ['visible' => 'true']),
-            new metric_value($record->numhidden, ['visible' => 'false']),
-        ];
+    public function __construct(
+        /** @var int Do not count attempts that are idle longer than this number of seconds. */
+        #[label('Maximum idle time (seconds)')]
+        public readonly int $maxidleseconds = 600,
+        /** @var int Do not count attempts that have a deadline in more than this number of seconds. */
+        #[label('Maximum deadline time (seconds)')]
+        public readonly int $maxdeadlineseconds = 3600,
+    ) {
+        if ($maxidleseconds <= 0 || $maxdeadlineseconds <= 0) {
+            throw new coding_exception('Time values must be positive.');
+        }
     }
 }

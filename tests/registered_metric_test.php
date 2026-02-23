@@ -212,6 +212,80 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see registered_metric::persist_enabled_state} method.
+     *
+     * @param bool $from Initial enabled state.
+     * @param bool $to State to set via {@see registered_metric::persist_enabled_state}.
+     * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
+     * @throws dml_exception
+     */
+    #[DataProvider('provider_test_persist_enabled_state')]
+    public function test_persist_enabled_state(bool $from, bool $to, array $events): void {
+        global $DB, $USER;
+        $this->resetAfterTest();
+        $metric = registered_metric::from_metric(new metric_settable_values(), enabled: $from);
+        // Set modification time in the past and arbitrary user.
+        $generator = $this->getDataGenerator();
+        $creationtime = time() - 1000;
+        $creationuser = (int) $generator->create_user()->id;
+        $metric->timecreated = $creationtime;
+        $metric->timemodified = $creationtime;
+        $metric->usermodified = $creationuser;
+        // Insert record manually.
+        $metric->id = $DB->insert_record(registered_metric::TABLE, (array) $metric);
+        // Intercept the event here.
+        $eventsink = $this->redirectEvents();
+        $metric->persist_enabled_state($to);
+        $eventsink->close();
+        // Load updated record manually from the database.
+        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
+        self::assertSame($to, $metric->enabled);
+        self::assertEquals($to, (bool) $record->enabled);
+        // Check that metadata was updated.
+        self::assertEquals($record->timemodified, $metric->timemodified);
+        self::assertEquals($record->usermodified, $metric->usermodified);
+        if ($from !== $to) {
+            self::assertGreaterThan($creationtime, $metric->timemodified);
+            self::assertSame($USER->id, $metric->usermodified);
+        } else {
+            self::assertSame($creationtime, $metric->timemodified);
+            self::assertSame($creationuser, $metric->usermodified);
+        }
+        // Check that the events were triggered as expected.
+        $actualevents = array_map(fn (base_event $event): string => $event::class, $eventsink->get_events());
+        self::assertSame($events, $actualevents);
+    }
+
+    /**
+     * Provides test data for the {@see test_persist_enabled_state} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_persist_enabled_state(): array {
+        return [
+            'No state change when already enabled' => [
+                'from' => true,
+                'to' => true,
+                'events' => [],
+            ],
+            'Metric gets enabled' => [
+                'from' => false,
+                'to' => true,
+                'events' => [
+                    event\metric_enabled::class,
+                ],
+            ],
+            'Metric gets disabled' => [
+                'from' => true,
+                'to' => false,
+                'events' => [
+                    event\metric_disabled::class,
+                ],
+            ],
+        ];
+    }
+
+    /**
      * Tests the {@see registered_metric::update_with_form_data} method.
      *
      * @param registered_metric $metric Instance on which to call the method.

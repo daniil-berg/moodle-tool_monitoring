@@ -25,8 +25,10 @@
             {
                 "component": "local_plugin",
                 "name": "foo",
+                "qualified_name": "local_plugin_foo",
                 "type": "gauge",
                 "description": "number of foos",
+                "enabled": true,
                 "config_url": "http://moodle.org/admin/tool/monitoring/configure.php?metric=local_plugin_foo",
                 "tags": [
                     {
@@ -77,7 +79,7 @@
     </div>
 {{/has_tags}}
 
-<table class="table table-sm table-hover">
+<table class="table table-sm table-striped table-hover generaltable">
   <thead>
     <tr>
       <th scope="col">{{#str}} component, tool_monitoring {{/str}}</th>
@@ -92,7 +94,7 @@
   </thead>
   <tbody>
     {{#metrics}}
-      <tr>
+      <tr{{^enabled}} class="dimmed_text"{{/enabled}}>
         <td>{{component}}</td>
         <td>{{name}}</td>
         <td>{{type}}</td>
@@ -104,7 +106,13 @@
             {{/tags}}
           </td>
         {{/is_tagging_enabled}}
-        <td><a href="{{{config_url}}}">{{#str}} edit, tool_monitoring {{/str}}</a></td>
+        <td>
+            <a href="{{{config_url}}}" class="icon-no-margin me-1 d-inline-block">{{#pix}}t/edit, core, {{#str}} configure_metric, tool_monitoring {{/str}}{{/pix}}</a>
+            <a href="#" class="icon-no-margin d-inline-block" data-action="toggle-metric" data-metric="{{qualified_name}}" data-enabled="{{#enabled}}1{{/enabled}}{{^enabled}}0{{/enabled}}">
+                <span data-region="enabled-icon"{{^enabled}} class="d-none"{{/enabled}}>{{#pix}}t/hide, core, {{#str}} metricenabled, tool_monitoring {{/str}}{{/pix}}</span>
+                <span data-region="disabled-icon"{{#enabled}} class="d-none"{{/enabled}}>{{#pix}}t/show, core, {{#str}} metricdisabled, tool_monitoring {{/str}}{{/pix}}</span>
+            </a>
+        </td>
       </tr>
     {{/metrics}}
   </tbody>
@@ -118,3 +126,7 @@
         <a href="{{manage_tags_url}}" class="btn btn-secondary">{{#str}} manage_tags, tool_monitoring {{/str}}</a>
     </div>
 {{/is_tagging_enabled}}
+
+{{#js}}
+require(['tool_monitoring/metric_toggle'], MetricToggle => MetricToggle.init());
+{{/js}}

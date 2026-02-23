@@ -112,8 +112,10 @@ final readonly class overview implements renderable, templatable {
             $line = [
                 'component' => $metric->component,
                 'name' => $metric->name,
+                'qualified_name' => $qualifiedname,
                 'type' => $metric->type->value,
                 'description' => $metric->description->out(),
+                'enabled' => $metric->enabled,
                 'config_url' => $configurl->out(escaped: false),
             ];
             if ($tagsenabled) {

@@ -30,7 +30,6 @@
 namespace tool_monitoring;
 
 use context_system;
-use core\exception\coding_exception;
 use core\lang_string;
 use core_tag_tag;
 use dml_exception;
@@ -201,6 +200,27 @@ final class registered_metric implements IteratorAggregate {
         $this->timemodified = time();
         $this->usermodified = $USER->id;
         $DB->update_record(self::TABLE, $this->to_db($fields));
+    }
+
+    /**
+     * Enables or disables the metric and persists the change.
+     *
+     * Does nothing if the metric already has the desired state.
+     *
+     * @param bool $enabled Desired enabled state.
+     * @throws dml_exception
+     */
+    public function persist_enabled_state(bool $enabled): void {
+        global $DB;
+        if ($this->enabled === $enabled) {
+            return;
+        }
+        $this->enabled = $enabled;
+        $event = $enabled ? event\metric_enabled::for_metric($this) : event\metric_disabled::for_metric($this);
+        $transaction = $DB->start_delegated_transaction();
+        $this->update(['enabled', 'timemodified', 'usermodified']);
+        $event->trigger();
+        $transaction->allow_commit();
     }
 
     /**

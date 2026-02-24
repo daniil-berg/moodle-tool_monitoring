@@ -59,8 +59,7 @@ trait strict_labels {
      * @return metric_value Valid metric value.
      * @throws coding_exception Label is not allowed.
      */
-    public static function validate_value(metric_value $metricvalue): metric_value
-    {
+    public static function validate_value(metric_value $metricvalue): metric_value {
         if (!in_array($metricvalue->label, static::get_labels())) {
             // TODO: Use custom exception class.
             throw new coding_exception(get_string('error:label_not_allowed', 'tool_monitoring', json_encode(static::get_labels())));

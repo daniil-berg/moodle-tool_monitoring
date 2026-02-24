@@ -59,8 +59,7 @@ trait with_config {
      * @return ConfT Config object of the provided class.
      * @throws coding_exception The {@see configjson} is not set or `$class` does not implement the {@see metric_config}.
      */
-    public function parse_config(string $class): metric_config
-    {
+    public function parse_config(string $class): metric_config {
         if (!isset($this->configjson)) {
             throw new coding_exception(get_string("error:metric_config", "tool_monitoring"));
         }

@@ -63,8 +63,11 @@ trait strict_label_names
         $allowed = array_flip(static::get_label_names());
         if (!empty(array_diff_key($allowed, $metricvalue->label) + array_diff_key($metricvalue->label, $allowed))) {
             // TODO: Use custom exception class.
-            throw new coding_exception(
-                get_string('error:invalid_label_names', 'tool_monitoring', json_encode($metricvalue->label)));
+            throw new coding_exception(get_string(
+                'error:invalid_label_names', 
+                'tool_monitoring', 
+                json_encode($metricvalue->label)
+            ));
         }
         return $metricvalue;
     }

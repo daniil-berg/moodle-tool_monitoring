@@ -14,7 +14,7 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
 - [Usage](#usage)
   - [Admin Settings](#admin-settings)
   - [Prometheus configuration](#prometheus-configuration)
-  - [Installing a custom metric](#installing-a-custom-metric)
+  - [Adding a custom metric](#adding-a-custom-metric)
   - [Making a metric configurable (advanced)](#making-a-metric-configurable-advanced)
   - [Grouping metrics with tags (optional)](#grouping-metrics-with-tags-optional)
 - [Terminology](#terminology)
@@ -85,7 +85,7 @@ Out of the box, `tool_monitoring` comes with the following metrics:
 |       `users_online`        | Number of users that have recently accessed the site         | `time_window` (last user access time to count, multiple configurable)                | [yes](#metric-configuration)  |
 
 Any Moodle component can add its own custom metrics.
-(See the section "[Installing a custom metric](#installing-a-custom-metric)" for details.)
+(See the section "[Adding a custom metric](#adding-a-custom-metric)" for details.)
 Once a metric is [registered](#registering-the-metric), it will be listed in the dashboard as well.
 
 #### Metric configuration
@@ -141,7 +141,7 @@ For exhaustive details about the various config options, see the official [Prome
 
 🚧 TODO
 
-### Installing a custom metric
+### Adding a custom metric
 
 In its most basic form, adding a custom metric consists of just four steps:
 1. Defining the metric class

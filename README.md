@@ -84,9 +84,10 @@ Out of the box, `tool_monitoring` comes with the following metrics:
 |       `user_accounts`       | Current number of user accounts                              | `auth` (available methods), `suspended` (`true`/`false`), `deleted` (`true`/`false`) |              no               |
 |       `users_online`        | Number of users that have recently accessed the site         | `time_window` (last user access time to count, multiple configurable)                | [yes](#metric-configuration)  |
 
-Any Moodle component can add its own custom metrics.
-(See the section "[Adding a custom metric](#adding-a-custom-metric)" for details.)
-Once a metric is [registered](#registering-the-metric), it will be listed in the dashboard as well.
+> [!NOTE]
+> Any Moodle component can add its own custom metrics.
+> (See the section "[Adding a custom metric](#adding-a-custom-metric)" for details.)
+> Once a metric is [registered](#registering-the-metric), it will be listed in the dashboard as well.
 
 #### Metric configuration
 
@@ -320,7 +321,8 @@ Described another way, they allow you to group multiple different but related me
 
 Labels can also be used to supplement a metric with structured meta-data/information.
 
-Although the labels are stored in the `metric_value` object, they are conceptually closely associated with a `metric` because they are typically not expected to change from one measurement/calculation to the next (or at least very rarely).
+> [!NOTE]
+> Although the labels are stored in the `metric_value` object, they are conceptually closely associated with a `metric` because they are typically not expected to change from one measurement/calculation to the next (or at least very rarely).
 
 **Examples:**
 
@@ -402,7 +404,8 @@ Therefore, a config object must be de-/serializable from/to JSON.
 Since the configuration is supposed to be managed via the admin panel, an extension to the config form must be provided as well.
 Lastly, the config object must be constructable from that form's data and vice versa.
 
-To avoid implementing the entire interface manually, the [`simple_metric_config`][. simple_metric_config] class serves a convenient base for simple configuration options.
+> [!TIP]
+> To avoid implementing the entire interface manually, the [`simple_metric_config`][. simple_metric_config] class serves a convenient base for simple configuration options.
 
 ### Exporter sub-plugins
 

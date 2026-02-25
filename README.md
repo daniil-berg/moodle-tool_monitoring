@@ -273,6 +273,12 @@ This is also true in `tool_monitoring`, but here a metric also
 2. calculates/produces one or more _values_ (see "metric value") when called upon, and
 3. has a name, description, and _type_ (see "metric type").
 
+**Example:**
+
+Our pre-installed metric named [`user_accounts`](#pre-installed-metrics).
+It measures the current number of user accounts in the system and is a _gauge_ type metric.
+In our implementation it produces multiple values.
+
 </details>
 
 ### Metric value
@@ -315,6 +321,31 @@ Described another way, they allow you to group multiple different but related me
 Labels can also be used to supplement a metric with structured meta-data/information.
 
 Although the labels are stored in the `metric_value` object, they are conceptually closely associated with a `metric` because they are typically not expected to change from one measurement/calculation to the next (or at least very rarely).
+
+**Examples:**
+
+As mentioned above, our pre-installed [`user_accounts`](#pre-installed-metrics) metric produces multiple values at any moment in time.
+This is because we added three dimensions to it:
+
+1. `auth` partitions the metric by the authentication method associated with the user account. The possible label values are the names of the authentication plugins (e.g. `manual` or `ldap`).
+2. `suspended` distinguishes suspended from active user accounts. The possible label values are `true` and `false`.
+3. `deleted` distinguishes accounts that have been marked as deleted from the others. The possible label values are `true` and `false`.
+
+Assuming the Moodle instance has four different authentication methods in use, that metric will produce 4 ✕ 2 ✕ 2 = 16 values every time it is called.
+One for each combination of authentication method, suspended/active, and deleted/not-deleted.
+
+In Prometheus notation, these labeled metric names would look something like this:
+
+```
+user_accounts{auth="manual", suspended="false", deleted="false"}
+user_accounts{auth="manual", suspended="false", deleted="true"}
+...
+user_accounts{auth="ldap", suspended="true", deleted="true"}
+```
+
+A different example is our [`quiz_attempts_in_progress`](#pre-installed-metrics) metric.
+There the labels are not used for partitioning but merely to document the configuration parameters.
+Specifically, the maximum time until a quiz deadline and the maximum time since the last user activity for an attempt to count as "in progress".
 
 </details>
 

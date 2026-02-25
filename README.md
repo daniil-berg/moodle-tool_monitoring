@@ -98,12 +98,17 @@ Some metrics have their own specific configuration options.
 
 The pre-installed Prometheus exporter has its own settings under _Site administration_ > _Plugins_ > _Admin tools_ > _Monitoring_ > _Exporter Prometheus_.
 
-The actual Prometheus endpoint is immediately accessible and can be reached at `/r.php/monitoringexporter_prometheus/metrics`.
+The actual Prometheus endpoint is immediately accessible and can be reached at the route `/monitoringexporter_prometheus/metrics`.
 
 That endpoint can be secured by specifying an access token in the `monitoringexporter_prometheus | prometheus_token` setting, which then must be provided in the `token` query parameter.
 So if your Moodle web root is `https://example.com` and you set the `prometheus_token` to be `super-secure-secret`, the full URL will look like this:
 
-`https://example.com/r.php/monitoringexporter_prometheus/metrics?token=super-secure-secret`
+`https://example.com/monitoringexporter_prometheus/metrics?token=super-secure-secret`
+
+> [!IMPORTANT]
+> This relies on the router and your webserver being properly configured.
+> If not, the endpoint is reached at `/r.php/monitoringexporter_prometheus/metrics`.
+> See the relevant [Moodle documentation][moodle docs routing config] for details.
 
 ### Prometheus configuration
 
@@ -120,7 +125,8 @@ scrape_configs:
     params:
       - token: ['super-secure-secret']
     # Specify the full endpoint path. The default is just '/metrics'.
-    metrics_path: /r.php/monitoringexporter_prometheus/metrics
+    # If Moodle routing is not fully configured, you have to prepend '/r.php' to the path.
+    metrics_path: /monitoringexporter_prometheus/metrics
     # Specify the target host.
     static_configs:
       - targets: ['example.com']
@@ -450,6 +456,7 @@ You should have received a copy of the GNU General Public License along with `to
 [moodle docs release 5.0]: https://moodledev.io/general/releases/5.0
 [moodle docs release 5.1]: https://moodledev.io/general/releases/5.1
 [moodle docs routing api]: https://moodledev.io/docs/apis/subsystems/routing
+[moodle docs routing config]: https://docs.moodle.org/en/Configuring_the_Router
 [moodle docs string api]: https://docs.moodle.org/dev/String_API
 [moodle docs tag api]: https://moodledev.io/docs/apis/subsystems/tag
 [moodle home]: https://moodle.com

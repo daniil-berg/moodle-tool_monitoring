@@ -76,13 +76,13 @@ There you can view all registered metrics, enable/disable them, add/remove metri
 
 Out of the box, `tool_monitoring` comes with the following metrics:
 
-|            Name             | Description                                                  | Partitioned by                                                                       | Configurable? |
-|:---------------------------:|--------------------------------------------------------------|--------------------------------------------------------------------------------------|:-------------:|
-|          `courses`          | Current number of courses.                                   | `visible` (`true`/`false`)                                                           |      no       |
-|       `overdue_tasks`       | Number of tasks that should have run already but have not    | `type` (`adhoc`/`scheduled`)                                                         |      no       |
-| `quiz_attempts_in_progress` | Number of ongoing quiz attempts with an approaching deadline | -                                                                                    |      yes      |
-|       `user_accounts`       | Current number of user accounts                              | `auth` (available methods), `suspended` (`true`/`false`), `deleted` (`true`/`false`) |      no       |
-|       `users_online`        | Number of users that have recently accessed the site         | `time_window` (last user access time to count, multiple configurable)                |      yes      |
+|            Name             | Description                                                  | Partitioned by                                                                       |         Configurable?         |
+|:---------------------------:|--------------------------------------------------------------|--------------------------------------------------------------------------------------|:-----------------------------:|
+|          `courses`          | Current number of courses.                                   | `visible` (`true`/`false`)                                                           |              no               |
+|       `overdue_tasks`       | Number of tasks that should have run already but have not    | `type` (`adhoc`/`scheduled`)                                                         |              no               |
+| `quiz_attempts_in_progress` | Number of ongoing quiz attempts with an approaching deadline | -                                                                                    | [yes](#metric-configuration)  |
+|       `user_accounts`       | Current number of user accounts                              | `auth` (available methods), `suspended` (`true`/`false`), `deleted` (`true`/`false`) |              no               |
+|       `users_online`        | Number of users that have recently accessed the site         | `time_window` (last user access time to count, multiple configurable)                | [yes](#metric-configuration)  |
 
 Any Moodle component can add its own custom metrics.
 (See the section "[Installing a custom metric](#installing-a-custom-metric)" for details.)

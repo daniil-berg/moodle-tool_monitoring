@@ -107,7 +107,7 @@
           </td>
         {{/is_tagging_enabled}}
         <td>
-            <a href="{{{config_url}}}" class="icon-no-margin me-1 d-inline-block">{{#pix}}t/edit, core, {{#str}} configure_metric, tool_monitoring {{/str}}{{/pix}}</a>
+            <a href="{{{config_url}}}" class="icon-no-margin me-1 d-inline-block">{{#pix}}i/settings, core, {{#str}} configure_metric, tool_monitoring {{/str}}{{/pix}}</a>
             <a href="#" class="icon-no-margin d-inline-block" data-action="toggle-metric" data-metric="{{qualified_name}}" data-enabled="{{#enabled}}1{{/enabled}}{{^enabled}}0{{/enabled}}">
                 <span data-region="enabled-icon"{{^enabled}} class="d-none"{{/enabled}}>{{#pix}}t/hide, core, {{#str}} metricenabled, tool_monitoring {{/str}}{{/pix}}</span>
                 <span data-region="disabled-icon"{{#enabled}} class="d-none"{{/enabled}}>{{#pix}}t/show, core, {{#str}} metricdisabled, tool_monitoring {{/str}}{{/pix}}</span>

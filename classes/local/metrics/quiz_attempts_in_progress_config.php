@@ -52,16 +52,14 @@ final class quiz_attempts_in_progress_config extends simple_metric_config {
      * @param int $maxidleseconds Do not count attempts that are idle longer than this number of seconds.
      * @param int $maxdeadlineseconds Do not count attempts that have a deadline in more than this number of seconds.
      * @throws coding_exception
-     *
-     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
         /** @var int Do not count attempts that are idle longer than this number of seconds. */
         #[label('Maximum idle time (seconds)')]
-        public readonly int $maxidleseconds = 600,
+        public readonly int $maxidleseconds = 1200,
         /** @var int Do not count attempts that have a deadline in more than this number of seconds. */
         #[label('Maximum deadline time (seconds)')]
-        public readonly int $maxdeadlineseconds = 3600,
+        public readonly int $maxdeadlineseconds = 10800,
     ) {
         if ($maxidleseconds <= 0 || $maxdeadlineseconds <= 0) {
             throw new coding_exception('Time values must be positive.');

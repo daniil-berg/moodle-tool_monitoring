@@ -30,7 +30,9 @@
 namespace tool_monitoring;
 
 use core\attribute\label;
+use core\component;
 use core\exception\coding_exception;
+use core\lang_string;
 use moodleform;
 use MoodleQuickForm;
 use ReflectionClass;
@@ -45,7 +47,10 @@ use stdClass;
  * {@link https://www.php.net/manual/en/language.oop5.decon.php#language.oop5.decon.constructor.promotion promoted parameters}.
  * Assuming all of those are public and there are no additional public properties on the config object, the JSON (de-)serialization
  * simply maps those properties to keys in a JSON object.
- * The extension of the Moodle form and its data handling is inferred from those properties as well.
+ *
+ * The definition of the Moodle form fields and their validation logic are inferred from those properties as well.
+ * Field labels are set by adding {@see label} attributes to those properties. The label must be a valid string identifier within
+ * the component that defines the config class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -160,22 +165,23 @@ abstract class simple_metric_config implements metric_config {
      * Infers field names and types to set from the property declarations of the config class.
      * Form field descriptions are taken from {@see label} attributes on those properties.
      *
-     * TODO Parameter to form field inference is extremely rudimentary and just a proof of concept.4
+     * TODO Parameter to form field inference is extremely rudimentary and just a proof of concept.
      *
      * @param MoodleQuickForm $mform Configuration form.
      * @throws coding_exception
      */
     public static function extend_config_form(MoodleQuickForm $mform): void {
+        $component = component::get_component_from_classname(static::class);
         foreach (self::get_config_parameters() as $name => $param) {
             $paramtype = $param->getType();
             if ($paramtype instanceof ReflectionNamedType) {
                 $type = match ($paramtype->getName()) {
                     'int' => PARAM_INT,
                     'float' => PARAM_FLOAT,
-                    default => PARAM_ALPHAEXT,
+                    default => PARAM_TEXT,
                 };
             } else {
-                $type = PARAM_ALPHAEXT;
+                $type = PARAM_TEXT;
             }
             /** @var label|null $labelattr */
             $labelattr = null;
@@ -185,7 +191,8 @@ abstract class simple_metric_config implements metric_config {
                     break;
                 }
             }
-            $mform->addElement('text', $name, $labelattr?->label);
+            $label = $labelattr ? new lang_string($labelattr->label, $component) : null;
+            $mform->addElement('text', $name, $label);
             $mform->setType($name, $type);
         }
     }

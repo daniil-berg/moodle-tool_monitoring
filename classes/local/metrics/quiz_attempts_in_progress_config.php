@@ -55,10 +55,10 @@ final class quiz_attempts_in_progress_config extends simple_metric_config {
      */
     public function __construct(
         /** @var int Do not count attempts that are idle longer than this number of seconds. */
-        #[label('Maximum idle time (seconds)')]
+        #[label('quiz_attempts_in_progress_max_idle_seconds')]
         public readonly int $maxidleseconds = 1200,
         /** @var int Do not count attempts that have a deadline in more than this number of seconds. */
-        #[label('Maximum deadline time (seconds)')]
+        #[label('quiz_attempts_in_progress_max_deadline_seconds')]
         public readonly int $maxdeadlineseconds = 10800,
     ) {
         if ($maxidleseconds <= 0 || $maxdeadlineseconds <= 0) {

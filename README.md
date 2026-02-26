@@ -271,9 +271,6 @@ The table row should no longer be greyed out and the metric should now be export
 ## Terminology
 
 ### Metric
-
-<details>
-  <summary>Click to expand/collapse</summary>
   
 A **metric** by popular definition, is a measure of something.
 This is also true in `tool_monitoring`, but here a metric also
@@ -288,23 +285,13 @@ Our pre-installed metric named [`user_accounts`](#pre-installed-metrics).
 It measures the current number of user accounts in the system and is a _gauge_ type metric.
 In our implementation it produces multiple values.
 
-</details>
-
 ### Metric value
-
-<details>
-  <summary>Click to expand/collapse</summary>
 
 Any single scalar (i.e. `float|int`) value produced by a _metric_ is called a **metric value**.
 
 Metric values can carry _labels_ (see "label") and are encapsulated by the [`metric_value`][. metric_value] class.
 
-</details>
-
 ### Metric type
-
-<details>
-  <summary>Click to expand/collapse</summary>
 
 There are currently only two types of metrics that `tool_monitoring` supports, **gauges** and **counters**.
 
@@ -313,12 +300,7 @@ There are currently only two types of metrics that `tool_monitoring` supports, *
 
 The metric type is static and encapsulated by the [`metric_type`][. metric_type] enum.
 
-</details>
-
 ### Label
-
-<details>
-  <summary>Click to expand/collapse</summary>
 
 A key-value-pair associated with a metric is referred to as a **label**.
 The pair is also referred to as **label name** and **label value**; both are strings.
@@ -357,12 +339,7 @@ A different example is our [`quiz_attempts_in_progress`](#pre-installed-metrics)
 There the labels are not used for partitioning but merely to document the configuration parameters.
 Specifically, the maximum time until a quiz deadline and the maximum time since the last user activity for an attempt to count as "in progress".
 
-</details>
-
 ### Exporter
-
-<details>
-  <summary>Click to expand/collapse</summary>
 
 An **exporter** is a sub-plugin for `tool_monitoring` that provides metrics to a monitoring backend.
 
@@ -372,8 +349,6 @@ The included `monitoringexporter_prometheus` sub-plugin is implemented in this w
 
 There are also push-based monitoring backends that expect metrics to be sent to them periodically.
 Exporters for those need to implement a way to stream metrics to the backend in the required format.
-
-</details>
 
 ## Architecture
 

@@ -68,7 +68,7 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
         $this->resetAfterTest();
         $metric = new quiz_attempts_in_progress();
         // Simulate the default config being applied here.
-        $metric->configjson = '{"maxdeadlineseconds": 3600, "maxidleseconds": 600}';
+        $metric->configjson = '{"maxdeadlineseconds": 10800, "maxidleseconds": 1200}';
         // Generate some quiz attempts.
         $now = time();
         $generator = $this->getDataGenerator();
@@ -103,11 +103,11 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
         );
         $DB->update_record(
             'quiz_attempts',
-            ['id' => $attempt12->id, 'timecheckstate' => $now + 1000, 'timemodified' => $now - 1000], // Idle for too long.
+            ['id' => $attempt12->id, 'timecheckstate' => $now + 1000, 'timemodified' => $now - 2000], // Idle for too long.
         );
         $DB->update_record(
             'quiz_attempts',
-            ['id' => $attempt21->id, 'timecheckstate' => $now + 7200], // Deadline too far in the future.
+            ['id' => $attempt21->id, 'timecheckstate' => $now + 20000], // Deadline too far in the future.
         );
         $DB->update_record(
             'quiz_attempts',
@@ -119,12 +119,12 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
         );
         $output = $metric->calculate();
         self::assertEquals(2, $output->value);
-        self::assertSame(['deadline_within' => '3600s', 'idle_within' => '600s'], $output->label);
+        self::assertSame(['deadline_within' => '10800s', 'idle_within' => '1200s'], $output->label);
     }
 
     public function test_get_default_config(): void {
         $defaultconfig = quiz_attempts_in_progress::get_default_config();
-        self::assertSame(3600, $defaultconfig->maxdeadlineseconds);
-        self::assertSame(600, $defaultconfig->maxidleseconds);
+        self::assertSame(10800, $defaultconfig->maxdeadlineseconds);
+        self::assertSame(1200, $defaultconfig->maxidleseconds);
     }
 }

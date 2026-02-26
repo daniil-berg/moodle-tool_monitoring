@@ -156,16 +156,15 @@ In its most basic form, adding a custom metric consists of just four steps:
 3. Registering the metric
 4. Enabling the metric
 
-The following is a simple example of a metric that counts the **total number of tasks** that have spawned since the Moodle instance was started.
-It distinguishes between ad-hoc and scheduled tasks by using the `type` label.
-(For this example, we assume PostgreSQL is used as the database backend.)
+The following is an example of a metric that shows the **current number of [blocks][moodle docs blocks]** in use on the site.
+For simplicity, we are only interested in the [**Courses**][moodle docs block courses] and [**Course/site summary**][moodle docs block course summary] blocks.
 
 #### Defining the metric class
 
-Let's say there is a `local_example` plugin and the metric class is supposed to live in its `classes/metrics` directory.
+Let's say we have our own `local_example` plugin and the metric class is supposed to live in its `classes/metrics` directory.
 
 <details open>
-  <summary><code>classes/metrics/tasks_total.php</code> (Click to expand/collapse)</summary>
+  <summary><code>classes/metrics/blocks_used.php</code> (Click to expand/collapse)</summary>
 
 ```php
 namespace local_example\metrics;
@@ -176,30 +175,30 @@ use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
 /**
- * Counts the total number of tasks that have spawned since the Moodle instance was started.
+ * Measures the current number of blocks used on the site.
  */
-class tasks_total extends metric {
+class blocks_used extends metric {
     public static function get_type(): metric_type {
-        return metric_type::COUNTER;
+        return metric_type::GAUGE;
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('tasks_total_description', 'local_example');
+        return new lang_string('blocks_used_description', 'local_example');
     }
 
     public function calculate(): array {
-        global $CFG, $DB;
-        if ($DB->get_dbfamily() !== 'postgres') {
-            return new metric_value(0);
-        }
-        $sql = "SELECT SUM(last_value)
-                  FROM pg_sequences
-                 WHERE sequencename = :sequence";
-        $totaladhoc = $DB->get_field_sql($sql, ['sequence' => "{$CFG->prefix}task_adhoc_id_seq"]);
-        $totalscheduled = $DB->get_field_sql($sql, ['sequence' => "{$CFG->prefix}task_scheduled_id_seq"]);
+        global $DB;
+        [$insql, $params] = $DB->get_in_or_equal(['course_list', 'course_summary']);
+        $sql = "SELECT b.name,
+                       COUNT(DISTINCT binst.id) AS count
+                  FROM {block} AS b
+             LEFT JOIN {block_instances} AS binst ON binst.blockname = b.name
+                 WHERE b.name $insql
+              GROUP BY b.name";
+        $records = $DB->get_records_sql($sql, $params);
         return [
-            new metric_value($totaladhoc, ['type' => 'adhoc']),
-            new metric_value($totalscheduled, ['type' => 'scheduled']),
+            new metric_value($records['course_list']->count, ['name' => 'course_list']),
+            new metric_value($records['course_summary']->count, ['name' => 'course_summary']),
         ];
     }
 }
@@ -207,12 +206,15 @@ class tasks_total extends metric {
 
 </details>
 
+Since blocks can be added as well as removed at any point in time, this is a _gauge_ type metric.
+We want to partition the metric by the block _name_ and therefore return an array of two labeled `metric_value` objects.
+
 #### Adding a localized metric description
 
 The description is what is shown in the admin dashboard.
 It is also what the `monitoringexporter_prometheus` exporter uses to generate its metric `HELP` string.
 
-In our example above, we return the [localized string][moodle docs string api] with the ID `tasks_total_description`.
+In our example above, we return the [localized string][moodle docs string api] with the ID `blocks_used_description`.
 We just need to actually add the text to be displayed to the plugin's language file.
 
 <details open>
@@ -221,7 +223,7 @@ We just need to actually add the text to be displayed to the plugin's language f
 ```php
 defined('MOODLE_INTERNAL') || die();
 // ...
-$string['tasks_total_description'] = 'Total number of tasks that have spawned since the Moodle instance was started.';
+$string['blocks_used_description'] = 'Current number of blocks used on the site.';
 ```
 
 </details>
@@ -236,13 +238,13 @@ All we need to do is [register that callback][moodle docs hooks.db].
   <summary><code>db/hooks.php</code> (Click to expand/collapse)</summary>
 
 ```php
-use local_example\metrics\tasks_total;
+use local_example\metrics\blocks_used;
 use tool_monitoring\hook\metric_collection;
 
 defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [
-    ['hook' => metric_collection::class, 'callback' => [tasks_total::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [blocks_used::class, 'collect']],
 ];
 ```
 
@@ -253,7 +255,7 @@ $callbacks = [
 That is all there is to it.
 By default, when a new metric is registered, it will be disabled, which means it is not meant to be exported.
 To enable it, first navigate to the admin dashboard.
-You should now see a new greyed-out entry in the overview table for the `tasks_total` metric.
+You should now see a new greyed-out entry in the overview table for the `blocks_used` metric.
 
 All you need to do is click on the eye icon to enable the metric.
 The table row should no longer be greyed out and the metric should now be exported.
@@ -447,6 +449,9 @@ You should have received a copy of the GNU General Public License along with `to
 [. simple_metric_config]: classes/simple_metric_config.php
 [. with_config]: classes/with_config.php
 [grafana oss home]: https://grafana.com/oss/grafana
+[moodle docs blocks]: https://docs.moodle.org/en/Blocks
+[moodle docs block course summary]: https://docs.moodle.org/en/Course/site_summary_block
+[moodle docs block courses]: https://docs.moodle.org/en/Courses_block
 [moodle docs hook api]: https://moodledev.io/docs/apis/core/hooks
 [moodle docs hook callback]: https://moodledev.io/docs/apis/core/hooks#hook-callback
 [moodle docs hook emitter]: https://moodledev.io/docs/apis/core/hooks#hook-emitter

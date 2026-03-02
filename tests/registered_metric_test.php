@@ -268,6 +268,11 @@ final class registered_metric_test extends advanced_testcase {
                 'to' => true,
                 'events' => [],
             ],
+            'No state change when already disabled' => [
+                'from' => false,
+                'to' => false,
+                'events' => [],
+            ],
             'Metric gets enabled' => [
                 'from' => false,
                 'to' => true,

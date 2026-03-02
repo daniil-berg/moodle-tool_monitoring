@@ -32,6 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['actions'] = 'Actions';
 $string['component'] = 'Component';
+$string['configure'] = 'Configure';
 $string['configure_metric'] = 'Configure Metric';
 $string['courses_description'] = 'Current number of courses';
 $string['description'] = 'Description';
@@ -40,7 +41,6 @@ $string['event:metric_disabled'] = 'Metric disabled';
 $string['event:metric_enabled'] = 'Metric enabled';
 $string['manage_tags'] = 'Manage tags';
 $string['metricconfigupdated'] = 'Metric configuration updated';
-$string['metricdisabled'] = 'Metric disabled';
 $string['metricenabled'] = 'Metric enabled';
 $string['metricsoverview'] = 'Overview of Available Metrics';
 $string['metricsoverviewshowall'] = 'Show all metrics';

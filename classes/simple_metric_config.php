@@ -29,7 +29,6 @@
 
 namespace tool_monitoring;
 
-use core\attribute\label;
 use core\component;
 use core\exception\coding_exception;
 use core\lang_string;
@@ -50,8 +49,40 @@ use tool_monitoring\form\config as config_form;
  * simply maps those properties to keys in a JSON object.
  *
  * The definition of the Moodle form fields and their validation logic are inferred from those properties as well.
- * Field labels are set by adding {@see label} attributes to those properties. The label must be a valid string identifier within
- * the component that defines the config class.
+ * For translatable field labels, a string with the ID `metric:<config-class-name>:<property-name>` must exist in the component
+ * defining the config class. If additionally a string with the ID `metric:<config-class-name>:<property-name>_help` exists,
+ * a help button is added to the form field with the corresponding text.
+ *
+ * Consider the following example config class defined in a plugin called `local_example`:
+ *
+ * ```
+ * class my_metric_config extends simple_metric_config {
+ *     public function __construct(
+ *         public string $foo = 'bar',
+ *         public float $spam = 3.14,
+ *     ) {}
+ * }
+ * ```
+ *
+ * Resulting/expected JSON: `{"foo": "bar", "spam": 3.14}`.
+ *
+ * Resulting/expected form data: `['foo' => 'bar', 'spam' => '3.14']`.
+ *
+ * The Moodle form definition would be similar to this:
+ * ```
+ * $mform->addElement('text', 'foo', get_string('metric:my_metric_config:foo', 'local_example'));
+ * $mform->addHelpButton('foo', 'metric:my_metric_config:foo', 'local_example');
+ * $mform->setType('foo', PARAM_TEXT);
+ * $mform->addRule('foo', null, 'required', null, 'client');
+ *
+ * $mform->addElement('text', 'spam', get_string('metric:my_metric_config:spam', 'local_example'));
+ * $mform->addHelpButton('spam', 'metric:my_metric_config:spam', 'local_example');
+ * $mform->setType('spam', PARAM_FLOAT);
+ * $mform->addRule('spam', null, 'numeric', null, 'client');
+ * $mform->addRule('spam', null, 'required', null, 'client');
+ * ```
+ *
+ * For more advanced definition/validation options, override {@see extend_form_definition} and {@see extend_form_validation}.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -184,28 +215,31 @@ abstract class simple_metric_config implements metric_config {
     #[\Override]
     public static function extend_form_definition(config_form $configform, MoodleQuickForm $mform): void {
         $component = component::get_component_from_classname(static::class);
-        foreach (self::get_config_parameters() as $name => $param) {
-            /** @var label|null $labelattr */
-            $labelattr = null;
-            foreach ($param->getAttributes() as $attribute) {
-                if ($attribute->getName() === label::class) {
-                    $labelattr = $attribute->newInstance();
-                    break;
-                }
-            }
-            $label = $labelattr ? new lang_string($labelattr->label, $component) : null;
+        // Get the unqualified class name.
+        $cls = static::class;
+        if (($pos = strrpos($cls, '\\')) !== false) {
+            $cls = substr($cls, $pos + 1);
+        }
+        $stringmanager = get_string_manager();
+        foreach (self::get_config_parameters() as $paramname => $param) {
+            $labelid = "metric:$cls:$paramname";
+            $label = new lang_string($labelid, $component);
             $paramtype = $param->getType();
             if ($paramtype instanceof ReflectionNamedType) {
                 match ($paramtype->getName()) {
-                    'int' => self::add_numeric_input_to_form($mform, $name, $label, PARAM_INT),
-                    'float' => self::add_numeric_input_to_form($mform, $name, $label, PARAM_FLOAT),
-                    default => self::add_text_input_to_form($mform, $name, $label),
+                    'int' => self::add_numeric_input_to_form($mform, $paramname, $label, PARAM_INT),
+                    'float' => self::add_numeric_input_to_form($mform, $paramname, $label, PARAM_FLOAT),
+                    default => self::add_text_input_to_form($mform, $paramname, $label),
                 };
             } else {
-                self::add_text_input_to_form($mform, $name, $label);
+                self::add_text_input_to_form($mform, $paramname, $label);
+            }
+            // Optionally, add a help button if the defining component has a corresponding language string.
+            if ($stringmanager->string_exists("{$labelid}_help", $component)) {
+                $mform->addHelpButton($paramname, $labelid, 'tool_monitoring');
             }
             // To avoid ugly errors about possibly missing constructor arguments, we make every field non-optional.
-            $mform->addRule($name, null, 'required', null, 'client');
+            $mform->addRule($paramname, null, 'required', null, 'client');
         }
     }
 

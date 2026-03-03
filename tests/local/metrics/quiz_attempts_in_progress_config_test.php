@@ -53,6 +53,13 @@ use tool_monitoring\form\config as config_form;
  */
 #[CoversClass(quiz_attempts_in_progress_config::class)]
 final class quiz_attempts_in_progress_config_test extends advanced_testcase {
+    #[\Override]
+    public static function setUpBeforeClass(): void {
+        global $CFG;
+        parent::setUpBeforeClass();
+        // We are using the `MoodleQuickForm` class. Hopefully, requiring the `formslib.php` will not be needed soon.
+        require_once("$CFG->libdir/formslib.php");
+    }
     /**
      * Tests the {@see quiz_attempts_in_progress_config} constructor.
      *

@@ -39,6 +39,7 @@ use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
 use stdClass;
+use tool_monitoring\form\config as config_form;
 
 /**
  * Basic implementation of the {@see metric_config} interface.
@@ -100,6 +101,7 @@ abstract class simple_metric_config implements metric_config {
      *
      * @return $this Same instance.
      */
+    #[\Override]
     public function jsonSerialize(): static {
         return $this;
     }
@@ -113,14 +115,17 @@ abstract class simple_metric_config implements metric_config {
      * @return static New instance of the config class.
      * @throws coding_exception JSON is not valid or not an object or missing config parameters.
      */
+    #[\Override]
     public static function from_json(string $json): static {
         $data = json_decode($json, associative: true);
         if (empty($data) || !is_array($data) || array_is_list($data)) {
+            // TODO: Use custom exception class.
             throw new coding_exception("PLACEHOLDER");
         }
         $args = [];
         foreach (array_keys(self::get_config_parameters()) as $name) {
             if (!array_key_exists($name, $data)) {
+                // TODO: Use custom exception class.
                 throw new coding_exception("Missing '$name' in JSON");
             }
             $args[$name] = $data[$name];
@@ -137,10 +142,12 @@ abstract class simple_metric_config implements metric_config {
      * @return static New instance of the config class.
      * @throws coding_exception
      */
+    #[\Override]
     public static function with_form_data(stdClass $formdata): static {
         $args = [];
         foreach (array_keys(self::get_config_parameters()) as $name) {
             if (!property_exists($formdata, $name)) {
+                // TODO: Use custom exception class.
                 throw new coding_exception("Missing '$name' in form data");
             }
             $args[$name] = $formdata->$name;
@@ -155,34 +162,29 @@ abstract class simple_metric_config implements metric_config {
      *
      * @return array<string, mixed> Data to set on the config form.
      */
+    #[\Override]
     public function to_form_data(): array {
         return (array) $this;
     }
 
     /**
-     * Extends/modifies a {@see MoodleQuickForm} for the config.
+     * Extends the definition of the configuration form.
+     *
+     * Called at the end of the {@see config_form::definition} method.
      *
      * Infers field names and types to set from the property declarations of the config class.
      * Form field descriptions are taken from {@see label} attributes on those properties.
      *
-     * TODO Parameter to form field inference is extremely rudimentary and just a proof of concept.
-     *
-     * @param MoodleQuickForm $mform Configuration form.
+     * @param config_form $configform Metric configuration form being defined.
+     * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
      * @throws coding_exception
+     *
+     * @link https://docs.moodle.org/dev/lib/formslib.php_Form_Definition Moodle docs on form definition
      */
-    public static function extend_config_form(MoodleQuickForm $mform): void {
+    #[\Override]
+    public static function extend_form_definition(config_form $configform, MoodleQuickForm $mform): void {
         $component = component::get_component_from_classname(static::class);
         foreach (self::get_config_parameters() as $name => $param) {
-            $paramtype = $param->getType();
-            if ($paramtype instanceof ReflectionNamedType) {
-                $type = match ($paramtype->getName()) {
-                    'int' => PARAM_INT,
-                    'float' => PARAM_FLOAT,
-                    default => PARAM_TEXT,
-                };
-            } else {
-                $type = PARAM_TEXT;
-            }
             /** @var label|null $labelattr */
             $labelattr = null;
             foreach ($param->getAttributes() as $attribute) {
@@ -192,8 +194,60 @@ abstract class simple_metric_config implements metric_config {
                 }
             }
             $label = $labelattr ? new lang_string($labelattr->label, $component) : null;
-            $mform->addElement('text', $name, $label);
-            $mform->setType($name, $type);
+            $paramtype = $param->getType();
+            if ($paramtype instanceof ReflectionNamedType) {
+                match ($paramtype->getName()) {
+                    'int' => self::add_numeric_input_to_form($mform, $name, $label, PARAM_INT),
+                    'float' => self::add_numeric_input_to_form($mform, $name, $label, PARAM_FLOAT),
+                    default => self::add_text_input_to_form($mform, $name, $label),
+                };
+            } else {
+                self::add_text_input_to_form($mform, $name, $label);
+            }
+            // To avoid ugly errors about possibly missing constructor arguments, we make every field non-optional.
+            $mform->addRule($name, null, 'required', null, 'client');
         }
+    }
+
+    /**
+     * Convenience method to add a text input field to a Moodle form.
+     *
+     * @param MoodleQuickForm $mform Moodle form instance.
+     * @param string $name Field name.
+     * @param lang_string|null $label Field label.
+     */
+    protected static function add_text_input_to_form(
+        MoodleQuickForm $mform,
+        string $name,
+        lang_string|null $label,
+    ): void {
+        $mform->addElement('text', $name, $label);
+        $mform->setType($name, PARAM_TEXT);
+    }
+
+    /**
+     * Convenience method to add a number input field to a Moodle form.
+     *
+     * Adds the `numeric` client-side validation rule to the field.
+     *
+     * @param MoodleQuickForm $mform Moodle form instance.
+     * @param string $name Field name.
+     * @param lang_string|null $label Field label.
+     * @param string $type Field type, presumably `PARAM_INT` or `PARAM_FLOAT`.
+     */
+    protected static function add_numeric_input_to_form(
+        MoodleQuickForm $mform,
+        string $name,
+        lang_string|null $label,
+        string $type,
+    ): void {
+        $mform->addElement('text', $name, $label);
+        $mform->setType($name, $type);
+        $mform->addRule($name, null, 'numeric', null, 'client');
+    }
+
+    #[\Override]
+    public static function extend_form_validation(array $data, config_form $configform, MoodleQuickForm $mform): array {
+        return [];
     }
 }

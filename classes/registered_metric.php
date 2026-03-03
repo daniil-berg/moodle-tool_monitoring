@@ -36,7 +36,6 @@ use dml_exception;
 use IteratorAggregate;
 use JsonException;
 use moodleform;
-use MoodleQuickForm;
 use stdClass;
 use tool_monitoring\form\config as config_form;
 use Traversable;
@@ -51,6 +50,7 @@ use TypeError;
  * @property-read string $qualifiedname Qualified name of the metric.
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
+ * @property-read class-string<metric_config>|null $configclass Name of the associated metric config class, if any.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -83,7 +83,7 @@ final class registered_metric implements IteratorAggregate {
     private metric $metric;
 
     /**
-     * @var class-string<metric_config>|null
+     * @var class-string<metric_config>|null Name of the associated metric config class; `null` if the metric is not configurable.
      */
     private string|null $configclass = null;
 
@@ -235,19 +235,21 @@ final class registered_metric implements IteratorAggregate {
     }
 
     /**
-     * Special-case getter for the qualified name, description, and type of the metric.
+     * Special-case getter for some public-read-only properties of the metric.
      *
      * TODO Replace this method with nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
      *
      * @param string $name Name of the property to return.
      * @return mixed Property value.
+     * @throws coding_exception Invalid property name passed.
      */
     public function __get(string $name): mixed {
         return match ($name) {
             'qualifiedname' => self::get_qualified_name($this->component, $this->name),
             'description'   => $this->metric::get_description(),
             'type'          => $this->metric::get_type(),
-            default         => $this->$name,
+            'configclass'   => $this->configclass,
+            default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
         };
     }
 
@@ -314,18 +316,6 @@ final class registered_metric implements IteratorAggregate {
             $event->trigger();
         }
         $transaction->allow_commit();
-    }
-
-    /**
-     * Calls the {@see config::extend_config_form} on the provided form object.
-     *
-     * @param MoodleQuickForm $mform Config form to extend.
-     */
-    public function extend_config_form(MoodleQuickForm $mform): void {
-        if (is_null($this->configclass)) {
-            return;
-        }
-        $this->configclass::extend_config_form($mform);
     }
 
     /**

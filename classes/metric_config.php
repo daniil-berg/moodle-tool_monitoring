@@ -33,6 +33,7 @@ use JsonSerializable;
 use moodleform;
 use MoodleQuickForm;
 use stdClass;
+use tool_monitoring\form\config as config_form;
 
 /**
  * Defines the optional configuration interface of a {@see metric} using the {@see with_config} trait.
@@ -42,7 +43,7 @@ use stdClass;
  * method determines what is saved in the database via {@see json_encode}, while the latter does the inverse.
  *
  * In addition, a metric config can be used together {@see moodleform}s. This is facilitated by the {@see self::with_form_data},
- * {@see self::to_form_data}, and {@see self::extend_config_form} methods.
+ * {@see self::to_form_data}, and {@see self::extend_form_definition} methods.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -80,11 +81,32 @@ interface metric_config extends JsonSerializable {
     public function to_form_data(): array;
 
     /**
-     * Extends/modifies a {@see MoodleQuickForm} for the config.
+     * Extends the definition of the configuration form.
+     *
+     * Called at the end of the {@see config_form::definition} method.
      *
      * Implementations _should_ ensure that any added form fields are compatible with {@see with_form_data} and {@see to_form_data}.
      *
-     * @param MoodleQuickForm $mform Configuration form.
+     * @param config_form $configform Metric configuration form being defined.
+     * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
+     *
+     * @link https://docs.moodle.org/dev/lib/formslib.php_Form_Definition Moodle docs on form definition
      */
-    public static function extend_config_form(MoodleQuickForm $mform): void;
+    public static function extend_form_definition(config_form $configform, MoodleQuickForm $mform): void;
+
+    /**
+     * Extends the validation of the configuration form and returns an array of error messages.
+     *
+     * Called at the end of the {@see config_form::validation} method.
+     *
+     * Implementations _should_ only return error messages for fields defined by their own {@see extend_form_definition} method.
+     *
+     * @param array<string, mixed> $data Form data to validate, indexed by field name.
+     * @param config_form $configform Metric configuration form being validated.
+     * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
+     * @return array<string, string> If something is not valid, an array of error messages, indexed by field name; empty otherwise.
+     *
+     * @link https://docs.moodle.org/dev/lib/formslib.php_Validation Moodle docs on form validation
+     */
+    public static function extend_form_validation(array $data, config_form $configform, MoodleQuickForm $mform): array;
 }

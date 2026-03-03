@@ -37,7 +37,6 @@ use core\lang_string;
 use MoodleQuickForm;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\MockObject\Exception;
 use stdClass;
 use tool_monitoring\form\config as config_form;
 
@@ -211,21 +210,21 @@ final class users_online_config_test extends advanced_testcase {
     }
 
     public function test_extend_form_definition(): void {
-        $mockform = $this->createMock(MoodleQuickForm::class);
-        $configform = $this->createMock(config_form::class);
-        $mockform->expects($this->once())
+        $mockmform = $this->createMock(MoodleQuickForm::class);
+        $mockconfigform = $this->createMock(config_form::class);
+        $mockmform->expects($this->once())
             ->method('addElement')
             ->with('text', 'timewindows', new lang_string('users_online_time_windows', 'tool_monitoring'));
-        $mockform->expects($this->once())
+        $mockmform->expects($this->once())
             ->method('setType')
             ->with('timewindows', PARAM_TEXT);
-        $mockform->expects($this->once())
+        $mockmform->expects($this->once())
             ->method('addHelpButton')
             ->with('timewindows', 'users_online_time_windows', 'tool_monitoring');
-        $mockform->expects($this->once())
+        $mockmform->expects($this->once())
             ->method('addRule')
             ->with('timewindows', null, 'required', null, 'client');
-        users_online_config::extend_form_definition($configform, $mockform);
+        users_online_config::extend_form_definition($mockconfigform, $mockmform);
     }
 
     /**
@@ -237,13 +236,13 @@ final class users_online_config_test extends advanced_testcase {
      */
     #[DataProvider('provider_test_extend_form_validation')]
     public function test_extend_form_validation(array $data, array|string $expected): void {
-        $mockform = $this->createMock(MoodleQuickForm::class);
-        $configform = $this->createMock(config_form::class);
+        $mockmform = $this->createMock(MoodleQuickForm::class);
+        $mockconfigform = $this->createMock(config_form::class);
         if (is_string($expected)) {
             $this->expectException($expected);
-            users_online_config::extend_form_validation($data, $configform, $mockform);
+            users_online_config::extend_form_validation($data, $mockconfigform, $mockmform);
         } else {
-            $errors = users_online_config::extend_form_validation($data, $configform, $mockform);
+            $errors = users_online_config::extend_form_validation($data, $mockconfigform, $mockmform);
             self::assertEquals($expected, $errors);
         }
     }

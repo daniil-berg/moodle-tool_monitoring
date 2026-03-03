@@ -262,13 +262,13 @@ final class users_online_config_test extends advanced_testcase {
             'One zero time window' => [
                 'data' => ['timewindows' => '1, 2, 0'],
                 'expected' => [
-                    'timewindows' => new lang_string('error:users_online_time_windows_invalid', 'tool_monitoring', '0'),
+                    'timewindows' => new lang_string('error:users_online_config:timewindows_invalid', 'tool_monitoring', '0'),
                 ],
             ],
             'Non-numeric and negative time winodws' => [
                 'data' => ['timewindows' => '1,2,foo,-3'],
                 'expected' => [
-                    'timewindows' => new lang_string('error:users_online_time_windows_invalid', 'tool_monitoring', 'foo, -3'),
+                    'timewindows' => new lang_string('error:users_online_config:timewindows_invalid', 'tool_monitoring', 'foo, -3'),
                 ],
             ],
             'Valid time windows with a lot of arbitrary whitespace' => [

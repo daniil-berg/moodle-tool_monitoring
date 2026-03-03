@@ -33,6 +33,7 @@ use core\exception\coding_exception;
 use core\lang_string;
 use MoodleQuickForm;
 use stdClass;
+use tool_monitoring\form\config as config_form;
 use tool_monitoring\metric_config;
 
 /**
@@ -79,6 +80,7 @@ final readonly class users_online_config implements metric_config {
      *
      * @return $this Same instance.
      */
+    #[\Override]
     public function jsonSerialize(): self {
         return $this;
     }
@@ -90,6 +92,7 @@ final readonly class users_online_config implements metric_config {
      * @return self New instance of the config class.
      * @throws coding_exception JSON is not valid or not an object or missing config parameters.
      */
+    #[\Override]
     public static function from_json(string $json): self {
         $data = json_decode($json, associative: true);
         if (empty($data) || !is_array($data) || array_is_list($data)) {
@@ -112,13 +115,11 @@ final readonly class users_online_config implements metric_config {
      * @return self New instance of the config class.
      * @throws coding_exception
      */
+    #[\Override]
     public static function with_form_data(stdClass $formdata): self {
         $timewindowsstring = $formdata->timewindows ?? null;
-        if (is_null($timewindowsstring)) {
-            throw new coding_exception("Missing 'timewindows' in form data");
-        }
         if (!is_string($timewindowsstring)) {
-            throw new coding_exception("Form data 'timewindows' is not a string");
+            throw new coding_exception("No 'timewindows' string in form data");
         }
         $timewindows = explode(',', $timewindowsstring);
         foreach ($timewindows as $value) {
@@ -129,21 +130,38 @@ final readonly class users_online_config implements metric_config {
         return new self(...$timewindows);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return array<string, mixed> Data to set on the config form.
-     */
+    #[\Override]
     public function to_form_data(): array {
         return ['timewindows' => implode(', ', $this->timewindows)];
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public static function extend_config_form(MoodleQuickForm $mform): void {
+    #[\Override]
+    public static function extend_form_definition(config_form $configform, MoodleQuickForm $mform): void {
         $mform->addElement('text', 'timewindows', new lang_string('users_online_time_windows', 'tool_monitoring'));
         $mform->setType('timewindows', PARAM_TEXT);
         $mform->addHelpButton('timewindows', 'users_online_time_windows', 'tool_monitoring');
+        $mform->addRule('timewindows', null, 'required', null, 'client');
+    }
+
+    #[\Override]
+    public static function extend_form_validation(array $data, config_form $configform, MoodleQuickForm $mform): array {
+        $timewindowsstring = $data['timewindows'] ?? null;
+        if (!is_string($timewindowsstring)) {
+            // This should never happen if our field definition/rule above is working correctly.
+            throw new coding_exception("No 'timewindows' string in form data");
+        }
+        $invalid = array_filter(
+            explode(',', $timewindowsstring),
+            fn (string $value): bool => !is_numeric($value) || $value <= 0,
+        );
+        if (!empty($invalid)) {
+            $error = new lang_string(
+                identifier: 'error:users_online_config:timewindows_invalid',
+                component: 'tool_monitoring',
+                a: implode(', ', array_map('trim', $invalid)),
+            );
+            return ['timewindows' => $error];
+        }
+        return [];
     }
 }

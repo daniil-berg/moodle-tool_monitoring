@@ -33,8 +33,11 @@ namespace tool_monitoring\local\metrics;
 
 use advanced_testcase;
 use core\exception\coding_exception;
+use core\lang_string;
+use MoodleQuickForm;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\form\config as config_form;
 
 /**
  * Unit tests for the {@see quiz_attempts_in_progress_config} class.
@@ -50,6 +53,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
  */
 #[CoversClass(quiz_attempts_in_progress_config::class)]
 final class quiz_attempts_in_progress_config_test extends advanced_testcase {
+    #[\Override]
+    public static function setUpBeforeClass(): void {
+        global $CFG;
+        parent::setUpBeforeClass();
+        // We are using the `MoodleQuickForm` class. Hopefully, requiring the `formslib.php` will not be needed soon.
+        require_once("$CFG->libdir/formslib.php");
+    }
     /**
      * Tests the {@see quiz_attempts_in_progress_config} constructor.
      *
@@ -108,6 +118,66 @@ final class quiz_attempts_in_progress_config_test extends advanced_testcase {
                 'maxidleseconds'     => 1,
                 'maxdeadlineseconds' => 0,
                 'expected'           => coding_exception::class,
+            ],
+        ];
+    }
+
+
+    /**
+     * Tests the {@see quiz_attempts_in_progress_config::extend_form_validation} method.
+     *
+     * @param array $data Form data to validate.
+     * @param array $expected Expected validation errors.
+     */
+    #[DataProvider('provider_test_extend_form_validation')]
+    public function test_extend_form_validation(array $data, array $expected): void {
+        $mockmform = $this->createMock(MoodleQuickForm::class);
+        $mockconfigform = $this->createMock(config_form::class);
+        $errors = quiz_attempts_in_progress_config::extend_form_validation($data, $mockconfigform, $mockmform);
+        self::assertEquals($expected, $errors);
+    }
+
+    /**
+     * Provides test data for the {@see test_extend_form_validation} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_extend_form_validation(): array {
+        return [
+            'Everything valid' => [
+                'data' => [
+                    'maxidleseconds'     => 1,
+                    'maxdeadlineseconds' => 1000000000000000,
+                ],
+                'expected' => [],
+            ],
+            'Non-numeric deadline interval' => [
+                'data' => [
+                    'maxidleseconds'     => 1,
+                    'maxdeadlineseconds' => 'foo',
+                ],
+                'expected' => [
+                    'maxdeadlineseconds' => new lang_string(
+                        identifier: 'error:quiz_attempts_in_progress_config:input_invalid',
+                        component: 'tool_monitoring',
+                    ),
+                ],
+            ],
+            'Zero/negative values' => [
+                'data' => [
+                    'maxidleseconds'     => 0,
+                    'maxdeadlineseconds' => -1,
+                ],
+                'expected' => [
+                    'maxidleseconds'     => new lang_string(
+                        identifier: 'error:quiz_attempts_in_progress_config:input_invalid',
+                        component: 'tool_monitoring',
+                    ),
+                    'maxdeadlineseconds' => new lang_string(
+                        identifier: 'error:quiz_attempts_in_progress_config:input_invalid',
+                        component: 'tool_monitoring',
+                    ),
+                ],
             ],
         ];
     }

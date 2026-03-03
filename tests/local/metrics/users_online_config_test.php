@@ -37,7 +37,9 @@ use core\lang_string;
 use MoodleQuickForm;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\Exception;
 use stdClass;
+use tool_monitoring\form\config as config_form;
 
 /**
  * Unit tests for the {@see users_online_config} class.
@@ -208,14 +210,71 @@ final class users_online_config_test extends advanced_testcase {
         self::assertSame(['timewindows' => '1, 2, 3'], $config->to_form_data());
     }
 
-    public function test_extend_config_form(): void {
+    public function test_extend_form_definition(): void {
         $mockform = $this->createMock(MoodleQuickForm::class);
+        $configform = $this->createMock(config_form::class);
         $mockform->expects($this->once())
             ->method('addElement')
             ->with('text', 'timewindows', new lang_string('users_online_time_windows', 'tool_monitoring'));
         $mockform->expects($this->once())
             ->method('setType')
             ->with('timewindows', PARAM_TEXT);
-        users_online_config::extend_config_form($mockform);
+        $mockform->expects($this->once())
+            ->method('addHelpButton')
+            ->with('timewindows', 'users_online_time_windows', 'tool_monitoring');
+        $mockform->expects($this->once())
+            ->method('addRule')
+            ->with('timewindows', null, 'required', null, 'client');
+        users_online_config::extend_form_definition($configform, $mockform);
+    }
+
+    /**
+     * Tests the {@see users_online_config::extend_form_validation} method.
+     *
+     * @param array $data Form data to validate.
+     * @param array|string $expected Expected validation errors; exception class name if an exception is expected.
+     * @throws coding_exception
+     */
+    #[DataProvider('provider_test_extend_form_validation')]
+    public function test_extend_form_validation(array $data, array|string $expected): void {
+        $mockform = $this->createMock(MoodleQuickForm::class);
+        $configform = $this->createMock(config_form::class);
+        if (is_string($expected)) {
+            $this->expectException($expected);
+            users_online_config::extend_form_validation($data, $configform, $mockform);
+        } else {
+            $errors = users_online_config::extend_form_validation($data, $configform, $mockform);
+            self::assertEquals($expected, $errors);
+        }
+    }
+
+    /**
+     * Provides test data for the {@see test_extend_form_validation} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_extend_form_validation(): array {
+        return [
+            'Missing time window data' => [
+                'data' => ['foo' => 'bar'],
+                'expected' => coding_exception::class,
+            ],
+            'One zero time window' => [
+                'data' => ['timewindows' => '1, 2, 0'],
+                'expected' => [
+                    'timewindows' => new lang_string('error:users_online_time_windows_invalid', 'tool_monitoring', '0'),
+                ],
+            ],
+            'Non-numeric and negative time winodws' => [
+                'data' => ['timewindows' => '1,2,foo,-3'],
+                'expected' => [
+                    'timewindows' => new lang_string('error:users_online_time_windows_invalid', 'tool_monitoring', 'foo, -3'),
+                ],
+            ],
+            'Valid time windows with a lot of arbitrary whitespace' => [
+                'data' => ['timewindows' => ' 1,2,3.14    , 0.01 '],
+                'expected' => [],
+            ],
+        ];
     }
 }

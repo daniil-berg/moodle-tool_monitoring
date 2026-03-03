@@ -14,9 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Definition of the abstract {@see config} form class.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_monitoring\form;
 
 use core\exception\coding_exception;
+use core\lang_string;
 use dml_exception;
 use JsonException;
 use moodleform;
@@ -39,7 +53,7 @@ require_once("$CFG->libdir/formslib.php");
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class config extends moodleform {
+class config extends moodleform {
     /** @var registered_metric Metric for which this form is defined; set in the {@see definition} method. */
     private registered_metric $metric;
 
@@ -47,27 +61,83 @@ final class config extends moodleform {
     protected function definition(): void {
         $this->metric = $this->_customdata['metric'];
         $this->_form->setType('metric', PARAM_ALPHAEXT);
-        $this->_form->addElement('static', 'component', get_string('component', 'tool_monitoring'), $this->metric->component);
-        $this->_form->addElement('static', 'name', get_string('name', 'tool_monitoring'), $this->metric->name);
-        $this->_form->addElement('static', 'type', get_string('type', 'tool_monitoring'), $this->metric->type->value);
-        $this->_form->addElement('static', 'description', get_string('description', 'tool_monitoring'), $this->metric->description);
-        $this->_form->addElement('advcheckbox', 'enabled', get_string('metricenabled', 'tool_monitoring'));
-        $this->_form->addElement(
-            'tags',
-            'tags',
-            get_string('tags'),
-            [
-                'itemtype' => 'metrics',
-                'component' => 'tool_monitoring',
-            ]
+        $this->add_static_field(
+            name: 'component',
+            label: new lang_string('component', 'tool_monitoring'),
+            value: $this->metric->component,
         );
-        $this->metric->extend_config_form($this->_form);
+        $this->add_static_field(
+            name: 'name',
+            label: new lang_string('name', 'tool_monitoring'),
+            value: $this->metric->name,
+        );
+        $this->add_static_field(
+            name: 'type',
+            label: new lang_string('type', 'tool_monitoring'),
+            value: $this->metric->type->value,
+        );
+        $this->add_static_field(
+            name: 'description',
+            label: new lang_string('description', 'tool_monitoring'),
+            value: $this->metric->description,
+        );
+        $this->add_advanced_checkbox_field(
+            name: 'enabled',
+            label: new lang_string('metricenabled', 'tool_monitoring'),
+        );
+        $this->add_tags_field(
+            itemtype: 'metrics',
+            component: 'tool_monitoring',
+        );
+        if (!is_null($this->metric->configclass)) {
+            $this->metric->configclass::extend_form_definition($this, $this->_form);
+        }
     }
 
     #[\Override]
     protected function after_definition(): void {
         $this->add_action_buttons();
         parent::after_definition();
+    }
+
+    /**
+     * Adds a static form field.
+     *
+     * @param string $name Name for the field.
+     * @param lang_string $label Label for the field.
+     * @param string $value Static value for the field.
+     */
+    private function add_static_field(string $name, lang_string $label, string $value): void {
+        $this->_form->addElement('static', $name, $label, $value);
+    }
+
+    /**
+     * Adds an advanced checkbox form field.
+     *
+     * @param string $name Name for the field.
+     * @param lang_string $label Label for the field.
+     */
+    private function add_advanced_checkbox_field(string $name, lang_string $label): void {
+        $this->_form->addElement('advcheckbox', $name, $label);
+    }
+
+    /**
+     * Adds a tags selector form field.
+     *
+     * @param string $itemtype Tag item type.
+     * @param string $component Tag component name.
+     */
+    private function add_tags_field(string $itemtype, string $component): void {
+        $this->_form->addElement('tags', 'tags', new lang_string('tags'), ['itemtype' => $itemtype, 'component' => $component]);
+    }
+
+    #[\Override]
+    public function validation($data, $files): array {
+        $errors = parent::validation($data, $files);
+        if (!is_null($this->metric->configclass)) {
+            $errors = array_merge($errors, $this->metric->configclass::extend_form_validation($data, $this, $this->_form));
+        }
+        return $errors;
     }
 
     /**

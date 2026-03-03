@@ -54,6 +54,7 @@ use tool_monitoring\form\config as config_form;
  */
 #[CoversClass(users_online_config::class)]
 final class users_online_config_test extends advanced_testcase {
+    #[\Override]
     public static function setUpBeforeClass(): void {
         global $CFG;
         parent::setUpBeforeClass();

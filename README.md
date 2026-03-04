@@ -151,10 +151,10 @@ For exhaustive details about the various config options, see the official [Prome
 ### Adding a custom metric
 
 In its most basic form, adding a custom metric consists of just four steps:
-1. Defining the metric class
-2. Adding a localized metric description
-3. Registering the metric
-4. Enabling the metric
+1. Define the metric class.
+2. Add a localized metric description.
+3. Register the metric.
+4. Enable the metric.
 
 The following is an example of a metric that shows the **current number of [blocks][moodle docs blocks]** in use on the site.
 For simplicity, we are only interested in the [**Courses**][moodle docs block courses] and [**Course/site summary**][moodle docs block course summary] blocks.
@@ -183,7 +183,7 @@ class blocks_used extends metric {
     }
 
     public static function get_description(): lang_string {
-        return new lang_string('blocks_used_description', 'local_example');
+        return new lang_string('metric:blocks_used_help', 'local_example');
     }
 
     public function calculate(): array {
@@ -214,7 +214,7 @@ We want to partition the metric by the block _name_ and therefore return an arra
 The description is what is shown in the admin dashboard.
 It is also what the `monitoringexporter_prometheus` exporter uses to generate its metric `HELP` string.
 
-In our example above, we return the [localized string][moodle docs string api] with the ID `blocks_used_description`.
+In our example above, we return the [localized string][moodle docs string api] with the ID `metric:blocks_used_help`.
 We just need to actually add the text to be displayed to the plugin's language file.
 
 <details open>
@@ -223,7 +223,7 @@ We just need to actually add the text to be displayed to the plugin's language f
 ```php
 defined('MOODLE_INTERNAL') || die();
 // ...
-$string['blocks_used_description'] = 'Current number of blocks used on the site.';
+$string['metric:blocks_used_help'] = 'Current number of blocks used on the site.';
 ```
 
 </details>
@@ -262,7 +262,184 @@ The table row should no longer be greyed out and the metric should now be export
 
 ### Making a metric configurable (advanced)
 
-🚧 TODO
+If a fixed way of calculating a metric is not enough, and you want to allow privileged users to configure it, `tool_monitoring` provides a convenient way to do so.
+This expands the required number of steps we laid out above just a bit:
+
+1. Define a custom config class that implements the [`metric_config`][. metric_config] interface.
+2. Define the metric class.
+   1. Same as above, except instead of extending `metric`, inherit from its descendant [`metric_with_config`][. metric_with_config].
+   2. Implement the regular `metric` methods as well as the `get_default_config` method by returning an instance of your config class from step 1.
+3. Add language strings.
+   1. Same as above, add the localized metric description.
+   2. Add any necessary strings for form definition/validation.
+4. Register the metric same as above.
+5. Enable and configure the metric.
+
+> [!NOTE]
+> The actual metric config data will be stored in the database in JSON format.
+
+Let's stick to [the example above](#adding-a-custom-metric).
+To start simple, say we want to optionally filter our blocks by **visibility** and **creation time**.
+Admins should be able to choose if they want to include hidden blocks and what the creation time of the newest block to count should be.
+(The idea for the latter is that maybe we do not want to count temporary experiments, only "established" block instances.)
+
+#### Defining a custom metric config class
+
+For simple configuration requirements like this, `tool_monitoring` provides a convenient base class that already implements the `metric_config` interface.
+It is called [`simple_metric_config`][. simple_metric_config] and infers almost everything we need automatically.
+All we need to do is implement a proper constructor.
+
+By convention, the config class should be named `<metric_name>_config` and live in the same directory as the metric class.
+
+<details open>
+  <summary><code>classes/metrics/blocks_used_config.php</code> (Click to expand/collapse)</summary>
+
+```php
+namespace local_example\metrics;
+
+use tool_monitoring\simple_metric_config;
+
+/**
+ * Defines the configuration for the `blocks_used` metric.
+ */
+class blocks_used_config extends simple_metric_config {
+    public function __construct(
+        public bool $includehidden = false,
+        public float $minblockagehours = 1.0,
+    ) {}
+}
+```
+
+</details>
+
+That's it.
+There is no need to override any of the `metric_config` methods by hand.
+
+> [!IMPORTANT]
+> The [constructor property promotion][php docs constructor promotion] is _required_ here! Same as making the config parameters **public**.
+
+This data class is meant to represent both the JSON "schema" for (de-)serializing the actual metric config from/to the database and the shape of the initial/submitted form data.
+
+Under the hood, the `simple_metric_config` class will also automatically define the config form fields appropriately.
+This means it will do the following for each public property in the constructor:
+
+1. Add a required `<input>` element with a `name` attribute equal to the property name.
+2. Add a corresponding `<label>` element (see the [language string definition below](#adding-more-language-strings)).
+3. Add a help button (optionally).
+4. Infer and set the `PARAM_` type for cleaning that input.
+5. Add a validation rule for that input (optionally).
+
+For example, our config form will have a text input field named `minblockagehours`.
+The type for that input will be `PARAM_FLOAT` and values will be immediately validated to be numeric on the client side.
+
+#### Defining the configurable metric class
+
+The actual metric class is very similar to the one we used [in the previous section](#defining-the-metric-class) with a few key differences.
+The `get_default_config` method returns an instance of our config class.
+And the `calculate` method now also relies on an instance of our config class.
+
+> [!NOTE]
+> To simplify the code a bit, we will no longer distinguish block types.
+> Instead, we will just deliver a single metric value counting all block types but with our aforementioned filtering applied.
+
+<details open>
+  <summary><code>classes/metrics/blocks_used.php</code> (Click to expand/collapse)</summary>
+
+```php
+namespace local_example\metrics;
+
+use core\lang_string;
+use tool_monitoring\metric;
+use tool_monitoring\metric_type;
+use tool_monitoring\metric_value;
+use tool_monitoring\metric_with_config;
+
+/**
+ * Measures the current number of blocks used on the site.
+ */
+class blocks_used extends metric_with_config {
+    public static function get_type(): metric_type {
+        return metric_type::GAUGE;
+    }
+
+    public static function get_description(): lang_string {
+        return new lang_string('metric:blocks_used_help', 'local_example');
+    }
+
+    public function calculate(): metric_value {
+        global $DB;
+        $config = $this->parse_config(blocks_used_config::class);
+        $sql = "SELECT COUNT(*)
+                  FROM {block_instances} AS binst
+                  JOIN {block} AS b ON b.name = binst.blockname
+                 WHERE binst.timecreated <= :maxtimecreated";
+        if (!$config->includehidden) {
+            $sql .= " AND b.visible = 1";
+        }
+        $params = ['maxtimecreated' => time() - $config->minblockagehours * HOURSECS];
+        return new metric_value($DB->count_records_sql($sql, $params));
+    }
+
+    public static function get_default_config(): blocks_used_config {
+        return new blocks_used_config();
+    }
+}
+```
+
+</details>
+
+Using the helper method `parse_config` we get an instance of our config class constructed with the data from the database.
+The return type is _guaranteed_ to be an instance of the supplied config class.
+We use it to construct the necessary SQL query.
+
+Lastly, since we defined default values for the config parameters in the `blocks_used_config` constructor, the implementation of the `get_default_config` method is trivial.
+
+#### Adding more language strings
+
+In addition to what we did [in the first example](#adding-a-localized-metric-description), we need to define _at least_ two more strings.
+One for each config parameter that we want to expose for admins in the config form.
+
+<details open>
+  <summary><code>lang/en/local_example.php</code> (Click to expand/collapse)</summary>
+
+```php
+defined('MOODLE_INTERNAL') || die();
+// ...
+$string['metric:blocks_used_config:includehidden'] = 'Include hidden/disabled blocks';
+$string['metric:blocks_used_config:minblockagehours'] = 'Minimum block age (hours)';
+$string['metric:blocks_used_help'] = 'Current number of blocks used on the site.';
+```
+
+</details>
+
+These two additional strings are used as the form field labels.
+
+If we want a help button to be generated for a config option, we just need to define another string with the same ID but `_help` appended to it.
+So if we want to explain the `minblockagehours` option a bit more, we need to add a `metric:blocks_used_config:minblockagehours_help` string.
+
+<details open>
+  <summary><code>lang/en/local_example.php</code> (Click to expand/collapse)</summary>
+
+```php
+defined('MOODLE_INTERNAL') || die();
+// ...
+$string['metric:blocks_used_config:includehidden'] = 'Include hidden/disabled blocks';
+$string['metric:blocks_used_config:minblockagehours'] = 'Minimum block age';
+$string['metric:blocks_used_config:minblockagehours_help'] = 'Only count block instances that have been created longer ago than this number of hours.';
+$string['metric:blocks_used_help'] = 'Current number of blocks used on the site.';
+```
+
+</details>
+
+#### Registering and enabling the configurable metric
+
+Same as [before](#registering-the-metric).
+
+#### Configuring a metric
+
+The `blocks_used` metric should now display a little gear icon in the admin dashboard.
+Clicking on it will open a form with our configuration options.
+It should show the default values we defined for all options.
 
 ### Grouping metrics with tags (optional)
 
@@ -442,6 +619,7 @@ You should have received a copy of the GNU General Public License along with `to
 [moodle home]: https://moodle.com
 [moodlemootdach 2025 votes]: https://moodlemootdach.org/mod/forum/discuss.php?d=7108
 [moodlemootdach home]: https://moodlemootdach.org
+[php docs constructor promotion]: https://www.php.net/manual/en/language.oop5.decon.php#language.oop5.decon.constructor.promotion
 [prometheus docs config]: https://prometheus.io/docs/prometheus/latest/configuration/configuration
 [prometheus docs data model]: https://prometheus.io/docs/concepts/data_model
 [prometheus docs instances]: https://prometheus.io/docs/concepts/jobs_instances

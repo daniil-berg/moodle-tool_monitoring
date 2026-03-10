@@ -36,6 +36,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [
     ['hook' => metric_collection::class, 'callback' => [metrics\courses::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\events::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\overdue_tasks::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\quiz_attempts_in_progress::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\user_accounts::class, 'collect']],

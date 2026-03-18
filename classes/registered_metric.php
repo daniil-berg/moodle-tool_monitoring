@@ -322,10 +322,9 @@ final class registered_metric implements IteratorAggregate {
     public function getIterator(): Traversable {
         $values = $this->metric->calculate();
         if ($values instanceof metric_value) {
-            $values = [$values];
-        }
-        foreach ($values as $metricvalue) {
-            yield $this->metric::validate_value($metricvalue);
+            yield $values;
+        } else {
+            yield from $values;
         }
     }
 }

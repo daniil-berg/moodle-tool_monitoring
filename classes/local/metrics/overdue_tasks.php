@@ -35,7 +35,6 @@ use Generator;
 use tool_monitoring\metric;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
-use tool_monitoring\strict_labels;
 
 /**
  * Calculates the number of tasks that should have already executed but did not.
@@ -53,8 +52,6 @@ use tool_monitoring\strict_labels;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class overdue_tasks extends metric {
-    use strict_labels;
-
     /**
      * {@inheritDoc}
      */
@@ -67,13 +64,6 @@ class overdue_tasks extends metric {
      */
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public static function get_labels(): array {
-        return [['type' => 'adhoc'], ['type' => 'scheduled']];
     }
 
     /**

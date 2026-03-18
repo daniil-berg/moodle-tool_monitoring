@@ -26,6 +26,8 @@
  *              Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * {@noinspection PhpUnhandledExceptionInspection}
  */
 
 use tool_monitoring\plugininfo\monitoringexporter;
@@ -33,6 +35,7 @@ use tool_monitoring\plugininfo\monitoringexporter;
 defined('MOODLE_INTERNAL') || die;
 
 global $ADMIN, $CFG;
+/** @var admin_root $ADMIN */
 require_once("$CFG->dirroot/mod/assign/adminlib.php");
 
 $ADMIN->add(
@@ -44,17 +47,17 @@ $ADMIN->add(
 );
 
 $overviewlink = new admin_externalpage(
-    'monitoringmetricsoverviewlink',
-    get_string('metricsoverview', 'tool_monitoring'),
-    new moodle_url('/admin/tool/monitoring'),
-    'tool/monitoring:manage_metrics',
+    name: 'monitoringmetricsoverviewlink',
+    visiblename: new lang_string('metricsoverview', 'tool_monitoring'),
+    url: new moodle_url('/admin/tool/monitoring'),
+    req_capability: 'tool/monitoring:manage_metrics',
 );
 $ADMIN->add('monitoringcategory', $overviewlink);
 
 /** @var monitoringexporter $subplugin */
 foreach (core_plugin_manager::instance()->get_plugins_of_type('monitoringexporter') as $subplugin) {
     $settings = new admin_settingpage(
-        name: $subplugin->type . '_' . $subplugin->name,
+        name: "{$subplugin->type}_$subplugin->name",
         visiblename: $subplugin->displayname,
         req_capability: 'moodle/site:config',
     );

@@ -74,7 +74,7 @@
             <a href="{{remove_url}}" class="badge bg-secondary text-dark" style="font-size: 100%;"><span aria-hidden="true">× </span> {{name}}</a>
         {{/tags}}
     </div>
-    <div class="text-right mb-3">
+    <div class="text-end mb-3">
         <a href="{{all_metrics_url}}">{{#str}} metricsoverviewshowall, tool_monitoring {{/str}}</a>
     </div>
 {{/has_tags}}
@@ -119,7 +119,7 @@
 </table>
 
 {{#is_tagging_enabled}}
-    <div class="my-5 text-right">
+    <div class="my-5 text-end">
         {{#tags}}
             <a href="{{edit_url}}" class="btn btn-secondary">{{#str}} edit_tag, tool_monitoring, {{name}} {{/str}}</a>
         {{/tags}}

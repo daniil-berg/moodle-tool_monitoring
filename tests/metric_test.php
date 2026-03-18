@@ -37,7 +37,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics\overdue_tasks;
 use tool_monitoring\local\metrics\users_online;
-use tool_monitoring\local\testing\metric_strict_label_names;
 use tool_monitoring\local\testing\metric_settable_values;
 
 /**
@@ -89,10 +88,6 @@ final class metric_test extends advanced_testcase {
                 'expected' => 'metric_settable_values',
             ],
             [
-                'class'    => metric_strict_label_names::class,
-                'expected' => 'metric_strict_label_names',
-            ],
-            [
                 'class'    => overdue_tasks::class,
                 'expected' => 'overdue_tasks',
             ],
@@ -126,10 +121,6 @@ final class metric_test extends advanced_testcase {
                 'expected' => 'tool_monitoring',
             ],
             [
-                'class'    => metric_strict_label_names::class,
-                'expected' => 'tool_monitoring',
-            ],
-            [
                 'class'    => overdue_tasks::class,
                 'expected' => 'tool_monitoring',
             ],
@@ -138,10 +129,5 @@ final class metric_test extends advanced_testcase {
                 'expected' => 'tool_monitoring',
             ],
         ];
-    }
-
-    public function test_validate_value(): void {
-        $value = new metric_value(0);
-        self::assertSame($value, metric::validate_value($value));
     }
 }

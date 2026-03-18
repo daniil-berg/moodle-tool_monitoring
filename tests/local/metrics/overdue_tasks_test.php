@@ -73,11 +73,6 @@ final class overdue_tasks_test extends advanced_testcase {
         self::assertSame('tool_monitoring', $description->get_component());
     }
 
-    public function test_get_labels(): void {
-        $fixedlabels = overdue_tasks::get_labels();
-        self::assertSame([['type' => 'adhoc'], ['type' => 'scheduled']], $fixedlabels);
-    }
-
     public function test_calculate(): void {
         global $DB;
         $this->resetAfterTest();

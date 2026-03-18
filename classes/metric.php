@@ -39,8 +39,7 @@ use Traversable;
  *
  * Concrete subclasses only **need** to implement the {@see calculate}, {@see get_description} and {@see get_type} methods.
  *
- * Inheriting classes _may_ also override the {@see get_name} method to provide a custom identifier and the {@see validate_value}
- * method to perform simple checks on the {@see metric_value} objects yielded by an instance during iteration.
+ * Inheriting classes _may_ also override the {@see get_name} method to provide a custom identifier.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -126,21 +125,5 @@ abstract class metric {
      */
     final public static function get_component(): string {
         return component::get_component_from_classname(static::class);
-    }
-
-    /**
-     * Ensures that the provided metric value is valid.
-     *
-     * Inheriting classes may override this method to validate each {@see metric_value} before yielding it from the iterator.
-     *
-     * Overrides _should_ throw an exception for an invalid metric value.
-     *
-     * The default implementation is no-op.
-     *
-     * @param metric_value $metricvalue Metric value instance to be validated.
-     * @return metric_value Valid metric value.
-     */
-    public static function validate_value(metric_value $metricvalue): metric_value {
-        return $metricvalue;
     }
 }

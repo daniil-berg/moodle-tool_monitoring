@@ -29,7 +29,10 @@
 
 namespace tool_monitoring\local\testing;
 
-use tool_monitoring\with_config;
+use core\lang_string;
+use tool_monitoring\metric_type;
+use tool_monitoring\metric_value;
+use tool_monitoring\metric_with_config;
 
 /**
  * Example of a valid metric that has its own config.
@@ -47,8 +50,23 @@ use tool_monitoring\with_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_with_custom_config extends metric_settable_values {
-    use with_config;
+class metric_with_custom_config extends metric_with_config {
+    #[\Override]
+    public function calculate(): metric_value {
+        // Just an arbitrary value. Not used anyway.
+        return new metric_value(1);
+    }
+
+    #[\Override]
+    public static function get_description(): lang_string {
+        // Just an arbitrary existing language string.
+        return new lang_string('pluginname', 'tool_monitoring');
+    }
+
+    #[\Override]
+    public static function get_type(): metric_type {
+        return metric_type::COUNTER;
+    }
 
     #[\Override]
     public static function get_default_config(): custom_metric_config {

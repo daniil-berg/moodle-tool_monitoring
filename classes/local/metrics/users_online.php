@@ -32,10 +32,9 @@ namespace tool_monitoring\local\metrics;
 use core\exception\coding_exception;
 use core\lang_string;
 use dml_exception;
-use tool_monitoring\metric;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
-use tool_monitoring\with_config;
+use tool_monitoring\metric_with_config;
 
 /**
  * Gauges the number of users online within certain time windows.
@@ -49,9 +48,7 @@ use tool_monitoring\with_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class users_online extends metric {
-    use with_config;
-
+class users_online extends metric_with_config {
     /**
      * {@inheritDoc}
      */

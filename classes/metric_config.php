@@ -36,14 +36,14 @@ use stdClass;
 use tool_monitoring\form\config as config_form;
 
 /**
- * Defines the optional configuration interface of a {@see metric} using the {@see with_config} trait.
+ * Defines the optional configuration interface used by a {@see metric_with_config}.
  *
- * If a {@see metric} has specific associated configuration options, those are represented as a JSON object. Any implementing class
- * must therefore implement the {@see JsonSerializable} interface as well as the {@see self::from_json} method. The former
+ * If a {@see metric_with_config} has specific associated configuration options, those are represented as a JSON object.
+ * Classes must therefore implement the {@see JsonSerializable} interface as well as the {@see self::from_json} method. The former
  * method determines what is saved in the database via {@see json_encode}, while the latter does the inverse.
  *
  * In addition, a metric config can be used together {@see moodleform}s. This is facilitated by the {@see self::with_form_data},
- * {@see self::to_form_data}, and {@see self::extend_form_definition} methods.
+ * {@see self::to_form_data}, {@see self::extend_form_definition}, and {@see self::extend_form_validation} methods.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp

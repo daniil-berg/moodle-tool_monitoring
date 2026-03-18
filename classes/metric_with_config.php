@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see with_config} trait.
+ * Definition of the abstract {@see metric_with_config} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -46,7 +46,7 @@ use core\exception\coding_exception;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-trait with_config {
+abstract class metric_with_config extends metric {
     /** @var string|null Metric-specific config in JSON format. */
     public string|null $configjson = null;
 

@@ -130,13 +130,6 @@ final class registered_metric implements IteratorAggregate {
      * @return self New instance from the provided metric and optional properties.
      */
     public static function from_metric(metric $metric, mixed ...$properties): self {
-        // Figure out, if the metric class uses the `with_config` trait.
-        try {
-            $defaultconfig = call_user_func([$metric, 'get_default_config']);
-        } catch (TypeError) {
-            // Method does not exist; `with_config` trait is not used.
-            $defaultconfig = null;
-        }
         $arguments = [
             'component' => $metric::get_component(),
             'name'      => $metric::get_name(),
@@ -148,8 +141,8 @@ final class registered_metric implements IteratorAggregate {
             $arguments[$name] = $properties[$name];
         }
         $instance = new self(...$arguments);
-        if ($defaultconfig instanceof metric_config && property_exists($metric, 'configjson')) {
-            // Assume the metric uses the `with_config` trait.
+        if ($metric instanceof metric_with_config) {
+            $defaultconfig = $metric::get_default_config();
             $instance->configclass = $defaultconfig::class;
             if (!array_key_exists('config', $arguments)) {
                 // No config was passed to the constructor; fall back to the default.

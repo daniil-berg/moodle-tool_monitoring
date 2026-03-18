@@ -367,7 +367,7 @@ For convenience, the static `metric::collect` method can be used as the [hook ca
 
 ### DB table and `registered_metric` wrapper
 
-To allow all metrics to be individually enabled/disabled and more advanced metrics (see the `with_config` trait) to have their own persistent configuration, each concrete metric is associated with a row in the `tool_monitoring_metrics` database table.
+To allow all metrics to be individually enabled/disabled and more [advanced metrics](#configurable-metrics-advanced) to have their own persistent configuration, each concrete metric is associated with a row in the `tool_monitoring_metrics` database table.
 
 The `registered_metric` class is an internal wrapper for metrics managed by `tool_monitoring` and maps instances to rows in the database table.
 
@@ -379,7 +379,7 @@ Outside code can use the `metrics_manager` to retrieve and filter all currently 
 
 ### Configurable metrics (advanced)
 
-Metrics can be made configurable by using the [`with_config`][. with_config] trait.
+Configurable metrics can be created by extending the [`metric_with_config`][. metric_with_config] class, which is itself a subclass of `metric`.
 This also requires the definition of a custom config class that implements the [`metric_config`][. metric_config] interface.
 
 Custom metric configuration is stored as JSON in the associated database row.
@@ -420,9 +420,9 @@ You should have received a copy of the GNU General Public License along with `to
 [. metric_config]: classes/metric_config.php
 [. metric_type]: classes/metric_type.php
 [. metric_value]: classes/metric_value.php
+[. metric_with_config]: classes/metric_with_config.php
 [. metrics_manager]: classes/metrics_manager.php
 [. simple_metric_config]: classes/simple_metric_config.php
-[. with_config]: classes/with_config.php
 [grafana oss home]: https://grafana.com/oss/grafana
 [moodle docs blocks]: https://docs.moodle.org/en/Blocks
 [moodle docs block course summary]: https://docs.moodle.org/en/Course/site_summary_block

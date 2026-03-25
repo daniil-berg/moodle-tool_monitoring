@@ -39,6 +39,7 @@ use GuzzleHttp\Psr7\Utils;
 use monitoringexporter_prometheus\exporter as prometheus_exporter;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\metrics_manager;
 
 /**
@@ -70,6 +71,7 @@ class prometheus {
      * @return Response Plain text response in the Prometheus format.
      * @throws coding_exception
      * @throws dml_exception
+     * @throws tag_not_found
      *
      * {@noinspection PhpUnused}
      */

@@ -15,10 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Definition of the {@see json_invalid} class.
  *
- * @package    monitoringexporter_prometheus
- * @subpackage tool_monitoring
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace tool_monitoring\exceptions;
+
+/**
+ * Invalid JSON encountered or the top-level type in that JSON is wrong.
+ *
+ * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -27,12 +41,6 @@
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
- * {@noinspection PhpUndefinedVariableInspection}
+ * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version   = 2025090305;      // The current plugin version (Date: YYYYMMDDXX).
-$plugin->component = 'monitoringexporter_prometheus'; // Full name of the plugin (used for diagnostics).
-$plugin->requires  = 2025041400; // Moodle 5.0.
-$plugin->maturity  = MATURITY_ALPHA;
+class json_invalid extends tool_monitoring_exception {}

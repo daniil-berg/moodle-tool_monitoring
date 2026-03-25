@@ -36,6 +36,7 @@ use core\exception\coding_exception;
 use dml_exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\metric_settable_values;
@@ -113,6 +114,7 @@ final class metrics_manager_test extends advanced_testcase {
      * @param string|null $expectedwarning If passed a string, a warning is expected to be triggered containing that text.
      * @throws coding_exception
      * @throws dml_exception
+     * @throws tag_not_found
      */
     #[DataProvider('provider_test_fetch')]
     public function test_fetch(

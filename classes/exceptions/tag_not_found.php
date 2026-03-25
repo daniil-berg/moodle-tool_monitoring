@@ -15,10 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Definition of the {@see tag_not_found} class.
  *
- * @package    monitoringexporter_prometheus
- * @subpackage tool_monitoring
+ * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -26,13 +25,32 @@
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- *
- * {@noinspection PhpUndefinedVariableInspection}
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace tool_monitoring\exceptions;
 
-$plugin->version   = 2025090305;      // The current plugin version (Date: YYYYMMDDXX).
-$plugin->component = 'monitoringexporter_prometheus'; // Full name of the plugin (used for diagnostics).
-$plugin->requires  = 2025041400; // Moodle 5.0.
-$plugin->maturity  = MATURITY_ALPHA;
+/**
+ * A tag name was specified that does not exist.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class tag_not_found extends tool_monitoring_exception {
+    /**
+     * Passes the arguments through to the parent constructor as the {@see parent::$a `a`} context.
+     *
+     * @param string $tagname Name of missing tag.
+     */
+    public function __construct(
+        /** @var string Name of missing tag. */
+        public readonly string $tagname,
+    ) {
+        parent::__construct(a: ['tagname' => $tagname]);
+    }
+}

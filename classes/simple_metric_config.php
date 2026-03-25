@@ -38,6 +38,10 @@ use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
 use stdClass;
+use tool_monitoring\exceptions\form_data_value_missing;
+use tool_monitoring\exceptions\json_invalid;
+use tool_monitoring\exceptions\json_key_missing;
+use tool_monitoring\exceptions\simple_metric_config_constructor_missing;
 use tool_monitoring\form\config as config_form;
 
 /**
@@ -103,7 +107,7 @@ abstract class simple_metric_config implements metric_config {
      * Caches the result after the first call.
      *
      * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
-     * @throws coding_exception
+     * @throws simple_metric_config_constructor_missing
      */
     protected static function get_config_parameters(): array {
         if (isset(self::$configparameters[static::class])) {
@@ -111,12 +115,7 @@ abstract class simple_metric_config implements metric_config {
         }
         $class = new ReflectionClass(static::class);
         if (is_null($constructor = $class->getConstructor())) {
-            // TODO: Use custom exception class.
-            throw new coding_exception("No constructor defined for '{$class->getName()}'");
-        }
-        if ($constructor->isPrivate()) {
-            // TODO: Use custom exception class.
-            throw new coding_exception("Constructor of '{$class->getName()}' is private");
+            throw new simple_metric_config_constructor_missing($class->getName());
         }
         $parameters = array_column(
             array:      $constructor->getParameters(),
@@ -144,20 +143,20 @@ abstract class simple_metric_config implements metric_config {
      *
      * @param string $json String of a valid JSON object (not an array or any other type).
      * @return static New instance of the config class.
-     * @throws coding_exception JSON is not valid or not an object or missing config parameters.
+     * @throws json_invalid
+     * @throws json_key_missing
+     * @throws simple_metric_config_constructor_missing
      */
     #[\Override]
     public static function from_json(string $json): static {
         $data = json_decode($json, associative: true);
         if (empty($data) || !is_array($data) || array_is_list($data)) {
-            // TODO: Use custom exception class.
-            throw new coding_exception("PLACEHOLDER");
+            throw new json_invalid();
         }
         $args = [];
         foreach (array_keys(self::get_config_parameters()) as $name) {
             if (!array_key_exists($name, $data)) {
-                // TODO: Use custom exception class.
-                throw new coding_exception("Missing '$name' in JSON");
+                throw new json_key_missing($name);
             }
             $args[$name] = $data[$name];
         }
@@ -171,15 +170,15 @@ abstract class simple_metric_config implements metric_config {
      *
      * @param stdClass $formdata Form data to use for construction.
      * @return static New instance of the config class.
-     * @throws coding_exception
+     * @throws form_data_value_missing
+     * @throws simple_metric_config_constructor_missing
      */
     #[\Override]
     public static function with_form_data(stdClass $formdata): static {
         $args = [];
         foreach (array_keys(self::get_config_parameters()) as $name) {
             if (!property_exists($formdata, $name)) {
-                // TODO: Use custom exception class.
-                throw new coding_exception("Missing '$name' in form data");
+                throw new form_data_value_missing($name);
             }
             $args[$name] = $formdata->$name;
         }
@@ -208,7 +207,8 @@ abstract class simple_metric_config implements metric_config {
      *
      * @param config_form $configform Metric configuration form being defined.
      * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
-     * @throws coding_exception
+     * @throws coding_exception Should never happen.
+     * @throws simple_metric_config_constructor_missing
      *
      * @link https://docs.moodle.org/dev/lib/formslib.php_Form_Definition Moodle docs on form definition
      */

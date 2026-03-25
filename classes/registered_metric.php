@@ -30,6 +30,7 @@
 namespace tool_monitoring;
 
 use context_system;
+use core\exception\coding_exception;
 use core\lang_string;
 use core_tag_tag;
 use dml_exception;
@@ -39,7 +40,6 @@ use moodleform;
 use stdClass;
 use tool_monitoring\form\config as config_form;
 use Traversable;
-use TypeError;
 
 /**
  * Represents a {@see metric} that is managed by the plugin and thus has a corresponding entry in the database.
@@ -201,6 +201,7 @@ final class registered_metric implements IteratorAggregate {
      * Does nothing if the metric already has the desired state.
      *
      * @param bool $enabled Desired enabled state.
+     * @throws coding_exception
      * @throws dml_exception
      */
     public function persist_enabled_state(bool $enabled): void {

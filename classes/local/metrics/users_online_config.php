@@ -143,6 +143,11 @@ final readonly class users_online_config implements metric_config {
         $mform->addRule('timewindows', null, 'required', null, 'client');
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws coding_exception
+     */
     #[\Override]
     public static function extend_form_validation(array $data, config_form $configform, MoodleQuickForm $mform): array {
         $timewindowsstring = $data['timewindows'] ?? null;

@@ -25,6 +25,8 @@
  *              Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * {@noinspection PhpUndefinedVariableInspection, PhpUnhandledExceptionInspection}
  */
 
 defined('MOODLE_INTERNAL') || die();

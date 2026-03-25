@@ -35,7 +35,6 @@ use advanced_testcase;
 use mod_quiz_generator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use tool_monitoring\metric_type;
-use tool_monitoring\metric_value;
 
 /**
  * Unit tests for the {@see quiz_attempts_in_progress} class.

@@ -30,11 +30,15 @@
 namespace tool_monitoring\external;
 
 use context_system;
+use core\exception\coding_exception;
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
+use core_external\restricted_context_exception;
+use dml_exception;
 use invalid_parameter_exception;
+use required_capability_exception;
 use tool_monitoring\metrics_manager;
 
 /**
@@ -68,6 +72,11 @@ final class set_metric_enabled extends external_api {
      * @param string $qualifiedname Qualified metric name.
      * @param bool $enabled Desired enabled state.
      * @return array<string, mixed> Empty result.
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws invalid_parameter_exception
+     * @throws required_capability_exception
+     * @throws restricted_context_exception
      */
     public static function execute(string $qualifiedname, bool $enabled): array {
         ['metric' => $qualifiedname, 'enabled' => $enabled] = self::validate_parameters(
@@ -82,7 +91,7 @@ final class set_metric_enabled extends external_api {
         require_capability('tool/monitoring:manage_metrics', $context);
 
         $manager = new metrics_manager();
-        $metric = $manager->sync(delete: false)->metrics[$qualifiedname] ?? null;
+        $metric = $manager->sync()->metrics[$qualifiedname] ?? null;
         if (is_null($metric)) {
             throw new invalid_parameter_exception("Unknown metric '$qualifiedname'.");
         }

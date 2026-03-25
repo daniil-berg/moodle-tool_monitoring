@@ -407,7 +407,6 @@ defined('MOODLE_INTERNAL') || die();
 // ...
 $string['metric:blocks_used_config:includehidden'] = 'Include hidden/disabled blocks';
 $string['metric:blocks_used_config:minblockagehours'] = 'Minimum block age (hours)';
-$string['metric:blocks_used_help'] = 'Current number of blocks used on the site.';
 ```
 
 </details>
@@ -426,7 +425,6 @@ defined('MOODLE_INTERNAL') || die();
 $string['metric:blocks_used_config:includehidden'] = 'Include hidden/disabled blocks';
 $string['metric:blocks_used_config:minblockagehours'] = 'Minimum block age';
 $string['metric:blocks_used_config:minblockagehours_help'] = 'Only count block instances that have been created longer ago than this number of hours.';
-$string['metric:blocks_used_help'] = 'Current number of blocks used on the site.';
 ```
 
 </details>
@@ -437,7 +435,7 @@ Same as [before](#registering-the-metric).
 
 #### Configuring a metric
 
-The `blocks_used` metric should now display a little gear icon in the admin dashboard.
+The `blocks_used` metric should display a little gear icon in the admin dashboard.
 Clicking on it will open a form with our configuration options.
 It should show the default values we defined for all options.
 

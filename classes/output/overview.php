@@ -29,6 +29,7 @@
 
 namespace tool_monitoring\output;
 
+use core\exception\moodle_exception;
 use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
@@ -69,6 +70,7 @@ final readonly class overview implements renderable, templatable {
      *
      * @param core_tag_tag $tag The new tag.
      * @return moodle_url
+     * @throws moodle_exception
      */
     private function add_tag_url(core_tag_tag $tag): moodle_url {
         $tags = $this->tags;
@@ -83,6 +85,7 @@ final readonly class overview implements renderable, templatable {
      *
      * @param core_tag_tag $tag The tag to remove.
      * @return moodle_url
+     * @throws moodle_exception
      */
     private function remove_tag_url(core_tag_tag $tag): moodle_url {
         $tags = $this->tags;
@@ -99,6 +102,7 @@ final readonly class overview implements renderable, templatable {
      *
      * @param renderer_base $output
      * @return array
+     * @throws moodle_exception
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {

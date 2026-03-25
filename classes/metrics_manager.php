@@ -35,6 +35,7 @@ use core\hook\manager as hook_manager;
 use core_tag_tag;
 use dml_exception;
 use Exception;
+use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\hook\metric_collection;
 
 /**
@@ -84,6 +85,7 @@ final class metrics_manager {
      *
      * @param string $name Name of the property to return.
      * @return mixed Property value.
+     * @throws coding_exception Invalid property name passed.
      */
     public function __get(string $name): mixed {
         if ($name === 'metrics') {
@@ -91,7 +93,7 @@ final class metrics_manager {
         } else if ($name === 'tags') {
             return $this->tags;
         }
-        throw new coding_exception("Property \"$name\" not found.");
+        throw new coding_exception('Undefined property: ' . self::class . '::$' . $name);
     }
 
     /**
@@ -119,6 +121,7 @@ final class metrics_manager {
      * @return $this Same instance.
      * @throws coding_exception
      * @throws dml_exception
+     * @throws tag_not_found At least one of the provided `$tagnames` does not exist.
      */
     public function fetch(bool $collect = true, bool|null $enabled = true, array $tagnames = []): self {
         global $DB;
@@ -152,10 +155,8 @@ final class metrics_manager {
             if (!empty($tagnames)) {
                 $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
                 $this->tags = core_tag_tag::get_by_name_bulk($tagcollid, $tagnames);
-                $badtagname = array_search(null, $this->tags, true);
-                if ($badtagname) {
-                    // TODO: Better error handling?
-                    throw new coding_exception("Tag not found: " . $badtagname);
+                if ($badtagname = array_search(null, $this->tags, true)) {
+                    throw new tag_not_found($badtagname);
                 }
                 $tagids = array_column($this->tags, 'id');
             }

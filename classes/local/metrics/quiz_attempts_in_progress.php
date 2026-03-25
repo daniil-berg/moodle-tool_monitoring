@@ -32,6 +32,7 @@ namespace tool_monitoring\local\metrics;
 use core\exception\coding_exception;
 use core\lang_string;
 use dml_exception;
+use tool_monitoring\exceptions\metric_config_not_implemented;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
@@ -72,6 +73,7 @@ class quiz_attempts_in_progress extends metric_with_config {
      * @return metric_value
      * @throws coding_exception
      * @throws dml_exception
+     * @throws metric_config_not_implemented
      * /
      */
     public function calculate(): metric_value {

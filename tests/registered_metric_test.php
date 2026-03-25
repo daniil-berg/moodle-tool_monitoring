@@ -218,6 +218,7 @@ final class registered_metric_test extends advanced_testcase {
      * @param bool $to State to set via {@see registered_metric::persist_enabled_state}.
      * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
      * @throws dml_exception
+     * @throws coding_exception
      */
     #[DataProvider('provider_test_persist_enabled_state')]
     public function test_persist_enabled_state(bool $from, bool $to, array $events): void {

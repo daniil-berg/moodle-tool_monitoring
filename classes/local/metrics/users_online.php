@@ -32,6 +32,7 @@ namespace tool_monitoring\local\metrics;
 use core\exception\coding_exception;
 use core\lang_string;
 use dml_exception;
+use tool_monitoring\exceptions\metric_config_not_implemented;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
@@ -69,6 +70,7 @@ class users_online extends metric_with_config {
      * @return metric_value[] One metric value per configured time window, labeled with that same time window, in ascending order.
      * @throws coding_exception
      * @throws dml_exception
+     * @throws metric_config_not_implemented
      */
     public function calculate(): array {
         global $DB;

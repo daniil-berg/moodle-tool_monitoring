@@ -34,7 +34,6 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use JsonException;
-use moodle_url;
 use tool_monitoring\form\config as config_form;
 use tool_monitoring\registered_metric;
 

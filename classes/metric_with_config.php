@@ -30,6 +30,7 @@
 namespace tool_monitoring;
 
 use core\exception\coding_exception;
+use tool_monitoring\exceptions\metric_config_not_implemented;
 
 /**
  * Extends a {@see metric} allowing it to define a custom {@see metric_config} for itself.
@@ -57,15 +58,15 @@ abstract class metric_with_config extends metric {
      * @template ConfT of metric_config
      * @param class-string<ConfT> $class Config class implementing {@see metric_config} to construct the object from.
      * @return ConfT Config object of the provided class.
-     * @throws coding_exception The {@see configjson} is not set or `$class` does not implement the {@see metric_config}.
+     * @throws coding_exception The {@see configjson} is not set.
+     * @throws metric_config_not_implemented Provided class does not implement the {@see metric_config} interface.
      */
     public function parse_config(string $class): metric_config {
         if (!isset($this->configjson)) {
             throw new coding_exception('Metric config JSON is not set.');
         }
-        $configclass = metric_config::class;
-        if (!is_subclass_of($class, $configclass)) {
-            throw new coding_exception("Provided class '$class' does not implement '$configclass'");
+        if (!is_subclass_of($class, metric_config::class)) {
+            throw new metric_config_not_implemented($class);
         }
         return $class::from_json($this->configjson);
     }

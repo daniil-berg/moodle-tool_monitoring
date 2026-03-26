@@ -58,7 +58,7 @@ final class users_online_test extends advanced_testcase {
     public function test_get_description(): void {
         $metric = new users_online();
         $description = $metric->get_description();
-        self::assertSame('users_online_description', $description->get_identifier());
+        self::assertSame('metric:users_online_description', $description->get_identifier());
         self::assertSame('tool_monitoring', $description->get_component());
     }
 

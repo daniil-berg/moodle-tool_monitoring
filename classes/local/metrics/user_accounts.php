@@ -60,7 +60,7 @@ class user_accounts extends metric {
      * {@inheritDoc}
      */
     public static function get_description(): lang_string {
-        return new lang_string('user_accounts_description', 'tool_monitoring');
+        return new lang_string('metric:user_accounts_description', 'tool_monitoring');
     }
 
     /**

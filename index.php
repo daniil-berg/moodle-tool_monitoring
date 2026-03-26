@@ -56,8 +56,8 @@ if ($taglist) {
 
 $PAGE->set_url('/admin/tool/monitoring/', $params);
 $PAGE->set_context($context);
-$PAGE->set_title(get_string('monitoring_metrics', 'tool_monitoring'));
-$PAGE->set_heading(get_string('monitoring_metrics', 'tool_monitoring'));
+$PAGE->set_title(get_string('settings:monitoring_metrics', 'tool_monitoring'));
+$PAGE->set_heading(get_string('settings:monitoring_metrics', 'tool_monitoring'));
 
 $overview = new overview(metrics: $manager->metrics, tags: $manager->tags);
 echo $OUTPUT->header();

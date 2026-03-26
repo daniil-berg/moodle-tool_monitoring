@@ -60,7 +60,7 @@ class users_online extends metric_with_config {
      * {@inheritDoc}
      */
     public static function get_description(): lang_string {
-        return new lang_string('users_online_description', 'tool_monitoring');
+        return new lang_string('metric:users_online_description', 'tool_monitoring');
     }
 
     /**

@@ -59,7 +59,7 @@ class overdue_tasks extends metric {
      * {@inheritDoc}
      */
     public static function get_description(): lang_string {
-        return new lang_string('overdue_tasks_description', 'tool_monitoring');
+        return new lang_string('metric:overdue_tasks_description', 'tool_monitoring');
     }
 
     /**

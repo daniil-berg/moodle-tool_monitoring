@@ -63,27 +63,27 @@ class config extends moodleform {
         $this->_form->setType('metric', PARAM_ALPHAEXT);
         $this->add_static_field(
             name: 'component',
-            label: new lang_string('component', 'tool_monitoring'),
+            label: new lang_string('settings:component', 'tool_monitoring'),
             value: $this->metric->component,
         );
         $this->add_static_field(
             name: 'name',
-            label: new lang_string('name', 'tool_monitoring'),
+            label: new lang_string('settings:name', 'tool_monitoring'),
             value: $this->metric->name,
         );
         $this->add_static_field(
             name: 'type',
-            label: new lang_string('type', 'tool_monitoring'),
+            label: new lang_string('settings:type', 'tool_monitoring'),
             value: $this->metric->type->value,
         );
         $this->add_static_field(
             name: 'description',
-            label: new lang_string('description', 'tool_monitoring'),
+            label: new lang_string('settings:description', 'tool_monitoring'),
             value: $this->metric->description,
         );
         $this->add_advanced_checkbox_field(
             name: 'enabled',
-            label: new lang_string('metricenabled', 'tool_monitoring'),
+            label: new lang_string('settings:metric_enabled', 'tool_monitoring'),
         );
         $this->add_tags_field(
             itemtype: 'metrics',

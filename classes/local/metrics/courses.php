@@ -59,7 +59,7 @@ class courses extends metric {
      * {@inheritDoc}
      */
     public static function get_description(): lang_string {
-        return new lang_string('courses_description', 'tool_monitoring');
+        return new lang_string('metric:courses_description', 'tool_monitoring');
     }
 
     /**

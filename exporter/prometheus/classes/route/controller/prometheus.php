@@ -71,7 +71,6 @@ class prometheus {
      * @return Response Plain text response in the Prometheus format.
      * @throws coding_exception
      * @throws dml_exception
-     * @throws tag_not_found
      *
      * {@noinspection PhpUnused}
      */
@@ -112,7 +111,11 @@ class prometheus {
         } else {
             $tags = [];
         }
-        $metrics = $manager->fetch(tagnames: $tags)->metrics;
+        try {
+            $metrics = $manager->fetch(tagnames: $tags)->metrics;
+        } catch (tag_not_found) {
+            return $response->withStatus(422);
+        }
         $body = Utils::streamFor(prometheus_exporter::export($metrics));
         return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }

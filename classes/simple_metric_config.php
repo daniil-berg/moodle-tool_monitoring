@@ -154,12 +154,13 @@ abstract class simple_metric_config implements metric_config {
             throw new coding_exception("PLACEHOLDER");
         }
         $args = [];
-        foreach (array_keys(self::get_config_parameters()) as $name) {
-            if (!array_key_exists($name, $data)) {
+        foreach (self::get_config_parameters() as $name => $param) {
+            if (array_key_exists($name, $data)) {
+                $args[$name] = $data[$name];
+            } else if (!$param->isOptional()) {
                 // TODO: Use custom exception class.
                 throw new coding_exception("Missing '$name' in JSON");
             }
-            $args[$name] = $data[$name];
         }
         return new static(...$args);
     }
@@ -177,11 +178,12 @@ abstract class simple_metric_config implements metric_config {
     public static function with_form_data(stdClass $formdata): static {
         $args = [];
         foreach (self::get_config_parameters() as $name => $param) {
-            if (!$param->isOptional() && !property_exists($formdata, $name)) {
+            if (property_exists($formdata, $name)) {
+                $args[$name] = $formdata->$name;
+            } else if (!$param->isOptional()) {
                 // TODO: Use custom exception class.
                 throw new coding_exception("Missing '$name' in form data");
             }
-            $args[$name] = $formdata->$name;
         }
         return new static(...$args);
     }

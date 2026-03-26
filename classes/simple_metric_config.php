@@ -191,13 +191,20 @@ abstract class simple_metric_config implements metric_config {
     /**
      * Transforms an instance into an associative array of data that can be passed to {@see moodleform::set_data}.
      *
-     * Simply casts the instance as an array, turning every public property into a key-value-pair in that array.
+     * Turns every **public** property into a key-value-pair in that array.
      *
      * @return array<string, mixed> Data to set on the config form.
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     #[\Override]
     public function to_form_data(): array {
-        return (array) $this;
+        // This is a dirty hack to quickly get _only_ the public properties.
+        $closure = fn (simple_metric_config $config): array => get_object_vars($config);
+        // Since `get_object_vars` is scope-aware, just calling it directly from an instance of a concrete subclass would also
+        // return any protected properties set on that instance. We simulate a different scope by temporarily binding a closure to
+        // an instance of an anonymous class; that closure gets the config instance as an argument and calls `get_object_vars`.
+        return $closure->call(new class {}, $this);
     }
 
     /**

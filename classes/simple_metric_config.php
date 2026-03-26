@@ -176,8 +176,8 @@ abstract class simple_metric_config implements metric_config {
     #[\Override]
     public static function with_form_data(stdClass $formdata): static {
         $args = [];
-        foreach (array_keys(self::get_config_parameters()) as $name) {
-            if (!property_exists($formdata, $name)) {
+        foreach (self::get_config_parameters() as $name => $param) {
+            if (!$param->isOptional() && !property_exists($formdata, $name)) {
                 // TODO: Use custom exception class.
                 throw new coding_exception("Missing '$name' in form data");
             }
@@ -204,7 +204,7 @@ abstract class simple_metric_config implements metric_config {
      * Called at the end of the {@see config_form::definition} method.
      *
      * Infers field names and types to set from the property declarations of the config class.
-     * Form field descriptions are taken from {@see label} attributes on those properties.
+     * Language string IDs for form field labels and optional help texts are derived from the property names as well.
      *
      * @param config_form $configform Metric configuration form being defined.
      * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
@@ -223,40 +223,72 @@ abstract class simple_metric_config implements metric_config {
         $stringmanager = get_string_manager();
         foreach (self::get_config_parameters() as $paramname => $param) {
             $labelid = "metric:$cls:$paramname";
-            $label = new lang_string($labelid, $component);
-            $paramtype = $param->getType();
-            if ($paramtype instanceof ReflectionNamedType) {
-                match ($paramtype->getName()) {
-                    'int' => self::add_numeric_input_to_form($mform, $paramname, $label, PARAM_INT),
-                    'float' => self::add_numeric_input_to_form($mform, $paramname, $label, PARAM_FLOAT),
-                    default => self::add_text_input_to_form($mform, $paramname, $label),
-                };
-            } else {
-                self::add_text_input_to_form($mform, $paramname, $label);
-            }
+            self::add_field_to_form($mform, $param, new lang_string($labelid, $component));
             // Optionally, add a help button if the defining component has a corresponding language string.
             if ($stringmanager->string_exists("{$labelid}_help", $component)) {
                 $mform->addHelpButton($paramname, $labelid, $component);
             }
-            // To avoid ugly errors about possibly missing constructor arguments, we make every field non-optional.
-            $mform->addRule($paramname, null, 'required', null, 'client');
         }
     }
 
     /**
-     * Convenience method to add a text input field to a Moodle form.
+     * Convenience method to derive a form field from a function parameter and add it to a Moodle form.
+     *
+     * This method is called by the default implementation of {@see self::extend_form_definition `extend_form_definition`} for every
+     * constructor parameter of the config class.
+     * Subclasses may override/extend this method to modify if/how a field is set up for a given parameter, for example:
+     *
+     * ```
+     * protected static function add_field_to_form(
+     *     MoodleQuickForm $mform,
+     *     ReflectionParameter $param,
+     *     lang_string|null $label,
+     * ): void {
+     *     if ($param->name === 'specialfield') {
+     *         // Do something special with this field.
+     *     } else {
+     *         parent::add_field_to_form($mform, $param, $label);
+     *     }
+     * }
+     * ```
      *
      * @param MoodleQuickForm $mform Moodle form instance.
-     * @param string $name Field name.
+     * @param ReflectionParameter $param Reflected function parameter.
      * @param lang_string|null $label Field label.
      */
-    protected static function add_text_input_to_form(
+    protected static function add_field_to_form(
         MoodleQuickForm $mform,
-        string $name,
+        ReflectionParameter $param,
         lang_string|null $label,
     ): void {
-        $mform->addElement('text', $name, $label);
-        $mform->setType($name, PARAM_TEXT);
+        $paramtype = $param->getType();
+        // TODO: Handle simple type union cases such as `int|null` for example.
+        if ($paramtype instanceof ReflectionNamedType) {
+            match ($paramtype->getName()) {
+                'bool' => self::add_advanced_checkbox_to_form($mform, $param->name, $label),
+                'float' => self::add_numeric_input_to_form($mform, $param->name, $label, PARAM_FLOAT),
+                'int' => self::add_numeric_input_to_form($mform, $param->name, $label, PARAM_INT),
+                default => self::add_text_input_to_form($mform, $param->name, $label),
+            };
+        } else {
+            self::add_text_input_to_form($mform, $param->name, $label);
+        }
+    }
+
+    /**
+     * Convenience method to add an advanced checkbox to a Moodle form.
+     *
+     * @param MoodleQuickForm $mform Moodle form instance.
+     * @param string $paramname Field name.
+     * @param lang_string|null $label Field label.
+     */
+    protected static function add_advanced_checkbox_to_form(
+        MoodleQuickForm $mform,
+        string $paramname,
+        lang_string|null $label,
+    ): void {
+        $mform->addElement('advcheckbox', $paramname, $label);
+        $mform->setType($paramname, PARAM_BOOL);
     }
 
     /**
@@ -278,6 +310,22 @@ abstract class simple_metric_config implements metric_config {
         $mform->addElement('text', $name, $label);
         $mform->setType($name, $type);
         $mform->addRule($name, null, 'numeric', null, 'client');
+    }
+
+    /**
+     * Convenience method to add a text input field to a Moodle form.
+     *
+     * @param MoodleQuickForm $mform Moodle form instance.
+     * @param string $name Field name.
+     * @param lang_string|null $label Field label.
+     */
+    protected static function add_text_input_to_form(
+        MoodleQuickForm $mform,
+        string $name,
+        lang_string|null $label,
+    ): void {
+        $mform->addElement('text', $name, $label);
+        $mform->setType($name, PARAM_TEXT);
     }
 
     #[\Override]

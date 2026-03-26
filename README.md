@@ -304,8 +304,8 @@ use tool_monitoring\simple_metric_config;
  */
 class blocks_used_config extends simple_metric_config {
     public function __construct(
-        public bool $includehidden = false,
         public float $minblockagehours = 1.0,
+        public bool $includehidden = false,
     ) {}
 }
 ```
@@ -323,14 +323,18 @@ This data class is meant to represent both the JSON "schema" for (de-)serializin
 Under the hood, the `simple_metric_config` class will also automatically define the config form fields appropriately.
 This means it will do the following for each public property in the constructor:
 
-1. Add a required `<input>` element with a `name` attribute equal to the property name.
+1. Add an `<input>` element with a `name` attribute equal to the property name.
 2. Add a corresponding `<label>` element (see the [language string definition below](#adding-more-language-strings)).
 3. Add a help button (optionally).
 4. Infer and set the `PARAM_` type for cleaning that input.
 5. Add a validation rule for that input (optionally).
 
-For example, our config form will have a text input field named `minblockagehours`.
-The type for that input will be `PARAM_FLOAT` and values will be immediately validated to be numeric on the client side.
+So our example config form will have a text input field named `minblockagehours` and a checkbox for `includehidden`.
+Also, the type for the former will be `PARAM_FLOAT` and its value will be immediately validated to be numeric on the client side.
+
+> [!NOTE]
+> The order of the constructor parameters determines the order of the form fields.
+> Since `includehidden` was declared after `minblockagehours` in our example above, the corresponding checkbox will be rendered _after_ the numeric input field.
 
 #### Defining the configurable metric class
 

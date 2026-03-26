@@ -30,7 +30,7 @@
 namespace tool_monitoring\exceptions;
 
 /**
- * A tag name was specified that does not exist.
+ * No tag with the specified name exists in the given collection.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -46,11 +46,14 @@ class tag_not_found extends tool_monitoring_exception {
      * Passes the arguments through to the parent constructor as the {@see parent::$a `a`} context.
      *
      * @param string $tagname Name of missing tag.
+     * @param string $collectionname Name of the collection in which the tag was not found.
      */
     public function __construct(
         /** @var string Name of missing tag. */
         public readonly string $tagname,
+        /** @var string Name of the collection in which the tag was not found. */
+        public readonly string $collectionname,
     ) {
-        parent::__construct(a: ['tagname' => $tagname]);
+        parent::__construct(a: ['tagname' => $tagname, 'collectionname' => $collectionname]);
     }
 }

@@ -156,7 +156,7 @@ final class metrics_manager {
                 $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
                 $this->tags = core_tag_tag::get_by_name_bulk($tagcollid, $tagnames);
                 if ($badtagname = array_search(null, $this->tags, true)) {
-                    throw new tag_not_found($badtagname);
+                    throw new tag_not_found($badtagname, 'monitoring');
                 }
                 $tagids = array_column($this->tags, 'id');
             }

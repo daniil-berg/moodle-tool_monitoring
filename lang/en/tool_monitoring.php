@@ -31,7 +31,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['error:form_data_value_missing'] = 'Form data is missing a value for the "{$a->fieldname}" field.';
+$string['error:json_invalid'] = 'Invalid JSON encountered or the top-level type in that JSON is wrong.';
+$string['error:json_key_missing'] = 'JSON object is missing the "{$a->key}" key.';
+$string['error:metric_config_not_implemented'] = 'The "{$a->classname}" class does not implement the "metric_config" interface.';
 $string['error:quiz_attempts_in_progress_config:input_invalid'] = 'Invalid input';
+$string['error:simple_metric_config_constructor_missing'] = 'The "{$a->classname}" class does not have a constructor.';
+$string['error:tag_not_found'] = 'No tag named "{$a->tagname}" exists in the "{$a->collectionname}" collection.';
 $string['error:users_online_config:timewindows_invalid'] = 'Invalid time window(s) provided: {$a}';
 
 $string['event:metric_config_updated'] = 'Metric configuration updated';

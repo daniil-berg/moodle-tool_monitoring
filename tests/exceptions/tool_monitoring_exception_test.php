@@ -61,12 +61,19 @@ final class tool_monitoring_exception_test extends advanced_testcase {
      *
      * @param class-string<tool_monitoring_exception> $exceptionclass Name of the exception class to construct.
      * @param array<string, mixed> $properties Arguments to unpack into the constructor. These are also the expected properties of
-     *                                         the exception instance as well as its expected {@see moodle_exception::$a} context.
-     * @param string $errorcode Expected {@see moodle_exception::$errorcode} value of the exception instance.
-     * @param string $module Expected {@see moodle_exception::$module} value of the exception instance.
+     *                                         the exception instance and its expected {@see moodle_exception::$a `a`} context.
+     * @param string $errorcode Expected {@see moodle_exception::$errorcode `errorcode`} value of the exception instance.
+     * @param string $module Expected {@see moodle_exception::$module `module`} value of the exception instance.
+     * @param string $message Expected message returned by the exception's {@see Exception::getMessage `getMessage`} method.
      */
     #[DataProvider('provider_test___construct')]
-    public function test___construct(string $exceptionclass, array $properties, string $errorcode, string $module): void {
+    public function test___construct(
+        string $exceptionclass,
+        array $properties,
+        string $errorcode,
+        string $module,
+        string $message,
+    ): void {
         $exception = new $exceptionclass(...array_values($properties));
         self::assertInstanceOf(moodle_exception::class, $exception); // Sanity check.
         foreach ($properties as $key => $value) {
@@ -75,7 +82,8 @@ final class tool_monitoring_exception_test extends advanced_testcase {
         self::assertSame($errorcode, $exception->errorcode);
         self::assertSame($module, $exception->module);
         self::assertSame($properties, $exception->a);
-        // TODO: Add an assertion for the existence of the corresponding string once our language strings are standardized.
+        self::assertTrue(get_string_manager()->string_exists($errorcode, $module));
+        self::assertSame($message, $exception->getMessage());
     }
 
     /**
@@ -90,36 +98,42 @@ final class tool_monitoring_exception_test extends advanced_testcase {
                 'properties' => ['fieldname' => 'foo'],
                 'errorcode' => 'error:form_data_value_missing',
                 'module' => 'tool_monitoring',
+                'message' => 'Form data is missing a value for the "foo" field.',
             ],
             [
                 'exceptionclass' => json_invalid::class,
                 'properties' => [],
                 'errorcode' => 'error:json_invalid',
                 'module' => 'tool_monitoring',
+                'message' => 'Invalid JSON encountered or the top-level type in that JSON is wrong.',
             ],
             [
                 'exceptionclass' => json_key_missing::class,
                 'properties' => ['key' => 'bar'],
                 'errorcode' => 'error:json_key_missing',
                 'module' => 'tool_monitoring',
+                'message' => 'JSON object is missing the "bar" key.',
             ],
             [
                 'exceptionclass' => metric_config_not_implemented::class,
                 'properties' => ['classname' => 'baz'],
                 'errorcode' => 'error:metric_config_not_implemented',
                 'module' => 'tool_monitoring',
+                'message' => 'The "baz" class does not implement the "metric_config" interface.',
             ],
             [
                 'exceptionclass' => simple_metric_config_constructor_missing::class,
                 'properties' => ['classname' => 'spam'],
                 'errorcode' => 'error:simple_metric_config_constructor_missing',
                 'module' => 'tool_monitoring',
+                'message' => 'The "spam" class does not have a constructor.',
             ],
             [
                 'exceptionclass' => tag_not_found::class,
-                'properties' => ['tagname' => 'eggs'],
+                'properties' => ['tagname' => 'eggs', 'collectionname' => 'beans'],
                 'errorcode' => 'error:tag_not_found',
                 'module' => 'tool_monitoring',
+                'message' => 'No tag named "eggs" exists in the "beans" collection.',
             ],
         ];
     }

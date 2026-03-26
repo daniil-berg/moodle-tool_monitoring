@@ -59,7 +59,7 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
     public function test_get_description(): void {
         $metric = new quiz_attempts_in_progress();
         $description = $metric->get_description();
-        self::assertSame('quiz_attempts_in_progress_description', $description->get_identifier());
+        self::assertSame('metric:quiz_attempts_in_progress_description', $description->get_identifier());
         self::assertSame('tool_monitoring', $description->get_component());
     }
 

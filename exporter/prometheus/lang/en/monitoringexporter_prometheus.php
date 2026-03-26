@@ -28,5 +28,5 @@
  */
 
 $string['pluginname'] = 'Exporter Prometheus';
-$string['setting_token'] = 'Token';
-$string['setting_token_desc'] = 'The token which has to be passed when the endpoint is called.';
+$string['settings:token'] = 'Token';
+$string['settings:token_desc'] = 'The token which has to be passed when the endpoint is called.';

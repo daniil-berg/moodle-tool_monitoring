@@ -64,32 +64,32 @@
 }}
 
 <h2>
-    {{#str}} metricsoverview, tool_monitoring {{/str}}
+    {{#str}} settings:metrics_overview, tool_monitoring {{/str}}
 </h2>
 
 {{#has_tags}}
     <div class="mt-3">
-        {{#str}} tagfilter, tool_monitoring {{/str}}
+        {{#str}} settings:tag_filter, tool_monitoring {{/str}}
         {{#tags}}
             <a href="{{remove_url}}" class="badge bg-secondary text-dark" style="font-size: 100%;"><span aria-hidden="true">× </span> {{name}}</a>
         {{/tags}}
     </div>
     <div class="text-end mb-3">
-        <a href="{{all_metrics_url}}">{{#str}} metricsoverviewshowall, tool_monitoring {{/str}}</a>
+        <a href="{{all_metrics_url}}">{{#str}} settings:metrics_overview_show_all, tool_monitoring {{/str}}</a>
     </div>
 {{/has_tags}}
 
 <table class="table table-sm table-striped table-hover generaltable">
   <thead>
     <tr>
-      <th scope="col">{{#str}} component, tool_monitoring {{/str}}</th>
-      <th scope="col">{{#str}} name, tool_monitoring {{/str}}</th>
-      <th scope="col">{{#str}} type, tool_monitoring {{/str}}</th>
-      <th scope="col">{{#str}} description, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:component, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:name, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:type, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:description, tool_monitoring {{/str}}</th>
       {{#is_tagging_enabled}}
-        <th scope="col">{{#str}} tags, tool_monitoring {{/str}}</th>
+        <th scope="col">{{#str}} tags {{/str}}</th>
       {{/is_tagging_enabled}}
-      <th scope="col">{{#str}} actions, tool_monitoring {{/str}}</th>
+      <th scope="col">{{#str}} settings:actions, tool_monitoring {{/str}}</th>
     </tr>
   </thead>
   <tbody>
@@ -107,7 +107,7 @@
           </td>
         {{/is_tagging_enabled}}
         <td>
-            <a href="{{{config_url}}}" class="icon-no-margin me-1 d-inline-block">{{#pix}}i/settings, core, {{#str}} configure, tool_monitoring {{/str}}{{/pix}}</a>
+            <a href="{{{config_url}}}" class="icon-no-margin me-1 d-inline-block">{{#pix}}i/settings, core, {{#str}} settings:configure, tool_monitoring {{/str}}{{/pix}}</a>
             <a href="#" class="icon-no-margin d-inline-block" data-action="toggle-metric" data-metric="{{qualified_name}}" data-enabled="{{#enabled}}1{{/enabled}}{{^enabled}}0{{/enabled}}">
                 <span data-region="enabled-icon"{{^enabled}} class="d-none"{{/enabled}}>{{#pix}}t/hide, core, {{#str}} disable {{/str}}{{/pix}}</span>
                 <span data-region="disabled-icon"{{#enabled}} class="d-none"{{/enabled}}>{{#pix}}t/show, core, {{#str}} enable {{/str}}{{/pix}}</span>
@@ -121,9 +121,9 @@
 {{#is_tagging_enabled}}
     <div class="my-5 text-end">
         {{#tags}}
-            <a href="{{edit_url}}" class="btn btn-secondary">{{#str}} edit_tag, tool_monitoring, {{name}} {{/str}}</a>
+            <a href="{{edit_url}}" class="btn btn-secondary">{{#str}} settings:edit_tag, tool_monitoring, {{name}} {{/str}}</a>
         {{/tags}}
-        <a href="{{manage_tags_url}}" class="btn btn-secondary">{{#str}} manage_tags, tool_monitoring {{/str}}</a>
+        <a href="{{manage_tags_url}}" class="btn btn-secondary">{{#str}} settings:manage_tags, tool_monitoring {{/str}}</a>
     </div>
 {{/is_tagging_enabled}}
 

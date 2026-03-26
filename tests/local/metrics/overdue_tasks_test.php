@@ -69,7 +69,7 @@ final class overdue_tasks_test extends advanced_testcase {
     public function test_get_description(): void {
         $metric = new overdue_tasks();
         $description = $metric->get_description();
-        self::assertSame('overdue_tasks_description', $description->get_identifier());
+        self::assertSame('metric:overdue_tasks_description', $description->get_identifier());
         self::assertSame('tool_monitoring', $description->get_component());
     }
 

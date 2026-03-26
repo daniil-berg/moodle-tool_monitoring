@@ -137,9 +137,9 @@ final readonly class users_online_config implements metric_config {
 
     #[\Override]
     public static function extend_form_definition(config_form $configform, MoodleQuickForm $mform): void {
-        $mform->addElement('text', 'timewindows', new lang_string('users_online_time_windows', 'tool_monitoring'));
+        $mform->addElement('text', 'timewindows', new lang_string('metric:users_online_config:timewindows', 'tool_monitoring'));
         $mform->setType('timewindows', PARAM_TEXT);
-        $mform->addHelpButton('timewindows', 'users_online_time_windows', 'tool_monitoring');
+        $mform->addHelpButton('timewindows', 'metric:users_online_config:timewindows', 'tool_monitoring');
         $mform->addRule('timewindows', null, 'required', null, 'client');
     }
 

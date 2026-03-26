@@ -58,7 +58,7 @@ final class user_accounts_test extends advanced_testcase {
     public function test_get_description(): void {
         $metric = new user_accounts();
         $description = $metric->get_description();
-        self::assertSame('user_accounts_description', $description->get_identifier());
+        self::assertSame('metric:user_accounts_description', $description->get_identifier());
         self::assertSame('tool_monitoring', $description->get_component());
     }
 

@@ -15,54 +15,61 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin strings are defined here.
+ * English language strings for the component.
  *
- * @package     tool_monitoring
- * @category    string
- * @copyright   2025 MootDACH DevCamp
- *              Daniel Fainberg <d.fainberg@tu-berlin.de>
- *              Martin Gauk <martin.gauk@tu-berlin.de>
- *              Sebastian Rupp <sr@artcodix.com>
- *              Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @link https://docs.moodle.org/dev/String_API Moodle docs String API
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['actions'] = 'Actions';
-$string['component'] = 'Component';
-$string['configure'] = 'Configure';
-$string['configure_metric'] = 'Configure Metric';
-$string['courses_description'] = 'Current number of courses';
-$string['description'] = 'Description';
-$string['edit_tag'] = 'Edit tag {$a}';
 $string['error:quiz_attempts_in_progress_config:input_invalid'] = 'Invalid input';
 $string['error:users_online_config:timewindows_invalid'] = 'Invalid time window(s) provided: {$a}';
+
+$string['event:metric_config_updated'] = 'Metric configuration updated';
 $string['event:metric_disabled'] = 'Metric disabled';
 $string['event:metric_enabled'] = 'Metric enabled';
-$string['manage_tags'] = 'Manage tags';
+
+$string['metric:courses_description'] = 'Current number of courses';
+$string['metric:overdue_tasks_description'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
 $string['metric:quiz_attempts_in_progress_config:maxdeadlineseconds'] = 'Maximum deadline time';
 $string['metric:quiz_attempts_in_progress_config:maxdeadlineseconds_help'] = 'Do not count attempts that have a deadline in more than this number of seconds.';
 $string['metric:quiz_attempts_in_progress_config:maxidleseconds'] = 'Maximum idle time';
 $string['metric:quiz_attempts_in_progress_config:maxidleseconds_help'] = 'Do not count attempts that are idle longer than this number of seconds.';
-$string['metricconfigupdated'] = 'Metric configuration updated';
-$string['metricenabled'] = 'Metric enabled';
-$string['metricsoverview'] = 'Overview of Available Metrics';
-$string['metricsoverviewshowall'] = 'Show all metrics';
+$string['metric:quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts with an approaching deadline';
+$string['metric:user_accounts_description'] = 'Current number of user accounts';
+$string['metric:users_online_config:timewindows'] = 'Time window (seconds)';
+$string['metric:users_online_config:timewindows_help'] = 'Number of seconds since the last user access for that user to be counted as online. Multiple values can be specified, separated by commas; the metric will produce a separate metric value for each time window.';
+$string['metric:users_online_description'] = 'Number of users that have recently accessed the site';
+
 $string['monitoring:manage_metrics'] = 'Manage and configure monitoring metrics';
-$string['monitoring_metrics'] = 'Monitoring Metrics';
-$string['name'] = 'Name';
-$string['overdue_tasks_description'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
+
 $string['pluginname'] = 'Monitoring';
-$string['quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts with an approaching deadline';
+
+$string['settings:actions'] = 'Actions';
+$string['settings:component'] = 'Component';
+$string['settings:configure'] = 'Configure';
+$string['settings:configure_metric'] = 'Configure Metric';
+$string['settings:description'] = 'Description';
+$string['settings:edit_tag'] = 'Edit tag {$a}';
+$string['settings:manage_tags'] = 'Manage tags';
+$string['settings:metric_enabled'] = 'Metric enabled';
+$string['settings:metrics_overview'] = 'Overview of Available Metrics';
+$string['settings:metrics_overview_show_all'] = 'Show all metrics';
+$string['settings:monitoring_metrics'] = 'Monitoring Metrics';
+$string['settings:name'] = 'Name';
+$string['settings:tag_filter'] = 'Filter:';
+$string['settings:type'] = 'Type';
+
 $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
+
 $string['tagarea_metrics'] = 'Metrics';
 $string['tagcollection_monitoring'] = 'Monitoring';
-$string['tagfilter'] = 'Filter:';
-$string['tags'] = 'Tags';
-$string['type'] = 'Type';
-$string['user_accounts_description'] = 'Current number of user accounts';
-$string['users_online_description'] = 'Number of users that have recently accessed the site';
-$string['users_online_time_windows'] = 'Time window (seconds)';
-$string['users_online_time_windows_help'] = 'Number of seconds since the last user access for that user to be counted as online. Multiple values can be specified, separated by commas; the metric will produce a separate metric value for each time window.';

@@ -58,7 +58,7 @@ final class courses_test extends advanced_testcase {
     public function test_get_description(): void {
         $metric = new courses();
         $description = $metric->get_description();
-        self::assertSame('courses_description', $description->get_identifier());
+        self::assertSame('metric:courses_description', $description->get_identifier());
         self::assertSame('tool_monitoring', $description->get_component());
     }
 

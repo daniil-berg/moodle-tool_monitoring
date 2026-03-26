@@ -215,13 +215,13 @@ final class users_online_config_test extends advanced_testcase {
         $mockconfigform = $this->createMock(config_form::class);
         $mockmform->expects($this->once())
             ->method('addElement')
-            ->with('text', 'timewindows', new lang_string('users_online_time_windows', 'tool_monitoring'));
+            ->with('text', 'timewindows', new lang_string('metric:users_online_config:timewindows', 'tool_monitoring'));
         $mockmform->expects($this->once())
             ->method('setType')
             ->with('timewindows', PARAM_TEXT);
         $mockmform->expects($this->once())
             ->method('addHelpButton')
-            ->with('timewindows', 'users_online_time_windows', 'tool_monitoring');
+            ->with('timewindows', 'metric:users_online_config:timewindows', 'tool_monitoring');
         $mockmform->expects($this->once())
             ->method('addRule')
             ->with('timewindows', null, 'required', null, 'client');

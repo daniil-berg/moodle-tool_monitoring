@@ -63,7 +63,7 @@ class quiz_attempts_in_progress extends metric_with_config {
      * {@inheritDoc}
      */
     public static function get_description(): lang_string {
-        return new lang_string('quiz_attempts_in_progress_description', 'tool_monitoring');
+        return new lang_string('metric:quiz_attempts_in_progress_description', 'tool_monitoring');
     }
 
     /**

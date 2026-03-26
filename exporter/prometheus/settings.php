@@ -33,8 +33,8 @@ if ($hassiteconfig) {
     $settings->add(
         new admin_setting_configpasswordunmask(
             name: 'monitoringexporter_prometheus/prometheus_token',
-            visiblename: get_string('setting_token', 'monitoringexporter_prometheus'),
-            description: get_string('setting_token_desc', 'monitoringexporter_prometheus'),
+            visiblename: get_string('settings:token', 'monitoringexporter_prometheus'),
+            description: get_string('settings:token_desc', 'monitoringexporter_prometheus'),
             defaultsetting: '',
         )
     );

@@ -48,7 +48,7 @@ $ADMIN->add(
 
 $overviewlink = new admin_externalpage(
     name: 'monitoringmetricsoverviewlink',
-    visiblename: new lang_string('metricsoverview', 'tool_monitoring'),
+    visiblename: new lang_string('settings:metrics_overview', 'tool_monitoring'),
     url: new moodle_url('/admin/tool/monitoring'),
     req_capability: 'tool/monitoring:manage_metrics',
 );

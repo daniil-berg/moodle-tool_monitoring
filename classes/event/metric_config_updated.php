@@ -51,7 +51,7 @@ class metric_config_updated extends metric_event {
      */
     #[\Override]
     public static function get_name(): lang_string {
-        return new lang_string('metricconfigupdated', 'tool_monitoring');
+        return new lang_string('event:metric_config_updated', 'tool_monitoring');
     }
 
     /**

@@ -236,7 +236,7 @@ abstract class simple_metric_config implements metric_config {
             }
             // Optionally, add a help button if the defining component has a corresponding language string.
             if ($stringmanager->string_exists("{$labelid}_help", $component)) {
-                $mform->addHelpButton($paramname, $labelid, 'tool_monitoring');
+                $mform->addHelpButton($paramname, $labelid, $component);
             }
             // To avoid ugly errors about possibly missing constructor arguments, we make every field non-optional.
             $mform->addRule($paramname, null, 'required', null, 'client');

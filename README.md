@@ -315,10 +315,11 @@ class blocks_used_config extends simple_metric_config {
 That's it.
 There is no need to override any of the `metric_config` methods by hand.
 
-> [!IMPORTANT]
-> The [constructor property promotion][php docs constructor promotion] is _required_ here! Same as making the config parameters **public**.
-
 This data class is meant to represent both the JSON "schema" for (de-)serializing the actual metric config from/to the database and the shape of the initial/submitted form data.
+
+> [!IMPORTANT]
+> Using [constructor property promotion][php docs constructor promotion] and declaring those properties `public` is done very deliberately!
+> The class allows ways to achieve the same results with a different setup, but this is the most concise way.
 
 Under the hood, the `simple_metric_config` class will also automatically define the config form fields appropriately.
 This means it will do the following for each public property in the constructor:
@@ -330,7 +331,7 @@ This means it will do the following for each public property in the constructor:
 5. Add a validation rule for that input (optionally).
 
 So our example config form will have a text input field named `minblockagehours` and a checkbox for `includehidden`.
-Also, the type for the former will be `PARAM_FLOAT` and its value will be immediately validated to be numeric on the client side.
+The type for the former will be set to `PARAM_FLOAT` and its value will be immediately validated to be numeric on the client side.
 
 > [!NOTE]
 > The order of the constructor parameters determines the order of the form fields.

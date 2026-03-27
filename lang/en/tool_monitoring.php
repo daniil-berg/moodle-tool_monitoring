@@ -79,3 +79,12 @@ $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
 
 $string['tagarea_metrics'] = 'Metrics';
 $string['tagcollection_monitoring'] = 'Monitoring';
+
+$string['testing:metric:testing_simple_metric_config:notpromotedstring'] = 'String with a default; not promoted to any property.';
+$string['testing:metric:testing_simple_metric_config:privatereadonlyfloat'] = 'Float with a default; promoted to private property.';
+$string['testing:metric:testing_simple_metric_config:protectedint'] = 'Integer with a default; promoted to protected property.';
+$string['testing:metric:testing_simple_metric_config:publicbool'] = 'Boolean with a default; promoted to public property.';
+$string['testing:metric:testing_simple_metric_config:publicobj'] = 'Object with a default; promoted to public property.';
+$string['testing:metric:testing_simple_metric_config:publicstringrequired'] = 'Required string; promoted to public property.';
+$string['testing:metric:testing_simple_metric_config:publicstringrequired_help'] = 'Help text for the above.';
+$string['testing:metric:testing_simple_metric_config:publicunion'] = 'Union of types with a default; promoted to public property.';

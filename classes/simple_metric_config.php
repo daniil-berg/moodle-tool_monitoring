@@ -45,19 +45,20 @@ use tool_monitoring\exceptions\simple_metric_config_constructor_missing;
 use tool_monitoring\form\config as config_form;
 
 /**
- * Basic implementation of the {@see metric_config} interface.
+ * Helper base class for simple metric configurations; fully implements the **{@see metric_config}** interface.
  *
- * A concrete subclass must simply define a constructor with
+ * During JSON serialization, the **public** properties of an instance are turned into the JSON object (saved in the DB).
+ * See the {@see self::jsonSerialize `jsonSerialize`} method for details.
+ * For JSON deserialization, the JSON object is expected to provide **keys that map to the constructor parameters** of the class.
+ * See the {@see self::from_json `from_json`} method for details.
+ *
+ * The same logic applies to the {@see self::to_form_data `to_form_data`} and {@see self::with_form_data `with_form_data`} methods.
+ * The former returns the **public** properties of a config instance, the latter expects the form data to have properties that
+ * **map to the constructor parameters** of the class.
+ *
+ * This means, a concrete subclass can be simply defined as a dataclass that has a constructor with public
  * {@link https://www.php.net/manual/en/language.oop5.decon.php#language.oop5.decon.constructor.promotion promoted parameters}.
- * Assuming all of those are public and there are no additional public properties on the config object, the JSON (de-)serialization
- * simply maps those properties to keys in a JSON object.
- *
- * The definition of the Moodle form fields and their validation logic are inferred from those properties as well.
- * For translatable field labels, a string with the ID `metric:<config-class-name>:<property-name>` must exist in the component
- * defining the config class. If additionally a string with the ID `metric:<config-class-name>:<property-name>_help` exists,
- * a help button is added to the form field with the corresponding text.
- *
- * Consider the following example config class defined in a plugin called `local_example`:
+ * For example:
  *
  * ```
  * class my_metric_config extends simple_metric_config {
@@ -72,21 +73,34 @@ use tool_monitoring\form\config as config_form;
  *
  * Resulting/expected form data: `['foo' => 'bar', 'spam' => '3.14']`.
  *
- * The Moodle form definition would be similar to this:
+ * The definition of the Moodle form fields and their validation logic are inferred from those properties as well.
+ * For translatable field labels, a string with the ID `metric:<config-class-name>:<property-name>` must exist in the component
+ * defining the config class. If additionally a string with the ID `metric:<config-class-name>:<property-name>_help` exists,
+ * a help button is added to the form field with the corresponding text.
+ *
+ * In a `local_example` plugin, the Moodle form definition for the example config above would be similar to this:
+ *
  * ```
  * $mform->addElement('text', 'foo', get_string('metric:my_metric_config:foo', 'local_example'));
  * $mform->addHelpButton('foo', 'metric:my_metric_config:foo', 'local_example');
  * $mform->setType('foo', PARAM_TEXT);
- * $mform->addRule('foo', null, 'required', null, 'client');
  *
  * $mform->addElement('text', 'spam', get_string('metric:my_metric_config:spam', 'local_example'));
  * $mform->addHelpButton('spam', 'metric:my_metric_config:spam', 'local_example');
  * $mform->setType('spam', PARAM_FLOAT);
  * $mform->addRule('spam', null, 'numeric', null, 'client');
- * $mform->addRule('spam', null, 'required', null, 'client');
  * ```
  *
- * For more advanced definition/validation options, override {@see extend_form_definition} and {@see extend_form_validation}.
+ * The automatic field inference currently supports the following constructor parameter types:
+ * - `bool` gives an `advcheckbox`/`PARAM_BOOL` field.
+ * - `float` gives a `text`/`PARAM_FLOAT` field with client-side numeric validation.
+ * - `int` gives a `text`/`PARAM_INT` field with client-side numeric validation.
+ * - `string` gives a `text`/`PARAM_TEXT` field.
+ *
+ * Any other type annotation is treated as `string`, which results in a `text`/`PARAM_TEXT` field without any validation.
+ *
+ * For more advanced definition and validation options, the {@see self::extend_form_definition `extend_form_definition`} and
+ * {@see self::extend_form_validation `extend_form_validation`} methods can still be overridden/extended.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -98,20 +112,20 @@ use tool_monitoring\form\config as config_form;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class simple_metric_config implements metric_config {
-    /** @var array<string, array<string, ReflectionParameter>> Cache for config parameters indexed by config class name. */
-    private static array $configparameters = [];
+    /** @var array<string, array<string, ReflectionParameter>> Cache for constructor parameters indexed by config class name. */
+    private static array $constructorparameters = [];
 
     /**
-     * Reflects the class, analyzes the constructor of the config class, and returns all parameters indexed by name.
+     * Reflects the calling class, analyzes its constructor, and returns all parameters indexed by name.
      *
      * Caches the result after the first call.
      *
      * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
      * @throws simple_metric_config_constructor_missing
      */
-    protected static function get_config_parameters(): array {
-        if (isset(self::$configparameters[static::class])) {
-            return self::$configparameters[static::class];
+    private static function get_constructor_parameters(): array {
+        if (isset(self::$constructorparameters[static::class])) {
+            return self::$constructorparameters[static::class];
         }
         $class = new ReflectionClass(static::class);
         if (is_null($constructor = $class->getConstructor())) {
@@ -122,7 +136,7 @@ abstract class simple_metric_config implements metric_config {
             column_key: null,
             index_key:  'name',
         );
-        self::$configparameters[static::class] = $parameters;
+        self::$constructorparameters[static::class] = $parameters;
         return $parameters;
     }
 
@@ -154,7 +168,7 @@ abstract class simple_metric_config implements metric_config {
             throw new json_invalid();
         }
         $args = [];
-        foreach (self::get_config_parameters() as $name => $param) {
+        foreach (self::get_constructor_parameters() as $name => $param) {
             if (array_key_exists($name, $data)) {
                 $args[$name] = $data[$name];
             } else if (!$param->isOptional()) {
@@ -177,7 +191,7 @@ abstract class simple_metric_config implements metric_config {
     #[\Override]
     public static function with_form_data(stdClass $formdata): static {
         $args = [];
-        foreach (self::get_config_parameters() as $name => $param) {
+        foreach (self::get_constructor_parameters() as $name => $param) {
             if (property_exists($formdata, $name)) {
                 $args[$name] = $formdata->$name;
             } else if (!$param->isOptional()) {
@@ -230,8 +244,11 @@ abstract class simple_metric_config implements metric_config {
             $cls = substr($cls, $pos + 1);
         }
         $stringmanager = get_string_manager();
-        foreach (self::get_config_parameters() as $paramname => $param) {
+        foreach (self::get_constructor_parameters() as $paramname => $param) {
             $labelid = "metric:$cls:$paramname";
+            if (PHPUNIT_TEST) {
+                $labelid = "testing:$labelid";
+            }
             self::add_field_to_form($mform, $param, new lang_string($labelid, $component));
             // Optionally, add a help button if the defining component has a corresponding language string.
             if ($stringmanager->string_exists("{$labelid}_help", $component)) {

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_settable_values} class.
+ * Definition of the {@see testing_simple_metric_config_cache} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,13 +29,10 @@
 
 namespace tool_monitoring\local\testing;
 
-use core\lang_string;
-use tool_monitoring\metric;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric_value;
+use tool_monitoring\simple_metric_config;
 
 /**
- * Example metric that allows setting arbitrary values to be returned by `calculate`.
+ * Extension of the {@see simple_metric_config} class for testing purposes.
  *
  * **TESTING ONLY: This exists purely to run unit tests.**
  *
@@ -50,23 +47,19 @@ use tool_monitoring\metric_value;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_settable_values extends metric {
-    /** @var iterable<metric_value>|metric_value Metric values to be produced by the metric. */
-    public iterable|metric_value $values = [];
-
-    #[\Override]
-    public function calculate(): iterable|metric_value {
-        return $this->values;
-    }
-
-    #[\Override]
-    public static function get_description(): lang_string {
-        // Just an arbitrary existing language string.
-        return new lang_string('pluginname', 'tool_monitoring');
-    }
-
-    #[\Override]
-    public static function get_type(): metric_type {
-        return metric_type::COUNTER;
-    }
+class testing_simple_metric_config_cache extends simple_metric_config {
+    /**
+     * Constructor without additional logic.
+     *
+     * @param string $foo Foo
+     * @param int $spam Spam
+     *
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
+     */
+    public function __construct(
+        /** @var string Foo */
+        public readonly string $foo = 'bar',
+        /** @var int Spam */
+        public readonly int $spam = 1234567,
+    ) {}
 }

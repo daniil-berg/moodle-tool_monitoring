@@ -29,7 +29,12 @@
 
 namespace tool_monitoring\plugininfo;
 
+use admin_root;
+use admin_settingpage;
+use coding_exception;
 use core\plugininfo\base;
+use part_of_admin_tree;
+use stdClass;
 
 /**
  * Sub-plugin info class.
@@ -46,4 +51,43 @@ use core\plugininfo\base;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class monitoringexporter extends base {
+    #[\Override]
+    public function get_settings_section_name(): string {
+        return "{$this->type}_$this->name";
+    }
+
+    /**
+     * Loads plugin settings to the settings tree.
+     *
+     * Sub-plugins can immediately add settings to their dedicated {@see admin_settingpage} via the `$settings` variable in their
+     * own `settings.php` file. The file will be automatically included if the user has the `moodle/site:config` capability.
+     *
+     * @param part_of_admin_tree $adminroot Admin tree root.
+     * @param string $parentnodename Name of the parent node in the tree.
+     * @param bool $hassiteconfig Whether the current user has the `moodle/site:config` capability.
+     * @throws coding_exception
+     */
+    #[\Override]
+    public function load_settings(part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig): void {
+        global $ADMIN, $CFG;
+        /** @var admin_root $ADMIN */
+        require_once("$CFG->dirroot/mod/assign/adminlib.php");
+        if (!$this->is_installed_and_upgraded()) {
+            return;
+        }
+        if (!$hassiteconfig || !file_exists($this->full_path('settings.php'))) {
+            return;
+        }
+        $settings = new admin_settingpage(
+            name: $this->get_settings_section_name(),
+            visiblename: $this->displayname,
+            req_capability: 'moodle/site:config',
+            hidden: $this->is_enabled() === false, // Can be `null`, therefore the identity comparison.
+        );
+        include($this->full_path('settings.php'));
+        if ($settings->settings != new stdClass()) {
+            // Only if settings were actually added to the page, do we want to add it to the tree.
+            $ADMIN->add($parentnodename, $settings);
+        }
+    }
 }

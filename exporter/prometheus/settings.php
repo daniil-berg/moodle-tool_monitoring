@@ -28,18 +28,17 @@
  *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
- * {@noinspection PhpUndefinedVariableInspection, PhpUnhandledExceptionInspection}
+ * {@noinspection PhpUnhandledExceptionInspection}
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-if ($hassiteconfig) {
-    $settings->add(
-        new admin_setting_configpasswordunmask(
-            name: 'monitoringexporter_prometheus/prometheus_token',
-            visiblename: new lang_string('settings:token', 'monitoringexporter_prometheus'),
-            description: new lang_string('settings:token_desc', 'monitoringexporter_prometheus'),
-            defaultsetting: '',
-        )
-    );
-}
+/** @var admin_settingpage $settings */
+$settings->add(
+    new admin_setting_configpasswordunmask(
+        name: 'monitoringexporter_prometheus/prometheus_token',
+        visiblename: new lang_string('settings:token', 'monitoringexporter_prometheus'),
+        description: new lang_string('settings:token_desc', 'monitoringexporter_prometheus'),
+        defaultsetting: '',
+    )
+);

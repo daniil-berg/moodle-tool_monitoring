@@ -66,6 +66,7 @@ $string['settings:configure'] = 'Configure';
 $string['settings:configure_metric'] = 'Configure Metric';
 $string['settings:description'] = 'Description';
 $string['settings:edit_tag'] = 'Edit tag {$a}';
+$string['settings:exporters'] = 'Available Exporters';
 $string['settings:manage_tags'] = 'Manage tags';
 $string['settings:metric_enabled'] = 'Metric enabled';
 $string['settings:metrics_overview'] = 'Overview of Available Metrics';

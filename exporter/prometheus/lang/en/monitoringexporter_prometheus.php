@@ -29,6 +29,6 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['pluginname'] = 'Exporter Prometheus';
+$string['pluginname'] = 'Prometheus Exporter';
 $string['settings:token'] = 'Token';
 $string['settings:token_desc'] = 'The token which has to be passed when the endpoint is called.';

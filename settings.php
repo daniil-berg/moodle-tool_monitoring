@@ -29,7 +29,7 @@
  *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
- * {@noinspection PhpUnhandledExceptionInspection}
+ * {@noinspection PhpUndefinedVariableInspection, PhpUnhandledExceptionInspection}
  */
 
 use tool_monitoring\plugininfo\monitoringexporter;
@@ -40,31 +40,31 @@ global $ADMIN, $CFG;
 /** @var admin_root $ADMIN */
 require_once("$CFG->dirroot/mod/assign/adminlib.php");
 
-$ADMIN->add(
-    'tools',
-    new admin_category(
-        name: 'monitoringcategory',
-        visiblename: new lang_string('pluginname', 'tool_monitoring'),
-    ),
+// Create a top-level plugin category and add it under the admin tools super-category.
+$monitoringcategory = new admin_category(
+    name: 'tool_monitoring_category',
+    visiblename: new lang_string('pluginname', 'tool_monitoring'),
 );
+$ADMIN->add('tools', $monitoringcategory);
 
+// Create a link to the metrics overview page and add it as the first item in the monitoring category.
 $overviewlink = new admin_externalpage(
     name: 'monitoringmetricsoverviewlink',
     visiblename: new lang_string('settings:metrics_overview', 'tool_monitoring'),
     url: new moodle_url('/admin/tool/monitoring'),
     req_capability: 'tool/monitoring:manage_metrics',
 );
-$ADMIN->add('monitoringcategory', $overviewlink);
+$ADMIN->add('tool_monitoring_category', $overviewlink);
 
+// As the second item in the monitoring category, group all settings pages for the exporters.
+$monitoringexportercategory = new admin_category(
+    name: 'monitoringexporter_category',
+    visiblename: new lang_string('settings:exporters', 'tool_monitoring'),
+);
+$ADMIN->add('tool_monitoring_category', $monitoringexportercategory);
+
+// Underneath the exporter category, add all exporter settings pages.
 /** @var monitoringexporter $subplugin */
 foreach (core_plugin_manager::instance()->get_plugins_of_type('monitoringexporter') as $subplugin) {
-    $settings = new admin_settingpage(
-        name: "{$subplugin->type}_$subplugin->name",
-        visiblename: $subplugin->displayname,
-        req_capability: 'moodle/site:config',
-    );
-    if ($ADMIN->fulltree) {
-        include($subplugin->full_path('settings.php'));
-    }
-    $ADMIN->add('monitoringcategory', $settings);
+    $subplugin->load_settings($ADMIN, 'monitoringexporter_category', $hassiteconfig);
 }

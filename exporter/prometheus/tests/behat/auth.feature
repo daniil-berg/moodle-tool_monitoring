@@ -16,14 +16,14 @@ Feature: Securing the exporter endpoint.
 
     # Set an access token.
     Given I am logged in as admin
-    When I navigate to "Plugins > Admin tools > Monitoring > Exporter Prometheus" in site administration
-    Then "Exporter Prometheus" "heading" should be visible
+    When I navigate to "Plugins > Admin tools > Monitoring > Prometheus Exporter" in site administration
+    Then "Prometheus Exporter" "heading" should be visible
     And I should see "monitoringexporter_prometheus | prometheus_token"
     And the field "Token" matches value ""
     When I click on "Click to enter text" "link" in the "admin-prometheus_token" "region"
     And I set the field "Token" to "abcdef"
     And I click on "Save changes" "button"
-    Then "Exporter Prometheus" "heading" should be visible
+    Then "Prometheus Exporter" "heading" should be visible
 
     # Verify the endpoint no longer returns the metric. Assume the 403 code is displayed somewhere.
     When I call the Prometheus endpoint

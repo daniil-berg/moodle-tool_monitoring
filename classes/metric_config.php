@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring;
@@ -39,11 +39,14 @@ use tool_monitoring\form\config as config_form;
  * Defines the optional configuration interface used by a {@see metric_with_config}.
  *
  * If a {@see metric_with_config} has specific associated configuration options, those are represented as a JSON object.
- * Classes must therefore implement the {@see JsonSerializable} interface as well as the {@see self::from_json} method. The former
- * method determines what is saved in the database via {@see json_encode}, while the latter does the inverse.
+ * Classes must therefore implement the {@see JsonSerializable} interface as well as the {@see self::from_json `from_json`} method.
+ * The former method determines what is saved in the database via {@see json_encode}, while the latter does the inverse.
  *
- * In addition, a metric config can be used together {@see moodleform}s. This is facilitated by the {@see self::with_form_data},
- * {@see self::to_form_data}, {@see self::extend_form_definition}, and {@see self::extend_form_validation} methods.
+ * In addition, a metric config can be used together {@see moodleform}s. This is facilitated by these methods:
+ * - {@see self::with_form_data, `with_form_data`} constructs a new instance from form data.
+ * - {@see self::to_form_data `to_form_data`} transforms an instance into form data.
+ * - {@see self::extend_form_definition `extend_form_definition`} adds form fields to the metric configuration form.
+ * - {@see self::extend_form_validation `extend_form_validation`} adds validation rules to the metric configuration form.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -52,13 +55,13 @@ use tool_monitoring\form\config as config_form;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface metric_config extends JsonSerializable {
     /**
      * Constructs a new instance from a JSON config object.
      *
-     * Should be the inverse of the {@see JsonSerializable::jsonSerialize} method.
+     * Should be the inverse of the {@see static::jsonSerialize `jsonSerialize`} method.
      *
      * @param string $json String of a valid JSON object (not an array or any other type).
      * @return self New instance of the config class.
@@ -85,7 +88,8 @@ interface metric_config extends JsonSerializable {
      *
      * Called at the end of the {@see config_form::definition} method.
      *
-     * Implementations _should_ ensure that any added form fields are compatible with {@see with_form_data} and {@see to_form_data}.
+     * Implementations _should_ ensure that any added form fields are compatible with both the
+     * {@see static::with_form_data `with_form_data`} and the {@see static::to_form_data `to_form_data`} methods.
      *
      * @param config_form $configform Metric configuration form being defined.
      * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
@@ -99,7 +103,8 @@ interface metric_config extends JsonSerializable {
      *
      * Called at the end of the {@see config_form::validation} method.
      *
-     * Implementations _should_ only return error messages for fields defined by their own {@see extend_form_definition} method.
+     * Implementations _should_ only return error messages for fields defined through their own implementation of the
+     * {@see static::extend_form_definition `extend_form_definition`} method.
      *
      * @param array<string, mixed> $data Form data to validate, indexed by field name.
      * @param config_form $configform Metric configuration form being validated.

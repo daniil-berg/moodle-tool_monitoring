@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring\exceptions;
@@ -42,7 +42,7 @@ use core\exception\moodle_exception;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class tool_monitoring_exception extends moodle_exception {
     /** @var string String to prefix all error codes with. */

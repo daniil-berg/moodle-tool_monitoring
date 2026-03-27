@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace monitoringexporter_prometheus\route\controller;
@@ -43,7 +43,7 @@ use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\metrics_manager;
 
 /**
- * Defines the route for Prometheus to pull the current metrics.
+ * Provides the route for Prometheus to pull the current metrics.
  *
  * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
@@ -52,7 +52,7 @@ use tool_monitoring\metrics_manager;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class prometheus {
     use route_controller;
@@ -64,10 +64,15 @@ class prometheus {
      * - `token` for authorization; must match the `prometheus_token` config value, if one was set.
      * - `tags` for filtering specific metrics.
      *
-     * @see https://prometheus.io/docs/instrumenting/exposition_formats
+     * Possible response codes for errors:
+     * - **500** if the `prometheus_token` config value is not set.
+     * - **403** if the `token` query parameter does not match the `prometheus_token` config value.
+     * - **422** if the `tags` query parameter is invalid.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats Prometheus format documentation
      *
      * @param Request $request Incoming, server-side HTTP request.
-     * @param Response $response Outgoing, server-side response; returned response object is derived from this.
+     * @param Response $response Outgoing, server-side response; the returned response object is derived from this.
      * @return Response Plain text response in the Prometheus format.
      * @throws coding_exception
      * @throws dml_exception

@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Language strings.
+ * English language strings for the component.
+ *
+ * @link https://docs.moodle.org/dev/String_API Moodle docs String API
  *
  * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
@@ -24,7 +26,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 $string['pluginname'] = 'Exporter Prometheus';

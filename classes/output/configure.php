@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring\output;
@@ -47,7 +47,7 @@ use tool_monitoring\registered_metric;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final readonly class configure implements renderable, templatable {
     /** @var config_form Metric config form to be rendered. */
@@ -67,8 +67,7 @@ final readonly class configure implements renderable, templatable {
      *
      * This method must be called before any output is sent to the browser.
      *
-     * @return bool true if the form was processed (either submit or cancel), false if the form was neither submitted
-     * nor canceled.
+     * @return bool `true` if the form was processed (either submitted or canceled); `false` otherwise.
      *
      * @throws moodle_exception
      * @throws JsonException The {@see registered_metric::config} could not be serialized.

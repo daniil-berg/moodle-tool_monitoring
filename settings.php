@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin settings.
+ * Declarations of admin settings for the plugin.
+ *
+ * @link https://moodledev.io/docs/apis/subsystems/admin Moodle docs Admin subsystem
  *
  * @package     tool_monitoring
  * @category    admin

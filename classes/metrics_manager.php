@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring;
@@ -44,7 +44,7 @@ use tool_monitoring\hook\metric_collection;
  * Registers new {@see metric}s picked up by the {@see metric_collection} hook and provides access to already registered ones.
  *
  * @property-read array<string, registered_metric> $metrics Registered metrics indexed by their qualified name; must be populated
- *                                                          by calling the {@see dispatch_hook} method.
+ *                                                          by calling the {@see self::dispatch_hook} method.
  * @property-read core_tag_tag[] $tags Tags used to filter the metrics. This attribute is only used if this feature is
  *                                     enabled in {@see fetch}.
  *
@@ -55,15 +55,13 @@ use tool_monitoring\hook\metric_collection;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class metrics_manager {
     /** @var array<string, registered_metric> Collected and registered metrics indexed by their qualified name. */
     private array $metrics = [];
 
-    /**
-     * @var core_tag_tag[] Tags used to filter the metrics.
-     */
+    /** @var core_tag_tag[] Tags used to filter the metrics. */
     private array $tags = [];
 
     /**
@@ -81,7 +79,7 @@ final class metrics_manager {
     /**
      * Special-case getter for the full array of registered metrics.
      *
-     * TODO Replace this method with a nice property `get`-hook, once PHP 8.4+ becomes the minimum requirement.
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
      *
      * @param string $name Name of the property to return.
      * @return mixed Property value.
@@ -114,7 +112,7 @@ final class metrics_manager {
      * Ignores database entries for previously registered metrics that are _not_ present in the currently managed collection.
      * Issues a single `SELECT` query; does not perform any `INSERT`/`UPDATE`/`DELETE` queries.
      *
-     * @param bool $collect If `true` (default), calls the {@see dispatch_hook} method first.
+     * @param bool $collect If `true` (default), calls the {@see self::dispatch_hook `dispatch_hook`} method first.
      * @param bool|null $enabled If `true` (default), only enabled metrics are loaded; if `false`, only disabled ones are loaded;
      *                           passing `null` (default) disables this filter.
      * @param string[] $tagnames Only metrics that carry tags with all the provided tag names will be returned.
@@ -205,8 +203,8 @@ final class metrics_manager {
      *
      * This function issues no more than two `SELECT`, exactly one `DELETE` (optional), and no more than two `INSERT` queries.
      *
-     * @param bool $collect If `true` (default), calls the {@see dispatch_hook} method first. **WARNING**: Failing to collect
-     *                      all relevant metrics first will cause data loss, if `$delete` is set to `true`.
+     * @param bool $collect If `true` (default), calls the {@see self::dispatch_hook `dispatch_hook`} method first.
+     *                      **WARNING**: Failing to collect relevant metrics first will cause data loss if `$delete` is `true`.
      * @param bool $delete If `true`, deletes every database entry that does not correspond to any metric in the collection, and
      *                     triggers individual deletion events for all deleted database records.
      * @return $this Same instance.
@@ -220,7 +218,7 @@ final class metrics_manager {
         }
         $this->metrics = [];
         // Grab all existing records indexed by qualified name.
-        $sqlqname = self::get_qualified_name_sql();
+        $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
         try {
             $transaction = $DB->start_delegated_transaction();
             $existingrecords = $DB->get_records_sql("SELECT $sqlqname AS qname, m.* FROM {" . registered_metric::TABLE . "} AS m");
@@ -298,15 +296,5 @@ final class metrics_manager {
         }
         // @codeCoverageIgnoreEnd
         return $this;
-    }
-
-    /**
-     * Returns the proper SQL snippet to construct the qualified name.
-     *
-     * @return string Qualified name SQL.
-     */
-    private static function get_qualified_name_sql(): string {
-        global $DB;
-        return $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }
 }

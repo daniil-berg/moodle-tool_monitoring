@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * External service to enable or disable a monitoring metric.
+ * Definition of the {@see set_metric_enabled} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring\external;
@@ -51,7 +51,7 @@ use tool_monitoring\metrics_manager;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class set_metric_enabled extends external_api {
     /**
@@ -89,14 +89,12 @@ final class set_metric_enabled extends external_api {
         $context = context_system::instance();
         self::validate_context($context);
         require_capability('tool/monitoring:manage_metrics', $context);
-
         $manager = new metrics_manager();
         $metric = $manager->sync()->metrics[$qualifiedname] ?? null;
         if (is_null($metric)) {
             throw new invalid_parameter_exception("Unknown metric '$qualifiedname'.");
         }
         $metric->persist_enabled_state($enabled);
-
         return [];
     }
 

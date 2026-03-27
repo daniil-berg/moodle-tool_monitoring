@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring;
@@ -44,7 +44,7 @@ use Traversable;
 /**
  * Represents a {@see metric} that is managed by the plugin and thus has a corresponding entry in the database.
  *
- * An instance of this class maps to a row in the {@see self::TABLE} database table.
+ * An instance of this class maps to a row in the {@see self::TABLE `TABLE`} database table.
  * Metric values can be retrieved by iterating over an instance of this class.
  *
  * @property-read string $qualifiedname Qualified name of the metric.
@@ -59,13 +59,13 @@ use Traversable;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class registered_metric implements IteratorAggregate {
     /** @var string Name of the mapped DB table. */
     public const TABLE = 'tool_monitoring_metrics';
 
-    /** @var string[] Names of all fields in the DB table, i.e. all constructor parameters. */
+    /** @var string[] Names of all fields in the DB table; matches all constructor parameters. */
     private const FIELDS = [
         'component',
         'name',
@@ -77,14 +77,10 @@ final class registered_metric implements IteratorAggregate {
         'id',
     ];
 
-    /**
-     * @var metric Underlying metric that the instance wraps.
-     */
+    /** @var metric Underlying metric that the instance wraps. */
     private metric $metric;
 
-    /**
-     * @var class-string<metric_config>|null Name of the associated metric config class; `null` if the metric is not configurable.
-     */
+    /** @var class-string<metric_config>|null Name of the associated metric config class; `null` if not configurable. */
     private string|null $configclass = null;
 
     /**
@@ -231,7 +227,7 @@ final class registered_metric implements IteratorAggregate {
     /**
      * Special-case getter for some public-read-only properties of the metric.
      *
-     * TODO Replace this method with nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
      *
      * @param string $name Name of the property to return.
      * @return mixed Property value.
@@ -266,13 +262,13 @@ final class registered_metric implements IteratorAggregate {
     /**
      * Updates the instance with the (non-empty) output of {@see moodleform::get_data} and saves it to the database.
      *
-     * Only performs an actual update, if {@see enabled} or {@see config} is different from the provided form data; no-op otherwise.
-     * Individual events are triggered, depending on what is updated.
+     * Only performs an actual update, if {@see self::enabled `enabled`} or {@see self::config `config`} is different from the
+     * provided form data; no-op otherwise. Individual events are triggered, depending on what is updated.
      *
      * @param stdClass $formdata Config form data to use for updating.
      * @throws coding_exception Should never happen.
      * @throws dml_exception
-     * @throws JsonException The {@see config} object could not be serialized.
+     * @throws JsonException The {@see self::config `config`} object could not be serialized.
      */
     public function update_with_form_data(stdClass $formdata): void {
         global $DB;
@@ -293,7 +289,7 @@ final class registered_metric implements IteratorAggregate {
                 $events[] = event\metric_config_updated::for_metric($this);
             }
         }
-        // This only actually performs DB queries, if tags were either added, removed, or their order changed.
+        // This only actually performs DB queries if tags were either added, removed, or their order changed.
         core_tag_tag::set_item_tags(
             component: 'tool_monitoring',
             itemtype: 'metrics',

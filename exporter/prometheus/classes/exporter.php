@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see prometheus} exporter class.
+ * Definition of the {@see prometheus} class.
  *
  * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace monitoringexporter_prometheus;
@@ -35,7 +35,7 @@ use tool_monitoring\registered_metric;
 /**
  * Exports metrics in Prometheus format.
  *
- * @see https://prometheus.io/docs/instrumenting/exposition_formats
+ * @link https://prometheus.io/docs/instrumenting/exposition_formats Prometheus format documentation
  *
  * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
@@ -44,7 +44,7 @@ use tool_monitoring\registered_metric;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class exporter {
     /**
@@ -58,9 +58,9 @@ class exporter {
     }
 
     /**
-     * Exports the provided metric in the Prometheus text format including `HELP` and `TYPE` comments.
+     * Exports the provided metric in the Prometheus text format, including `HELP` and `TYPE` comments.
      *
-     * @see https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
      *
      * @param registered_metric $metric Instance of the metric to export.
      * @return string Prometheus text format for a single metric.

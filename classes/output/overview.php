@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring\output;
@@ -47,7 +47,7 @@ use core_tag_tag;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final readonly class overview implements renderable, templatable {
     /**
@@ -66,10 +66,10 @@ final readonly class overview implements renderable, templatable {
     ) {}
 
     /**
-     * Generate a URL to the current overview with an additional tag in the filter.
+     * Generates a URL to the current overview with an additional tag in the filter.
      *
-     * @param core_tag_tag $tag The new tag.
-     * @return moodle_url
+     * @param core_tag_tag $tag New tag.
+     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} and the new `$tag`.
      * @throws moodle_exception
      */
     private function add_tag_url(core_tag_tag $tag): moodle_url {
@@ -81,10 +81,10 @@ final readonly class overview implements renderable, templatable {
     }
 
     /**
-     * Generate a URL to the current overview with one tag removed from the filter.
+     * Generates a URL to the current overview with one tag removed from the filter.
      *
-     * @param core_tag_tag $tag The tag to remove.
-     * @return moodle_url
+     * @param core_tag_tag $tag Tag to remove.
+     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} minus the `$tag`.
      * @throws moodle_exception
      */
     private function remove_tag_url(core_tag_tag $tag): moodle_url {
@@ -101,7 +101,7 @@ final readonly class overview implements renderable, templatable {
      * {@inheritDoc}
      *
      * @param renderer_base $output
-     * @return array
+     * @return array<string, mixed> Template context.
      * @throws moodle_exception
      */
     #[\Override]

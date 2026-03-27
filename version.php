@@ -17,14 +17,14 @@
 /**
  * Plugin version and other meta-data are defined here.
  *
- * @package     tool_monitoring
- * @copyright   2025 MootDACH DevCamp
- *              Daniel Fainberg <d.fainberg@tu-berlin.de>
- *              Martin Gauk <martin.gauk@tu-berlin.de>
- *              Sebastian Rupp <sr@artcodix.com>
- *              Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *              Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
  * {@noinspection PhpUndefinedVariableInspection}
  */

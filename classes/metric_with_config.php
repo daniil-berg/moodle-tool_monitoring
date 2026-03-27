@@ -24,7 +24,7 @@
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_monitoring;
@@ -35,8 +35,8 @@ use tool_monitoring\exceptions\metric_config_not_implemented;
 /**
  * Extends a {@see metric} allowing it to define a custom {@see metric_config} for itself.
  *
- * For convenience and type safety, the {@see get_config} method allows subclasses to parse their configuration,
- * typically from within the {@see metric::calculate} method.
+ * For convenience and type safety, the {@see self::parse_config `parse_config`} method allows subclasses to retrieve their
+ * configuration object, typically from within the {@see static::calculate `calculate`} method.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -45,10 +45,10 @@ use tool_monitoring\exceptions\metric_config_not_implemented;
  *             Sebastian Rupp <sr@artcodix.com>
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class metric_with_config extends metric {
-    /** @var string|null Metric-specific config in JSON format. */
+    /** @var string|null Metric-specific config in JSON format; subclasses _should_ never write to this. */
     public string|null $configjson = null;
 
     /**

@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin administration pages are defined here.
+ * Declarations of admin settings for the plugin.
+ *
+ * @link https://moodledev.io/docs/apis/subsystems/admin Moodle docs Admin subsystem
  *
  * @package     monitoringexporter_prometheus
  * @copyright   2025 MootDACH DevCamp
@@ -35,8 +37,8 @@ if ($hassiteconfig) {
     $settings->add(
         new admin_setting_configpasswordunmask(
             name: 'monitoringexporter_prometheus/prometheus_token',
-            visiblename: get_string('settings:token', 'monitoringexporter_prometheus'),
-            description: get_string('settings:token_desc', 'monitoringexporter_prometheus'),
+            visiblename: new lang_string('settings:token', 'monitoringexporter_prometheus'),
+            description: new lang_string('settings:token_desc', 'monitoringexporter_prometheus'),
             defaultsetting: '',
         )
     );

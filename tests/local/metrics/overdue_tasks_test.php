@@ -66,13 +66,6 @@ final class overdue_tasks_test extends advanced_testcase {
         self::assertSame(metric_type::GAUGE, $metric->get_type());
     }
 
-    public function test_get_description(): void {
-        $metric = new overdue_tasks();
-        $description = $metric->get_description();
-        self::assertSame('metric:overdue_tasks_description', $description->get_identifier());
-        self::assertSame('tool_monitoring', $description->get_component());
-    }
-
     public function test_calculate(): void {
         global $DB;
         $this->resetAfterTest();

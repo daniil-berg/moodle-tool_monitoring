@@ -55,13 +55,6 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
         self::assertSame(metric_type::GAUGE, $metric->get_type());
     }
 
-    public function test_get_description(): void {
-        $metric = new quiz_attempts_in_progress();
-        $description = $metric->get_description();
-        self::assertSame('metric:quiz_attempts_in_progress_description', $description->get_identifier());
-        self::assertSame('tool_monitoring', $description->get_component());
-    }
-
     public function test_calculate(): void {
         global $DB;
         $this->resetAfterTest();

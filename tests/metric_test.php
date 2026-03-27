@@ -32,6 +32,8 @@
 namespace tool_monitoring;
 
 use advanced_testcase;
+use core\exception\coding_exception;
+use core\lang_string;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\hook\metric_collection;
@@ -66,10 +68,43 @@ final class metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see metric::get_description} method.
+     *
+     * @param class-string<metric> $class Metric class name.
+     * @param lang_string $expected Expected return value.
+     * @throws coding_exception
+     */
+    #[DataProvider('provider_test_get_description')]
+    public function test_get_description(string $class, lang_string $expected): void {
+        $description = $class::get_description();
+        self::assertEquals($expected, $description);
+        self::assertSame($expected->get_identifier(), $description->get_identifier());
+        self::assertSame($expected->get_component(), $description->get_component());
+    }
+
+    /**
+     * Provides test data for the {@see test_get_description} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_get_description(): array {
+        return [
+            [
+                'class'    => overdue_tasks::class,
+                'expected' => new lang_string('metric:overdue_tasks_desc', 'tool_monitoring'),
+            ],
+            [
+                'class'    => users_online::class,
+                'expected' => new lang_string('metric:users_online_desc', 'tool_monitoring'),
+            ],
+        ];
+    }
+
+    /**
      * Tests the {@see metric::get_name} method.
      *
      * @param class-string<metric> $class Metric class name.
-     * @param string $expected Expected return value name.
+     * @param string $expected Expected return value.
      */
     #[DataProvider('provider_test_get_name')]
     public function test_get_name(string $class, string $expected): void {
@@ -102,7 +137,7 @@ final class metric_test extends advanced_testcase {
      * Tests the {@see metric::get_component} method.
      *
      * @param class-string<metric> $class Metric class name.
-     * @param string $expected Expected return value name.
+     * @param string $expected Expected return value.
      */
     #[DataProvider('provider_test_get_component')]
     public function test_get_component(string $class, string $expected): void {

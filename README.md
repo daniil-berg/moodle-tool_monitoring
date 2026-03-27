@@ -169,7 +169,6 @@ Let's say we have our own `local_example` plugin and the metric class is suppose
 ```php
 namespace local_example\metrics;
 
-use core\lang_string;
 use tool_monitoring\metric;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
@@ -180,10 +179,6 @@ use tool_monitoring\metric_value;
 class blocks_used extends metric {
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
-    }
-
-    public static function get_description(): lang_string {
-        return new lang_string('metric:blocks_used_help', 'local_example');
     }
 
     public function calculate(): array {
@@ -214,8 +209,9 @@ We want to partition the metric by the block _name_ and therefore return an arra
 The description is what is shown in the admin dashboard.
 It is also what the `monitoringexporter_prometheus` exporter uses to generate its metric `HELP` string.
 
-In our example above, we return the [localized string][moodle docs string api] with the ID `metric:blocks_used_help`.
-We just need to actually add the text to be displayed to the plugin's language file.
+By default, a metric is expected to come with a [localized string][moodle docs string api] with the ID `"metric:{$name}_desc"` where `{$name}` is the name of the metric.
+In our example above, there needs to be a string with the ID `metric:blocks_used_desc`.
+So we need to actually add the text to be displayed to the plugin's language file.
 
 <details open>
   <summary><code>lang/en/local_example.php</code> (Click to expand/collapse)</summary>
@@ -223,10 +219,13 @@ We just need to actually add the text to be displayed to the plugin's language f
 ```php
 defined('MOODLE_INTERNAL') || die();
 // ...
-$string['metric:blocks_used_help'] = 'Current number of blocks used on the site.';
+$string['metric:blocks_used_desc'] = 'Current number of blocks used on the site.';
 ```
 
 </details>
+
+> [!TIP]
+> You can specify a different string by overriding the `get_description` method in your metric class.
 
 #### Registering the metric
 
@@ -365,10 +364,6 @@ use tool_monitoring\metric_with_config;
 class blocks_used extends metric_with_config {
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
-    }
-
-    public static function get_description(): lang_string {
-        return new lang_string('metric:blocks_used_help', 'local_example');
     }
 
     public function calculate(): metric_value {

@@ -30,6 +30,7 @@
 namespace tool_monitoring;
 
 use core\component;
+use core\exception\coding_exception;
 use core\lang_string;
 use tool_monitoring\hook\metric_collection;
 use Traversable;
@@ -88,13 +89,6 @@ abstract class metric {
     abstract public function calculate(): iterable|metric_value;
 
     /**
-     * Returns the localized description of the metric.
-     *
-     * @return lang_string Metric description/help text.
-     */
-    abstract public static function get_description(): lang_string;
-
-    /**
      * Returns the type of the metric.
      *
      * @return metric_type
@@ -102,10 +96,27 @@ abstract class metric {
     abstract public static function get_type(): metric_type;
 
     /**
+     * Returns the localized description of the metric.
+     *
+     * Subclasses may override this. Defaults to a language string with the ID `"metric:{$name}_desc"` where `$name` is the
+     * metric's name as returned by the {@see static::get_name `get_name`} method, residing in the language file of the defining
+     * component as returned by the {@see static::get_component `get_component`} method.
+     *
+     * @return lang_string Metric description/help text.
+     * @throws coding_exception
+     */
+    public static function get_description(): lang_string {
+        $name = static::get_name();
+        return new lang_string("metric:{$name}_desc", static::get_component());
+    }
+
+    /**
      * Returns the name of the metric to be used as an identifier.
      *
      * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the defining component as returned by {@see get_component}; it _must_ be a maximum of 100 characters long.
+     * the defining component as returned by the {@see static::get_component `get_component`} method; it _must_ be no longer than
+     * 100 characters.
+     *
      * Defaults to the unqualified class name.
      *
      * @return string Unique metric name/identifier.
@@ -119,7 +130,7 @@ abstract class metric {
     }
 
     /**
-     * Returns the name of the Moodle component, i.e. the plugin or core component, which defines this metric.
+     * Returns the name of the Moodle component/plugin, which defines the metric.
      *
      * @return string Moodle component name.
      */

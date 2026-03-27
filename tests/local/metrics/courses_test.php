@@ -55,13 +55,6 @@ final class courses_test extends advanced_testcase {
         self::assertSame(metric_type::GAUGE, $metric->get_type());
     }
 
-    public function test_get_description(): void {
-        $metric = new courses();
-        $description = $metric->get_description();
-        self::assertSame('metric:courses_description', $description->get_identifier());
-        self::assertSame('tool_monitoring', $description->get_component());
-    }
-
     public function test_calculate(): void {
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();

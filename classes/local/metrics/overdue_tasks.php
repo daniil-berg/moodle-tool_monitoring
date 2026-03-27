@@ -29,7 +29,6 @@
 
 namespace tool_monitoring\local\metrics;
 
-use core\lang_string;
 use dml_exception;
 use Generator;
 use tool_monitoring\metric;
@@ -52,26 +51,18 @@ use tool_monitoring\metric_value;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class overdue_tasks extends metric {
-    /**
-     * {@inheritDoc}
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('metric:overdue_tasks_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    #[\Override]
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
     /**
-     * {@inheritDoc}
+     * Produces the current metric value.
      *
      * @return Generator<metric_value> Yields one {@see metric_value} for adhoc and then one for scheduled tasks.
      * @throws dml_exception
      */
+    #[\Override]
     public function calculate(): Generator {
         global $DB;
         $where = 'nextruntime <= :next_runtime';

@@ -30,7 +30,6 @@
 namespace tool_monitoring\local\metrics;
 
 use core\exception\coding_exception;
-use core\lang_string;
 use dml_exception;
 use tool_monitoring\exceptions\metric_config_not_implemented;
 use tool_monitoring\metric_type;
@@ -50,28 +49,20 @@ use tool_monitoring\metric_with_config;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class users_online extends metric_with_config {
-    /**
-     * {@inheritDoc}
-     */
+    #[\Override]
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('metric:users_online_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
+     * Produces the current metric values.
      *
      * @return metric_value[] One metric value per configured time window, labeled with that same time window, in ascending order.
      * @throws coding_exception
      * @throws dml_exception
      * @throws metric_config_not_implemented
      */
+    #[\Override]
     public function calculate(): array {
         global $DB;
         $config = $this->parse_config(users_online_config::class);
@@ -97,9 +88,12 @@ class users_online extends metric_with_config {
     }
 
     /**
-     * {@inheritDoc}
-     * {@noinspection PhpUnhandledExceptionInspection}
+     * Returns the default config for the metric.
+     *
+     * @return users_online_config Config object.
+     * @throws coding_exception
      */
+    #[\Override]
     public static function get_default_config(): users_online_config {
         return new users_online_config(60, 300, 900, 3600);
     }

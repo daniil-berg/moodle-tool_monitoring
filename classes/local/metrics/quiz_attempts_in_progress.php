@@ -30,7 +30,6 @@
 namespace tool_monitoring\local\metrics;
 
 use core\exception\coding_exception;
-use core\lang_string;
 use dml_exception;
 use tool_monitoring\exceptions\metric_config_not_implemented;
 use tool_monitoring\metric_type;
@@ -53,29 +52,20 @@ use tool_monitoring\metric_with_config;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class quiz_attempts_in_progress extends metric_with_config {
-    /**
-     * {@inheritDoc}
-     */
+    #[\Override]
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('metric:quiz_attempts_in_progress_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
+     * Produces the current metric value.
      *
-     * @return metric_value
+     * @return metric_value Number of ongoing quiz attempts within the configured time windows.
      * @throws coding_exception
      * @throws dml_exception
      * @throws metric_config_not_implemented
-     * /
      */
+    #[\Override]
     public function calculate(): metric_value {
         global $DB;
         $config = $this->parse_config(quiz_attempts_in_progress_config::class);
@@ -95,9 +85,7 @@ class quiz_attempts_in_progress extends metric_with_config {
         );
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    #[\Override]
     public static function get_default_config(): quiz_attempts_in_progress_config {
         return new quiz_attempts_in_progress_config();
     }

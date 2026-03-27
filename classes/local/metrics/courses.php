@@ -29,7 +29,6 @@
 
 namespace tool_monitoring\local\metrics;
 
-use core\lang_string;
 use dml_exception;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric;
@@ -48,26 +47,18 @@ use tool_monitoring\metric_value;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class courses extends metric {
-    /**
-     * {@inheritDoc}
-     */
+    #[\Override]
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public static function get_description(): lang_string {
-        return new lang_string('metric:courses_description', 'tool_monitoring');
-    }
-
-    /**
-     * {@inheritDoc}
+     * Produces the current metric values.
      *
-     * @return metric_value[]
+     * @return metric_value[] Two metric values, one for visible courses and one for hidden courses.
      * @throws dml_exception
      */
+    #[\Override]
     public function calculate(): array {
         global $DB;
         $sql = "SELECT SUM(visible)                                 AS numvisible,

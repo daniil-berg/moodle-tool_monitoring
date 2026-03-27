@@ -44,17 +44,17 @@ $string['event:metric_config_updated'] = 'Metric configuration updated';
 $string['event:metric_disabled'] = 'Metric disabled';
 $string['event:metric_enabled'] = 'Metric enabled';
 
-$string['metric:courses_description'] = 'Current number of courses';
-$string['metric:overdue_tasks_description'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
+$string['metric:courses_desc'] = 'Current number of courses';
+$string['metric:overdue_tasks_desc'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
 $string['metric:quiz_attempts_in_progress_config:maxdeadlineseconds'] = 'Maximum deadline time';
 $string['metric:quiz_attempts_in_progress_config:maxdeadlineseconds_help'] = 'Do not count attempts that have a deadline in more than this number of seconds.';
 $string['metric:quiz_attempts_in_progress_config:maxidleseconds'] = 'Maximum idle time';
 $string['metric:quiz_attempts_in_progress_config:maxidleseconds_help'] = 'Do not count attempts that are idle longer than this number of seconds.';
-$string['metric:quiz_attempts_in_progress_description'] = 'Number of ongoing quiz attempts with an approaching deadline';
-$string['metric:user_accounts_description'] = 'Current number of user accounts';
+$string['metric:quiz_attempts_in_progress_desc'] = 'Number of ongoing quiz attempts with an approaching deadline';
+$string['metric:user_accounts_desc'] = 'Current number of user accounts';
 $string['metric:users_online_config:timewindows'] = 'Time window (seconds)';
 $string['metric:users_online_config:timewindows_help'] = 'Number of seconds since the last user access for that user to be counted as online. Multiple values can be specified, separated by commas; the metric will produce a separate metric value for each time window.';
-$string['metric:users_online_description'] = 'Number of users that have recently accessed the site';
+$string['metric:users_online_desc'] = 'Number of users that have recently accessed the site';
 
 $string['monitoring:manage_metrics'] = 'Manage and configure monitoring metrics';
 

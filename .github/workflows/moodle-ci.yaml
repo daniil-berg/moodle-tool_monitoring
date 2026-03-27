@@ -4,13 +4,21 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '**.md'
-      - '.gitignore'
+    paths:
+      - '**.feature'
+      - '**.js'
+      - '**.mustache'
+      - '**.php'
+      - '.github/workflows/*'
+      - 'db/*'
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - '.gitignore'
+    paths:
+      - '**.feature'
+      - '**.js'
+      - '**.mustache'
+      - '**.php'
+      - '.github/workflows/*'
+      - 'db/*'
   schedule:
     # At 00:00 on the 1st of every month
     - cron: '0 0 1 * *'

@@ -70,7 +70,7 @@ For other options and general plugin installation instructions, see the [officia
 
 The admin dashboard can be found at `/admin/tool/monitoring` or by navigating to _Site administration_ > _Plugins_ > _Admin tools_ > _Monitoring_ > _Overview_.
 
-📄 ==**TODO: Screenshot Admin Overview**==
+![Metrics Overview](docs/img/screenshot_metrics_overview.png)
 
 There you can view all registered metrics, enable/disable them, add/remove metric tags, and configure some metrics individually.
 

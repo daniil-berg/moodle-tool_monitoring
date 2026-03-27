@@ -443,6 +443,33 @@ It should show the default values we defined for all options.
 
 🚧 TODO
 
+### Writing a custom exporter sub-plugin (optional)
+
+Out of the box `tool_monitoring` only comes with a Prometheus [exporter](#exporter).
+If you are using a different monitoring backend, you will need to provide a custom [exporter sub-plugin](#exporter-sub-plugins).
+
+How exactly such a plugin should look depends heavily on the specifics of your monitoring backend.
+For example, since Prometheus is a pull-based monitoring backend, the exporter provides a route/endpoint for Prometheus to periodically query.
+
+In general, the only requirements for an exporter sub-plugin are
+- the `version.php` as well as a minimal language file (as with any other plugin),
+- and that the plugin is placed in the `exporter/` directory of `tool_monitoring`.
+
+There is no common exporter interface, so you have maximum flexibility in the rest of the setup.
+If you have admin settings to configure, a `settings.php` script placed in the plugin directory will have access to a dedicated `admin_settingpage` via the `$settings` variable.
+That page will be added under _Plugins_ > _Admin tools_ > _Monitoring_ > _Available Exporters_ and named the same as the sub-plugin.
+
+Since any exporter will need access to the actual metrics available in the system, at some point it should probably make use of the [`metrics_manager`][. metrics_manager].
+Instantiating it and calling its `fetch` method will be enough in most cases.
+That will store all [`registered_metric`][. registered_metric] instances in its `metrics` property.
+
+To calculate and retrieve the current value(s) of a given metric, the associated `registered_metric` instance just needs to be iterated over.
+Iteration will yield the [`metric_value`][. metric_value] objects.
+
+> [!TIP]
+> You can look at how the Prometheus exporter does this in its [`exporter`][. exporter] class.
+> Its `export` method receives the `metrics_manager::$metrics` array as an argument after the route controller called `fetch` on the manager.
+
 ## Terminology
 
 ### Metric
@@ -544,7 +571,8 @@ For convenience, the static `metric::collect` method can be used as the [hook ca
 
 To allow all metrics to be individually enabled/disabled and more [advanced metrics](#configurable-metrics-advanced) to have their own persistent configuration, each concrete metric is associated with a row in the `tool_monitoring_metrics` database table.
 
-The `registered_metric` class is an internal wrapper for metrics managed by `tool_monitoring` and maps instances to rows in the database table.
+The [`registered_metric`][. registered_metric] class is a wrapper for metrics managed by `tool_monitoring` and maps instances to rows in the database table.
+It implements the `IteratorAggregate` interface and iterating over an instance will call the `calculate` method of the underlying `metric` and pass through the value(s).
 
 ### Central `metrics_manager`
 
@@ -590,6 +618,7 @@ You should have received a copy of the GNU General Public License along with `to
 
 **Code, tests, and documentation written by and for humans.** 🚫🤖
 
+[. exporter]: exporter/prometheus/classes/exporter.php
 [. hook/metric_collection]: classes/hook/metric_collection.php
 [. metric]: classes/metric.php
 [. metric_config]: classes/metric_config.php
@@ -597,6 +626,7 @@ You should have received a copy of the GNU General Public License along with `to
 [. metric_value]: classes/metric_value.php
 [. metric_with_config]: classes/metric_with_config.php
 [. metrics_manager]: classes/metrics_manager.php
+[. registered_metric]: classes/registered_metric.php
 [. simple_metric_config]: classes/simple_metric_config.php
 [grafana oss home]: https://grafana.com/oss/grafana
 [moodle docs blocks]: https://docs.moodle.org/en/Blocks

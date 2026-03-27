@@ -13,10 +13,12 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
 - [Installation](#installation)
 - [Usage](#usage)
   - [Admin Settings](#admin-settings)
+  - [Grouping metrics with tags (optional)](#grouping-metrics-with-tags-optional)
   - [Prometheus configuration](#prometheus-configuration)
+  - [Setting up a Grafana dashboard](#setting-up-a-grafana-dashboard)
   - [Adding a custom metric](#adding-a-custom-metric)
   - [Making a metric configurable (advanced)](#making-a-metric-configurable-advanced)
-  - [Grouping metrics with tags (optional)](#grouping-metrics-with-tags-optional)
+  - [Writing a custom exporter sub-plugin (advanced)](#writing-a-custom-exporter-sub-plugin-advanced)
 - [Terminology](#terminology)
   - [Metric](#metric)
   - [Metric value](#metric-value)
@@ -96,7 +98,7 @@ Some metrics have their own specific configuration options.
 
 #### Exporters
 
-The pre-installed Prometheus exporter has its own settings under _Site administration_ > _Plugins_ > _Admin tools_ > _Monitoring_ > _Exporter Prometheus_.
+The pre-installed Prometheus exporter has its own settings under _Site administration_ > _Plugins_ > _Admin tools_ > _Monitoring_ > _Available Exporters_ > _Prometheus Exporter_.
 
 The actual Prometheus endpoint is immediately accessible and can be reached at the route `/monitoringexporter_prometheus/metrics`.
 
@@ -109,6 +111,10 @@ So if your Moodle web root is `https://example.com` and you set the `prometheus_
 > This relies on the router and your webserver being properly configured.
 > If not, the endpoint is reached at `/r.php/monitoringexporter_prometheus/metrics`.
 > See the relevant [Moodle documentation][moodle docs routing config] for details.
+
+### Grouping metrics with tags (optional)
+
+🚧 TODO
 
 ### Prometheus configuration
 
@@ -439,11 +445,7 @@ The `blocks_used` metric should display a little gear icon in the admin dashboar
 Clicking on it will open a form with our configuration options.
 It should show the default values we defined for all options.
 
-### Grouping metrics with tags (optional)
-
-🚧 TODO
-
-### Writing a custom exporter sub-plugin (optional)
+### Writing a custom exporter sub-plugin (advanced)
 
 Out of the box `tool_monitoring` only comes with a Prometheus [exporter](#exporter).
 If you are using a different monitoring backend, you will need to provide a custom [exporter sub-plugin](#exporter-sub-plugins).

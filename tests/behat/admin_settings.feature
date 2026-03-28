@@ -1,5 +1,5 @@
 @tool @tool_monitoring @javascript
-Feature: Administering metrics via the admin panel.
+Feature: Administering metrics
 
   Background:
     Given the following "users" exist:
@@ -9,7 +9,7 @@ Feature: Administering metrics via the admin panel.
       | user     | role    | contextlevel | reference |
       | manager1 | manager | System       |           |
 
-  Scenario: Viewing the metrics dashboard, enabling and disabling metrics.
+  Scenario: Registered metrics are visible in the overview and disabled by default
     Given I am logged in as "manager1"
     And I navigate to "Plugins > Admin tools > Monitoring > Overview" in site administration
     Then "Overview of Available Metrics" "heading" should be visible
@@ -47,6 +47,7 @@ Feature: Administering metrics via the admin panel.
     And I should not see "tool_monitoring_user_accounts"
     And I should not see "tool_monitoring_users_online"
 
+  Scenario: Enabling/disabling metrics makes them appear/disappear in the Prometheus export
     Given I am logged in as "manager1"
     # Enable the `courses` and `users_online` metrics.
     When I navigate to "Plugins > Admin tools > Monitoring > Overview" in site administration
@@ -90,7 +91,7 @@ Feature: Administering metrics via the admin panel.
     And I should not see "tool_monitoring_user_accounts"
     And I should not see "tool_monitoring_users_online"
 
-  Scenario: Configuring users_online metric.
+  Scenario: Changing a metric-specific config affects the Prometheus export
     Given I am logged in as "manager1"
     And I navigate to "Plugins > Admin tools > Monitoring > Overview" in site administration
     Then "Overview of Available Metrics" "heading" should be visible

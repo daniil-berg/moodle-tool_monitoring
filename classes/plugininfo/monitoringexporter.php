@@ -69,9 +69,8 @@ class monitoringexporter extends base {
      */
     #[\Override]
     public function load_settings(part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig): void {
-        global $ADMIN, $CFG;
+        global $ADMIN;
         /** @var admin_root $ADMIN */
-        require_once("$CFG->dirroot/mod/assign/adminlib.php");
         if (!$this->is_installed_and_upgraded()) {
             return;
         }

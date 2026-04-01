@@ -33,13 +33,13 @@ use tool_monitoring\metrics_manager;
 use tool_monitoring\output\overview;
 
 require_once(__DIR__ . '/../../../config.php');
+require_once($CFG->libdir . '/adminlib.php');
 
 global $PAGE, $OUTPUT;
 
 require_login();
 
-$context = context_system::instance();
-require_capability('tool/monitoring:manage_metrics', $context);
+require_capability('tool/monitoring:manage_metrics', context_system::instance());
 
 // Handle tags parameter for filtering of multiple tags.
 $taglist = optional_param('tag', '', PARAM_TAGLIST);
@@ -54,10 +54,9 @@ if ($taglist) {
     $tags = [];
 }
 
+admin_externalpage_setup('tool_monitoring_overview');
+$PAGE->set_secondary_active_tab('modules');
 $PAGE->set_url('/admin/tool/monitoring/', $params);
-$PAGE->set_context($context);
-$PAGE->set_title(get_string('settings:monitoring_metrics', 'tool_monitoring'));
-$PAGE->set_heading(get_string('settings:monitoring_metrics', 'tool_monitoring'));
 
 $overview = new overview(metrics: $manager->metrics, tags: $manager->tags);
 echo $OUTPUT->header();

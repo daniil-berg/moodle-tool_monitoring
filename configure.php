@@ -34,20 +34,18 @@ use tool_monitoring\metrics_manager;
 use tool_monitoring\output\configure;
 
 require_once(__DIR__ . '/../../../config.php');
+require_once($CFG->libdir . '/adminlib.php');
 
 global $OUTPUT, $PAGE;
 
 require_login();
 
-$context = context_system::instance();
-require_capability('tool/monitoring:manage_metrics', $context);
+require_capability('tool/monitoring:manage_metrics', context_system::instance());
 
 $qualifiedname = required_param('metric', PARAM_ALPHAEXT);
+admin_externalpage_setup('tool_monitoring_overview');
+$PAGE->set_secondary_active_tab('modules');
 $PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
-$PAGE->set_context($context);
-$PAGE->set_title(get_string('settings:monitoring_metrics', 'tool_monitoring'));
-$PAGE->set_heading(get_string('settings:monitoring_metrics', 'tool_monitoring'));
-$PAGE->add_body_class('limitedwidth');
 
 $manager = new metrics_manager();
 $metric = $manager->sync(delete: true)->metrics[$qualifiedname] ?? null;

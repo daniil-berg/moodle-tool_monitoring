@@ -71,7 +71,6 @@ $string['settings:manage_tags'] = 'Manage tags';
 $string['settings:metric_enabled'] = 'Metric enabled';
 $string['settings:metrics_overview'] = 'Overview of Available Metrics';
 $string['settings:metrics_overview_show_all'] = 'Show all metrics';
-$string['settings:monitoring_metrics'] = 'Monitoring Metrics';
 $string['settings:name'] = 'Name';
 $string['settings:tag_filter'] = 'Filter:';
 $string['settings:type'] = 'Type';

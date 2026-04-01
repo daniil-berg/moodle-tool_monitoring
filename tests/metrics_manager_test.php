@@ -525,4 +525,55 @@ final class metrics_manager_test extends advanced_testcase {
             ],
         ];
     }
+
+    /**
+     * Tests that deleting a metric also removes its tag associations.
+     *
+     * @throws dml_exception
+     */
+    public function test_sync_deletes_tag_instances_for_deleted_metrics(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        // Create new metric foo in the database.
+        $collection = new metric_collection();
+        $collection->add(self::named_metric_factory(name: 'foo'));
+        $manager = new metrics_manager($collection);
+        $manager->sync(collect: false, delete: false);
+        $metric = $manager->metrics['tool_monitoring_foo'];
+        self::assertNotNull($metric->id);
+
+        // Add tags alpha and beta to metric foo.
+        \core_tag_tag::set_item_tags(
+            component: 'tool_monitoring',
+            itemtype: 'metrics',
+            itemid: $metric->id,
+            context: \context_system::instance(),
+            tagnames: ['alpha', 'beta'],
+        );
+        self::assertSame(
+            2,
+            $DB->count_records('tag_instance', [
+                'component' => 'tool_monitoring',
+                'itemtype' => 'metrics',
+                'itemid' => $metric->id,
+            ]),
+        );
+
+        // Delete metric foo.
+        $deletemanager = new metrics_manager(new metric_collection());
+        $deletemanager->sync(collect: false, delete: true);
+        self::assertFalse($DB->record_exists(registered_metric::TABLE, ['id' => $metric->id]));
+
+        // Assert that tags are gone, too.
+        self::assertSame(
+            0,
+            $DB->count_records('tag_instance', [
+                'component' => 'tool_monitoring',
+                'itemtype' => 'metrics',
+                'itemid' => $metric->id,
+            ]),
+        );
+        self::assertSame([], \core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $metric->id));
+    }
 }

@@ -251,6 +251,9 @@ final class metrics_manager {
             // and `$unregistered` should contain those metrics from the collection that do not have a corresponding DB entry.
             // Optionally, delete the former and insert the latter.
             if ($delete) {
+                foreach ($existingrecords as $record) {
+                    core_tag_tag::remove_all_item_tags('tool_monitoring', 'metrics', $record->id);
+                }
                 [$oprphansql, $orphanparams] = $DB->get_in_or_equal(array_column($existingrecords, 'id'), onemptyitems: null);
                 $DB->delete_records_select(registered_metric::TABLE, "id $oprphansql", $orphanparams);
                 // TODO: Trigger individual deletion events here.

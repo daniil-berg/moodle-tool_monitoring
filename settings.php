@@ -36,9 +36,8 @@ use tool_monitoring\plugininfo\monitoringexporter;
 
 defined('MOODLE_INTERNAL') || die;
 
-global $ADMIN, $CFG;
+global $ADMIN;
 /** @var admin_root $ADMIN */
-require_once("$CFG->dirroot/mod/assign/adminlib.php");
 
 // Create a top-level plugin category and add it under the admin tools super-category.
 $monitoringcategory = new admin_category(

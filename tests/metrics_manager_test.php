@@ -538,18 +538,23 @@ final class metrics_manager_test extends advanced_testcase {
         $this->resetAfterTest();
 
         // Create new metric foo in the database.
-        $collection = new metric_collection();
-        $collection->add(self::named_metric_factory(name: 'foo'));
-        $manager = new metrics_manager($collection);
-        $manager->sync(collect: false, delete: false);
-        $metric = $manager->metrics['tool_monitoring_foo'];
-        self::assertNotNull($metric->id);
+        $data = [
+            'component'    => 'tool_monitoring',
+            'name'         => 'foo',
+            'enabled'      => true,
+            'config'       => null,
+            'timecreated'  => 30,
+            'timemodified' => 40,
+            'usermodified' => 0,
+        ];
+        $metricid = $DB->insert_record(registered_metric::TABLE, $data);
+        self::assertNotNull($metricid);
 
         // Add tags alpha and beta to metric foo.
         core_tag_tag::set_item_tags(
             component: 'tool_monitoring',
             itemtype: 'metrics',
-            itemid: $metric->id,
+            itemid: $metricid,
             context: context_system::instance(),
             tagnames: ['alpha', 'beta'],
         );
@@ -558,14 +563,14 @@ final class metrics_manager_test extends advanced_testcase {
             $DB->count_records('tag_instance', [
                 'component' => 'tool_monitoring',
                 'itemtype' => 'metrics',
-                'itemid' => $metric->id,
+                'itemid' => $metricid,
             ]),
         );
 
         // Delete metric foo.
         $deletemanager = new metrics_manager(new metric_collection());
         $deletemanager->sync(collect: false, delete: true);
-        self::assertFalse($DB->record_exists(registered_metric::TABLE, ['id' => $metric->id]));
+        self::assertFalse($DB->record_exists(registered_metric::TABLE, ['id' => $metricid]));
 
         // Assert that tags are gone, too.
         self::assertSame(
@@ -573,9 +578,9 @@ final class metrics_manager_test extends advanced_testcase {
             $DB->count_records('tag_instance', [
                 'component' => 'tool_monitoring',
                 'itemtype' => 'metrics',
-                'itemid' => $metric->id,
+                'itemid' => $metricid,
             ]),
         );
-        self::assertSame([], core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $metric->id));
+        self::assertSame([], core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $metricid));
     }
 }

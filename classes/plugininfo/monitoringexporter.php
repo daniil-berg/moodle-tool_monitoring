@@ -70,7 +70,7 @@ class monitoringexporter extends base {
     #[\Override]
     public function load_settings(part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig): void {
         global $ADMIN;
-        /** @var admin_root $ADMIN */
+
         if (!$this->is_installed_and_upgraded()) {
             return;
         }
@@ -86,6 +86,7 @@ class monitoringexporter extends base {
         include($this->full_path('settings.php'));
         if ($settings->settings != new stdClass()) {
             // Only if settings were actually added to the page, do we want to add it to the tree.
+            /** @var admin_root $ADMIN */
             $ADMIN->add($parentnodename, $settings);
         }
     }

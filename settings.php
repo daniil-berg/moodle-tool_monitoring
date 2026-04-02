@@ -37,13 +37,13 @@ use tool_monitoring\plugininfo\monitoringexporter;
 defined('MOODLE_INTERNAL') || die;
 
 global $ADMIN;
-/** @var admin_root $ADMIN */
 
 // Create a top-level plugin category and add it under the admin tools super-category.
 $monitoringcategory = new admin_category(
     name: 'tool_monitoring',
     visiblename: new lang_string('pluginname', 'tool_monitoring'),
 );
+/** @var admin_root $ADMIN */
 $ADMIN->add('tools', $monitoringcategory);
 
 // Create a link to the metrics overview page and add it as the first item in the monitoring category.

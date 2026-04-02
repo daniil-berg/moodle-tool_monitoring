@@ -32,7 +32,9 @@
 namespace tool_monitoring;
 
 use advanced_testcase;
+use context_system;
 use core\exception\coding_exception;
+use core_tag_tag;
 use dml_exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -544,11 +546,11 @@ final class metrics_manager_test extends advanced_testcase {
         self::assertNotNull($metric->id);
 
         // Add tags alpha and beta to metric foo.
-        \core_tag_tag::set_item_tags(
+        core_tag_tag::set_item_tags(
             component: 'tool_monitoring',
             itemtype: 'metrics',
             itemid: $metric->id,
-            context: \context_system::instance(),
+            context: context_system::instance(),
             tagnames: ['alpha', 'beta'],
         );
         self::assertSame(
@@ -574,6 +576,6 @@ final class metrics_manager_test extends advanced_testcase {
                 'itemid' => $metric->id,
             ]),
         );
-        self::assertSame([], \core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $metric->id));
+        self::assertSame([], core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $metric->id));
     }
 }

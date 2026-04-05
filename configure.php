@@ -29,7 +29,7 @@
  * {@noinspection PhpUnhandledExceptionInspection}
  */
 
-use core\exception\moodle_exception;
+use core\di;
 use tool_monitoring\metrics_manager;
 use tool_monitoring\output\configure;
 
@@ -47,11 +47,7 @@ admin_externalpage_setup('tool_monitoring_overview');
 $PAGE->set_secondary_active_tab('modules');
 $PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
 
-$manager = new metrics_manager();
-$metric = $manager->sync(delete: true)->metrics[$qualifiedname] ?? null;
-if (is_null($metric)) {
-    throw new moodle_exception('invalidrecord', 'error', '', 'tool_monitoring_metrics');
-}
+$metric = di::get(metrics_manager::class)->sync(delete: true)[$qualifiedname]; // May throw a metric_not_found exception.
 $configure = new configure($metric);
 if ($configure->process_form()) {
     redirect(new moodle_url('/admin/tool/monitoring/'));

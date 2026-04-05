@@ -29,16 +29,16 @@
 
 namespace tool_monitoring;
 
-use context_system;
 use core\exception\coding_exception;
 use core\lang_string;
-use core_tag_tag;
+use core_cache\cacheable_object_interface;
 use dml_exception;
 use IteratorAggregate;
 use JsonException;
 use moodleform;
 use stdClass;
 use tool_monitoring\form\config as config_form;
+use tool_monitoring\local\metrics_cache;
 use Traversable;
 
 /**
@@ -51,6 +51,7 @@ use Traversable;
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
  * @property-read class-string<metric_config>|null $configclass Name of the associated metric config class, if any.
+ * @property-read array<string, metric_tag> $tags Tags on the metric, indexed by their normalized name.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -61,7 +62,7 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class registered_metric implements IteratorAggregate {
+final class registered_metric implements cacheable_object_interface, IteratorAggregate {
     /** @var string Name of the mapped DB table. */
     public const TABLE = 'tool_monitoring_metrics';
 
@@ -77,11 +78,29 @@ final class registered_metric implements IteratorAggregate {
         'id',
     ];
 
+    /** @var array<string, string> Properties of interest that are cached; for convenience, keys and values are the same. */
+    private const CACHE_FIELDS = [
+        'id' => 'id',
+        'component' => 'component',
+        'name' => 'name',
+        'enabled' => 'enabled',
+        'config' => 'config',
+        'timecreated' => 'timecreated',
+        'timemodified' => 'timemodified',
+        'usermodified' => 'usermodified',
+        'metric' => 'metric',
+        'configclass' => 'configclass',
+        'tags' => 'tags',
+    ];
+
     /** @var metric Underlying metric that the instance wraps. */
     private metric $metric;
 
     /** @var class-string<metric_config>|null Name of the associated metric config class; `null` if not configurable. */
     private string|null $configclass = null;
+
+    /** @var array<string, metric_tag> Tags on the metric, indexed by their normalized name. */
+    private array $tags = [];
 
     /**
      * Constructor without additional logic.
@@ -119,35 +138,93 @@ final class registered_metric implements IteratorAggregate {
     /**
      * Constructs a new instance from the specified metric.
      *
-     * @param metric $metric Metric to wrap in the new instance; unless passed via `...$properties`, the `component`, `name`,
-     *                       and `config` properties are derived from the {@see metric::get_component}, {@see metric::get_name},
-     *                       and {@see metric::get_default_config} methods respectively.
-     * @param mixed ...$properties Properties to set/overwrite on the new instance; non-property names are ignored.
-     * @return self New instance from the provided metric and optional properties.
+     * @param metric $metric Metric to wrap in the new instance; the {@see self::$component `component`}, {@see self::$name `name`},
+     *                       {@see self::$configclass `configclass`}, and {@see self::$config `config`} properties are derived from
+     *                       {@see metric::get_component}, {@see metric::get_name}, and {@see metric::get_default_config}.
+     * @return self New instance from the provided metric.
+     * @throws JsonException The metric is configurable but it's default config could not be serialized.
      */
-    public static function from_metric(metric $metric, mixed ...$properties): self {
-        $arguments = [
-            'component' => $metric::get_component(),
-            'name'      => $metric::get_name(),
-        ];
-        foreach (self::FIELDS as $name) {
-            if (!array_key_exists($name, $properties)) {
+    public static function from_metric(metric $metric): self {
+        $instance = new self(component: $metric::get_component(), name: $metric::get_name());
+        $instance->set_metric($metric);
+        return $instance;
+    }
+
+    /**
+     * Constructs new instances from the provided metrics, querying the DB for corresponding records.
+     *
+     * The returned array is indexed by the qualified names of the provided metrics. If a metric is not found in the database,
+     * the corresponding instance will only have its {@see self::$component `component`} and {@see self::$name `name`} set, as well
+     * as its {@see self::$config `config`} and {@see self::$configclass `configclass`}, if the metric is configurable.
+     *
+     * @param metric ...$metrics Metrics to construct new instances from.
+     *                           Their qualified names **should** be unique, otherwise a warning will be emitted.
+     * @return array<string, self> Associative array of instances, indexed by the qualified names of the provided metrics.
+     * @throws dml_exception
+     * @throws JsonException A metric is configurable but it's default config could not be serialized.
+     */
+    public static function get_for_metrics(metric ...$metrics): array {
+        global $DB;
+        if (empty($metrics)) {
+            return [];
+        }
+        $results = [];
+        // Construct the `IN` expression and parameters from all unique component-name-combinations.
+        $inplaceholders = [];
+        $params = [];
+        foreach (array_values($metrics) as $i => $metric) {
+            // Create the instance now and store it in the `$results` array.
+            // If we find a matching record later, we will update that instance.
+            $instance = self::from_metric($metric);
+            $qname = $instance->qualifiedname;
+            if (array_key_exists($qname, $results)) {
+                trigger_error("More than one metric with the qualified name '$qname'", E_USER_WARNING);
                 continue;
             }
-            $arguments[$name] = $properties[$name];
+            $results[$qname] = $instance;
+            $inplaceholders[] = "(:component$i, :name$i)";
+            $params["component$i"] = $instance->component;
+            $params["name$i"] = $instance->name;
         }
-        $instance = new self(...$arguments);
+        $inlist = implode(', ', $inplaceholders);
+        $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
+        $records = $DB->get_records_select(
+            table:  self::TABLE,
+            select: "(component, name) IN ($inlist)",
+            params: $params,
+            fields: "$sqlqname AS qname, *"
+        );
+        $tags = metric_tag::get_for_metric_ids(...array_column($records, 'id'));
+        foreach ($records as $qname => $record) {
+            $instance = $results[$qname];
+            foreach (self::FIELDS as $name) {
+                $instance->$name = $record->$name;
+            }
+            $instance->tags = $tags[$record->id] ?? []; // Tags may be disabled.
+        }
+        return $results;
+    }
+
+    /**
+     * Assigns the provided metric to the instance.
+     *
+     * If the metric is configurable, sets the instance's {@see self::$configclass `configclass`} and {@see self::config `config`}
+     * properties consistently and updates the metric's {@see metric_with_config::$configjson `configjson`} property.
+     *
+     * @param metric $metric Metric to assign to the instance.
+     * @throws JsonException No {@see self::config `config`} was set and the default config could not be serialized.
+     */
+    private function set_metric(metric $metric): void {
         if ($metric instanceof metric_with_config) {
             $defaultconfig = $metric::get_default_config();
-            $instance->configclass = $defaultconfig::class;
-            if (!array_key_exists('config', $arguments)) {
-                // No config was passed to the constructor; fall back to the default.
-                $instance->config = json_encode($defaultconfig);
+            $this->configclass = $defaultconfig::class;
+            if (is_null($this->config)) {
+                // No config set yet; fall back to the default.
+                $this->config = json_encode($defaultconfig, JSON_THROW_ON_ERROR);
             }
-            $metric->configjson = $instance->config;
+            $metric->configjson = $this->config;
         }
-        $instance->metric = $metric;
-        return $instance;
+        $this->metric = $metric;
     }
 
     /**
@@ -161,7 +238,7 @@ final class registered_metric implements IteratorAggregate {
      *                              properties will be included in the output array.
      * @return array<string, mixed> DB-friendly data taken from the instance.
      */
-    private function to_db(array|null $fields = null): array {
+    public function to_db(array|null $fields = null): array {
         $data = [];
         if (!is_null($this->id)) {
             $data['id'] = $this->id;
@@ -182,6 +259,7 @@ final class registered_metric implements IteratorAggregate {
      * The {@see timemodified} and {@see usermodified} are set to the current time and user respectively before the update.
      *
      * @param string[]|null $fields If specified, only these fields will be updated.
+     * @throws coding_exception
      * @throws dml_exception
      */
     private function update(array|null $fields = null): void {
@@ -189,6 +267,7 @@ final class registered_metric implements IteratorAggregate {
         $this->timemodified = time();
         $this->usermodified = $USER->id;
         $DB->update_record(self::TABLE, $this->to_db($fields));
+        metrics_cache::set($this);
     }
 
     /**
@@ -239,7 +318,24 @@ final class registered_metric implements IteratorAggregate {
             'description'   => $this->metric::get_description(),
             'type'          => $this->metric::get_type(),
             'configclass'   => $this->configclass,
+            'tags'          => $this->tags,
             default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
+        };
+    }
+
+    /**
+     * Special-case {@see isset} check for some public-read-only properties of the metric.
+     *
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to check.
+     * @return bool `true` if the property is set, `false` otherwise.
+     */
+    public function __isset(string $name): bool {
+        return match ($name) {
+            'configclass', 'description', 'qualifiedname', 'type' => isset($this->metric),
+            'tags' => isset($this->tags),
+            default => false,
         };
     }
 
@@ -255,7 +351,11 @@ final class registered_metric implements IteratorAggregate {
             $formdata = [];
         }
         $formdata['enabled'] = $this->enabled;
-        $formdata['tags'] = core_tag_tag::get_item_tags_array('tool_monitoring', self::TABLE, $this->id);
+        $tags = [];
+        foreach ($this->tags as $tag) {
+            $tags[$tag->id] = $tag->get_display_name();
+        }
+        $formdata['tags'] = $tags;
         return $formdata;
     }
 
@@ -289,14 +389,7 @@ final class registered_metric implements IteratorAggregate {
                 $events[] = event\metric_config_updated::for_metric($this);
             }
         }
-        // This only actually performs DB queries if tags were either added, removed, or their order changed.
-        core_tag_tag::set_item_tags(
-            component: 'tool_monitoring',
-            itemtype: self::TABLE,
-            itemid: $this->id,
-            context: context_system::instance(),
-            tagnames: $formdata->tags
-        );
+        metric_tag::set_for_metric($this, ...$formdata->tags);
         if (empty($events)) {
             return;
         }
@@ -323,5 +416,48 @@ final class registered_metric implements IteratorAggregate {
         } else {
             yield from $values;
         }
+    }
+
+    #[\Override]
+    public function prepare_to_cache(): array {
+        $data = [];
+        foreach (self::CACHE_FIELDS as $field) {
+            $data[$field] = match ($field) {
+                'tags' => array_map(fn (metric_tag $tag): array => $tag->prepare_to_cache(), $this->tags),
+                'metric' => get_class($this->metric), // Store just the class name.
+                default => $this->$field,
+            };
+        }
+        return $data;
+    }
+
+    /**
+     * Constructs a new instance from data stored in the cache.
+     *
+     * @param array<string, mixed>|stdClass $data Data to use for construction.
+     * @return self New instance.
+     * @throws coding_exception Data has an unexpected type or is missing required fields.
+     * @throws JsonException Should never happen.
+     */
+    #[\Override]
+    public static function wake_from_cache(mixed $data): self {
+        if ($data instanceof stdClass) {
+            $data = (array) $data;
+        } else if (!is_array($data) || array_is_list($data)) {
+            throw new coding_exception('Received unexpected data type for registered_metric from cache: ' . gettype($data));
+        }
+        $missing = array_diff_key(self::CACHE_FIELDS, $data);
+        if (!empty($missing)) {
+            throw new coding_exception("Missing cache fields for registered_metric {$data['id']}: " . implode(', ', $missing));
+        }
+        $extra = array_diff_key($data, self::CACHE_FIELDS);
+        if (!empty($extra)) {
+            debugging("Unexpected cache fields for registered_metric {$data['id']}:" . implode(', ', $extra), DEBUG_DEVELOPER);
+        }
+        $instance = new self(...array_intersect_key($data, array_flip(self::FIELDS)));
+        $metric = new $data['metric'](); // Construct from the class name.
+        $instance->set_metric($metric);
+        $instance->tags = array_map(fn (array $tag): metric_tag => metric_tag::wake_from_cache($tag), $data['tags']);
+        return $instance;
     }
 }

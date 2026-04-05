@@ -15,9 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Registration of metrics via the Hooks API.
- *
- * @link https://moodledev.io/docs/apis/core/hooks#registering-of-hook-callbacks API Documentation
+ * Definition of the {@see metric_not_found} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,17 +27,30 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\hook\di_configuration;
-use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\metrics;
+namespace tool_monitoring\exceptions;
 
-defined('MOODLE_INTERNAL') || die();
-
-$callbacks = [
-    ['hook' => di_configuration::class, 'callback' => [metric_collection::class, 'configure_dependency_injection']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\courses::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\overdue_tasks::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\quiz_attempts_in_progress::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\user_accounts::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\users_online::class, 'collect']],
-];
+/**
+ * No metric with the given qualified name is registered.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class metric_not_found extends tool_monitoring_exception {
+    /**
+     * Passes the arguments through to the parent constructor as the {@see parent::$a `a`} context.
+     *
+     * @param string $qualifiedname Name of the missing metric.
+     */
+    public function __construct(
+        /** @var string Name of the missing metric. */
+        public readonly string $qualifiedname,
+    ) {
+        parent::__construct(a: ['qualifiedname' => $qualifiedname]);
+    }
+}

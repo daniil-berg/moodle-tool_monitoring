@@ -90,7 +90,7 @@ final class set_metric_enabled extends external_api {
         self::validate_context($context);
         require_capability('tool/monitoring:manage_metrics', $context);
         $manager = new metrics_manager();
-        $metric = $manager->sync()->metrics[$qualifiedname] ?? null;
+        $metric = $manager->sync()[$qualifiedname] ?? null;
         if (is_null($metric)) {
             throw new invalid_parameter_exception("Unknown metric '$qualifiedname'.");
         }

@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Displays the configuration form for a single metric.
+ * Cache definitions.
+ *
+ * @link https://moodledev.io/docs/apis/subsystems/muc#creating-a-definition Cache API documentation
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -25,37 +27,24 @@
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- *
- * {@noinspection PhpUnhandledExceptionInspection}
  */
 
-use core\exception\moodle_exception;
 use tool_monitoring\metrics_manager;
-use tool_monitoring\output\configure;
 
-require_once(__DIR__ . '/../../../config.php');
+defined('MOODLE_INTERNAL') || die();
 
-global $OUTPUT, $PAGE;
-
-require_login();
-
-$context = context_system::instance();
-require_capability('tool/monitoring:manage_metrics', $context);
-
-$qualifiedname = required_param('metric', PARAM_ALPHAEXT);
-$PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
-$PAGE->set_context($context);
-$PAGE->set_title(get_string('settings:monitoring_metrics', 'tool_monitoring'));
-$PAGE->set_heading(get_string('settings:monitoring_metrics', 'tool_monitoring'));
-$PAGE->add_body_class('limitedwidth');
-
-$manager = new metrics_manager();
-$metric = $manager->sync(delete: true)[$qualifiedname]; // May throw a metric_not_found exception.
-$configure = new configure($metric);
-if ($configure->process_form()) {
-    redirect(new moodle_url('/admin/tool/monitoring/'));
-}
-
-echo $OUTPUT->header();
-echo $OUTPUT->render($configure);
-echo $OUTPUT->footer();
+$definitions = [
+    'metrics' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'datasource' => metrics_manager::class,
+        'staticacceleration' => true,
+    ],
+    'metric_tags' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'staticacceleration' => true,
+    ],
+];

@@ -55,6 +55,10 @@ use tool_monitoring\local\testing\metric_settable_values;
  */
 #[CoversClass(metric::class)]
 final class metric_test extends advanced_testcase {
+    public function test___construct(): void {
+        self::fail("TODO: Write test to ensure constructor takes no arguments and is final!");
+    }
+
     public function test_collect(): void {
         $collection = new metric_collection();
         // The collection should not yet have the test metric.

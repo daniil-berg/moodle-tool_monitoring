@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Registration of metrics via the Hooks API.
+ * Description of event observers.
  *
- * @link https://moodledev.io/docs/apis/core/hooks#registering-of-hook-callbacks API Documentation
+ * @link https://docs.moodle.org/dev/Events_API#Event_observers Events API documentation
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,17 +29,34 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\hook\di_configuration;
-use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\metrics;
+use core\event\tag_added;
+use core\event\tag_created;
+use core\event\tag_deleted;
+use core\event\tag_removed;
+use core\event\tag_updated;
+use tool_monitoring\event\observer;
 
 defined('MOODLE_INTERNAL') || die();
 
-$callbacks = [
-    ['hook' => di_configuration::class, 'callback' => [metric_collection::class, 'configure_dependency_injection']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\courses::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\overdue_tasks::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\quiz_attempts_in_progress::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\user_accounts::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\users_online::class, 'collect']],
+$observers = [
+    [
+        'eventname' => tag_added::class,
+        'callback' => [observer::class, 'tag_instance_added_or_removed'],
+    ],
+    [
+        'eventname' => tag_created::class,
+        'callback' => [observer::class, 'tag_created_or_deleted_or_updated'],
+    ],
+    [
+        'eventname' => tag_deleted::class,
+        'callback' => [observer::class, 'tag_created_or_deleted_or_updated'],
+    ],
+    [
+        'eventname' => tag_removed::class,
+        'callback' => [observer::class, 'tag_instance_added_or_removed'],
+    ],
+    [
+        'eventname' => tag_updated::class,
+        'callback' => [observer::class, 'tag_created_or_deleted_or_updated'],
+    ],
 ];

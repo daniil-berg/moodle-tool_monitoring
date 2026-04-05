@@ -39,6 +39,8 @@ use dml_exception;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\local\metrics;
+use tool_monitoring\local\testing\custom_metric_config;
 use tool_monitoring\local\testing\metric_settable_values;
 use tool_monitoring\local\testing\metric_with_custom_config;
 
@@ -57,68 +59,128 @@ use tool_monitoring\local\testing\metric_with_custom_config;
 #[CoversClass(registered_metric::class)]
 final class registered_metric_test extends advanced_testcase {
     /**
-     * Tests the {@see registered_metric::from_metric} method.
+     * Tests the {@see registered_metric::get_for_metrics} method.
      *
-     * @param metric $metric Metric instance to pass to the `from_metric` method.
-     * @param array $arguments Additional arguments to unpack into to the `from_metric` method.
-     * @param array|string $expected Expected properties of the returned object or exception class name.
+     * @param array<array<string, string>> $indb DB records to insert before calling the method.
+     * @param array $metrics Metric instances to pass to the  method.
+     * @param array<string, array<string, string>> $expected Arrays of expected instance properties of the returned objects indexed
+     *                                                       by qualified name.
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws JsonException
      */
-    #[DataProvider('provider_test_from_metric')]
-    public function test_from_metric(metric $metric, array $arguments, array|string $expected): void {
-        if (is_string($expected)) {
-            $this->expectException($expected);
-            registered_metric::from_metric($metric, ...$arguments);
-            return;
-        }
-        $instance = registered_metric::from_metric($metric, ...$arguments);
-        foreach ($expected as $name => $value) {
-            self::assertEquals($value, $instance->$name);
+    #[DataProvider('provider_test_get_for_metrics')]
+    public function test_get_for_metrics(array $indb, array $metrics, array $expected): void {
+        global $DB;
+        $this->resetAfterTest();
+        $DB->insert_records(registered_metric::TABLE, $indb);
+        $instances = registered_metric::get_for_metrics(...$metrics);
+        self::assertCount(count($expected), $instances);
+        foreach ($expected as $qname => $properties) {
+            $instance = $instances[$qname] ?? null;
+            self::assertInstanceOf(registered_metric::class, $instance);
+            foreach ($properties as $name => $value) {
+                self::assertEquals($value, $instance->$name, "Unexpected $name on $qname instance");
+            }
         }
     }
 
     /**
-     * Provides test data for the {@see test_from_metric} method.
+     * Provides test data for the {@see test_get_for_metrics} method.
      *
      * @return array[] Arguments for the test method.
      */
-    public static function provider_test_from_metric(): array {
-        $metric = new metric_settable_values();
+    public static function provider_test_get_for_metrics(): array {
+        $defaults = [
+            'component'    => 'tool_monitoring',
+            'enabled'      => false,
+            'config'       => null,
+            'timecreated'  => null,
+            'timemodified' => null,
+            'usermodified' => null,
+        ];
+        $metricmissing = new metric_settable_values();
+        $metricquizattempts = new metrics\quiz_attempts_in_progress();
+        $metricuseraccounts = new metrics\user_accounts();
         return [
-            'No additional arguments' => [
-                'metric'    => $metric,
-                'arguments' => [],
-                'expected'  => [
-                    'id'           => null,
-                    'component'    => 'tool_monitoring',
-                    'name'         => 'metric_settable_values',
-                    'enabled'      => false,
-                    'config'       => null,
-                    'timecreated'  => null,
-                    'timemodified' => null,
-                    'usermodified' => null,
+            'No metrics provided' => [
+                'indb' => [
+                    [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'foo',
+                        'enabled'      => false,
+                        'timecreated'  => 1,
+                        'timemodified' => 1,
+                        'usermodified' => 1,
+                    ],
+                ],
+                'metrics' => [],
+                'expected' => [],
+            ],
+            'No records in the DB' => [
+                'indb' => [],
+                'metrics' => [
+                    $metricmissing,
+                    $metricquizattempts,
+                    $metricuseraccounts,
+                ],
+                'expected' => [
+                    'tool_monitoring_metric_settable_values' => [
+                        'name' => 'metric_settable_values',
+                    ] + $defaults,
+                    'tool_monitoring_quiz_attempts_in_progress' => [
+                        'name'   => 'quiz_attempts_in_progress',
+                        'config' => '{"maxidleseconds":1200,"maxdeadlineseconds":10800}',
+                    ] + $defaults,
+                    'tool_monitoring_user_accounts' => [
+                        'name' => 'user_accounts',
+                    ] + $defaults,
                 ],
             ],
-            'All arguments override values from metric' => [
-                'metric'    => $metric,
-                'arguments' => [
-                    'id'           => 9000,
-                    'component'    => 'foo',
-                    'name'         => 'bar',
-                    'enabled'      => true,
-                    'config'       => '{"a":"b"}',
-                    'timecreated'  => 123,
-                    'timemodified' => 456,
-                    'usermodified' => 789,
+            'Two records in the DB' => [
+                'indb' => [
+                    [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'quiz_attempts_in_progress',
+                        'enabled'      => true,
+                        'config'       => '{"maxidleseconds":1200,"maxdeadlineseconds":10800}',
+                        'timecreated'  => 123,
+                        'timemodified' => 456,
+                        'usermodified' => 1,
+                    ],
+                    [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'user_accounts',
+                        'enabled'      => false,
+                        'config'       => null,
+                        'timecreated'  => 1,
+                        'timemodified' => 1,
+                        'usermodified' => 1,
+                    ],
                 ],
-                'expected'  => [
-                    'id'           => 9000,
-                    'component'    => 'foo',
-                    'name'         => 'bar',
-                    'enabled'      => true,
-                    'config'       => '{"a":"b"}',
-                    'timecreated'  => 123,
-                    'timemodified' => 456,
-                    'usermodified' => 789,
+                'metrics' => [
+                    $metricmissing,
+                    $metricquizattempts,
+                    $metricuseraccounts,
+                ],
+                'expected' => [
+                    'tool_monitoring_metric_settable_values' => [
+                        'name' => 'metric_settable_values',
+                    ] + $defaults,
+                    'tool_monitoring_quiz_attempts_in_progress' => [
+                        'name'         => 'quiz_attempts_in_progress',
+                        'enabled'      => true,
+                        'config'       => '{"maxidleseconds":1200,"maxdeadlineseconds":10800}',
+                        'timecreated'  => 123,
+                        'timemodified' => 456,
+                        'usermodified' => 1,
+                    ] + $defaults,
+                    'tool_monitoring_user_accounts' => [
+                        'name'         => 'user_accounts',
+                        'timecreated'  => 1,
+                        'timemodified' => 1,
+                        'usermodified' => 1,
+                    ] + $defaults,
                 ],
             ],
         ];
@@ -128,6 +190,7 @@ final class registered_metric_test extends advanced_testcase {
      * Tests the {@see IteratorAggregate} implementation of the {@see registered_metric} class.
      *
      * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
+     * @throws JsonException
      */
     #[DataProvider('provider_test_iterator')]
     public function test_iterator(iterable|metric_value $testvalues): void {
@@ -204,11 +267,21 @@ final class registered_metric_test extends advanced_testcase {
         ];
     }
 
+    /**
+     * Tests the {@see registered_metric::__get} method.
+     *
+     * @throws coding_exception
+     * @throws JsonException
+     */
     public function test___get(): void {
         $instance = registered_metric::from_metric(new metric_settable_values());
         self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
         self::assertEquals(metric_settable_values::get_description(), $instance->description);
         self::assertSame(metric_settable_values::get_type(), $instance->type);
+        self::assertSame([], $instance->tags);
+        self::assertTrue(isset($instance->tags));
+        $instance = registered_metric::from_metric(new metric_with_custom_config());
+        self::assertSame(custom_metric_config::class, $instance->configclass);
     }
 
     /**
@@ -219,12 +292,14 @@ final class registered_metric_test extends advanced_testcase {
      * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
      * @throws dml_exception
      * @throws coding_exception
+     * @throws JsonException
      */
     #[DataProvider('provider_test_persist_enabled_state')]
     public function test_persist_enabled_state(bool $from, bool $to, array $events): void {
         global $DB, $USER;
         $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new metric_settable_values(), enabled: $from);
+        $metric = registered_metric::from_metric(new metric_settable_values());
+        $metric->enabled = $from;
         // Set modification time in the past and arbitrary user.
         $generator = $this->getDataGenerator();
         $creationtime = time() - 1000;
@@ -233,7 +308,7 @@ final class registered_metric_test extends advanced_testcase {
         $metric->timemodified = $creationtime;
         $metric->usermodified = $creationuser;
         // Insert record manually.
-        $metric->id = $DB->insert_record(registered_metric::TABLE, (array) $metric);
+        $metric->id = $DB->insert_record(registered_metric::TABLE, $metric->to_db());
         // Intercept the event here.
         $eventsink = $this->redirectEvents();
         $metric->persist_enabled_state($to);
@@ -348,14 +423,16 @@ final class registered_metric_test extends advanced_testcase {
         $metric->update_with_form_data((object) $formdata);
         $eventsink->close();
         $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
+        if (empty($events)) {
+            self::assertEquals($creationtime, $record->timemodified, "DB record timemodified unexpectedly changed");
+        } else {
+            // Time modified should have been updated.
+            self::assertGreaterThan($creationtime, $record->timemodified);
+        }
         // Check the expected values.
         foreach ($expected as $name => $value) {
-            self::assertEquals($value, $record->$name);
-            self::assertEquals($value, $metric->$name);
-        }
-        if (!empty($events)) {
-            // Time modified should have been updated as well.
-            self::assertGreaterThan($creationtime, $record->timemodified);
+            self::assertEquals($value, $record->$name, "Unexpected $name on DB record");
+            self::assertEquals($value, $metric->$name, "Unexpected $name on instance");
         }
         // Check that the events were triggered as expected.
         $actualevents = array_map(fn (base_event $event): string => $event::class, $eventsink->get_events());
@@ -366,13 +443,22 @@ final class registered_metric_test extends advanced_testcase {
      * Provides test data for the {@see test_update_with_form_data} method.
      *
      * @return array[] Arguments for the test method.
+     * @throws JsonException
      */
     public static function provider_test_update_with_form_data(): array {
-        $metric = new metric_settable_values();
-        $metricwithconfig = new metric_with_custom_config();
+        $metricenabled = registered_metric::from_metric(new metric_settable_values());
+        $metricenabled->enabled = true;
+        $metricdisabledwithconfig = registered_metric::from_metric(new metric_with_custom_config());
+        $metricdisabledwithconfig->config = '{"foo":"baz","spam":0}';
+        $metricenabledwithconfig = registered_metric::from_metric(new metric_with_custom_config());
+        $metricenabledwithconfig->enabled = true;
+        $metricenabledwithconfig->config = '{"foo":"baz","spam":0}';
+        $metricenabledwithoutconfig = registered_metric::from_metric(new metric_with_custom_config());
+        $metricenabledwithoutconfig->enabled = true;
+        $metricenabledwithoutconfig->config = '{}';
         return [
             'Enabled basic metric, nothing changed' => [
-                'metric'   => registered_metric::from_metric($metric, enabled: true),
+                'metric'   => $metricenabled,
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
@@ -384,7 +470,7 @@ final class registered_metric_test extends advanced_testcase {
                 'events'   => [],
             ],
             'Enabled basic metric, being disabled, arbitrary form data present' => [
-                'metric'   => registered_metric::from_metric($metric, enabled: true),
+                'metric'   => $metricenabled,
                 'formdata' => [
                     'enabled' => false,
                     'tags' => [],
@@ -400,7 +486,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Enabled configurable metric, nothing changed' => [
-                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{"foo":"baz","spam":0}'),
+                'metric'   => $metricenabledwithconfig,
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
@@ -414,7 +500,7 @@ final class registered_metric_test extends advanced_testcase {
                 'events'   => [],
             ],
             'Enabled configurable metric, having config updated' => [
-                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{}'),
+                'metric'   => $metricenabledwithoutconfig,
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
@@ -429,7 +515,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Enabled configurable metric, being disabled' => [
-                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: true, config: '{"foo":"baz","spam":0}'),
+                'metric'   => $metricenabledwithconfig,
                 'formdata' => [
                     'enabled' => false,
                     'tags' => [],
@@ -445,7 +531,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Disabled configurable metric, being enabled' => [
-                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: false, config: '{"foo":"baz","spam":0}'),
+                'metric'   => $metricenabledwithconfig,
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
@@ -461,7 +547,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Disabled configurable metric, being enabled and having config updated' => [
-                'metric'   => registered_metric::from_metric($metricwithconfig, enabled: false, config: '{"foo":"baz","spam":0}'),
+                'metric'   => $metricdisabledwithconfig,
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],

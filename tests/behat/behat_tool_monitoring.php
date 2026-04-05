@@ -30,7 +30,7 @@
  */
 
 use Behat\Step\Given;
-use tool_monitoring\registered_metric;
+use tool_monitoring\metric_tag;
 
 require_once(__DIR__ . '/../../../../../lib/behat/behat_base.php');
 
@@ -67,7 +67,7 @@ class behat_tool_monitoring extends behat_base {
         };
         $area = $DB->get_record(
             table: 'tag_area',
-            conditions: ['itemtype' => registered_metric::TABLE, 'component' => 'tool_monitoring'],
+            conditions: ['itemtype' => metric_tag::ITEM_TYPE, 'component' => 'tool_monitoring'],
             strictness: MUST_EXIST,
         );
         core_tag_area::update($area, ['enabled' => $enabled]);

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Registration of metrics via the Hooks API.
+ * Cache definitions.
  *
- * @link https://moodledev.io/docs/apis/core/hooks#registering-of-hook-callbacks API Documentation
+ * @link https://moodledev.io/docs/apis/subsystems/muc#creating-a-definition Cache API documentation
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,17 +29,22 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\hook\di_configuration;
-use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\metrics;
+use tool_monitoring\metrics_manager;
 
 defined('MOODLE_INTERNAL') || die();
 
-$callbacks = [
-    ['hook' => di_configuration::class, 'callback' => [metric_collection::class, 'configure_dependency_injection']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\courses::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\overdue_tasks::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\quiz_attempts_in_progress::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\user_accounts::class, 'collect']],
-    ['hook' => metric_collection::class, 'callback' => [metrics\users_online::class, 'collect']],
+$definitions = [
+    'metrics' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'datasource' => metrics_manager::class,
+        'staticacceleration' => true,
+    ],
+    'metric_tags' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'staticacceleration' => true,
+    ],
 ];

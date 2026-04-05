@@ -29,6 +29,8 @@
  * {@noinspection PhpUnhandledExceptionInspection}
  */
 
+use core\di;
+use tool_monitoring\metric_tag;
 use tool_monitoring\metrics_manager;
 use tool_monitoring\output\overview;
 
@@ -44,21 +46,22 @@ require_capability('tool/monitoring:manage_metrics', context_system::instance())
 // Handle tags parameter for filtering of multiple tags.
 $taglist = optional_param('tag', '', PARAM_TAGLIST);
 $params = [];
-$manager = new metrics_manager();
-$manager->sync(delete: true);
 if ($taglist) {
-    $tags = explode(',', $taglist);
+    $tagnames = explode(',', $taglist);
     $params['tag'] = $taglist;
-    $manager->fetch(collect: false, enabled: null, tagnames: $tags);
 } else {
-    $tags = [];
+    $tagnames = [];
 }
 
 admin_externalpage_setup('tool_monitoring_overview');
 $PAGE->set_secondary_active_tab('modules');
 $PAGE->set_url('/admin/tool/monitoring/', $params);
 
-$overview = new overview(metrics: $manager->metrics, tags: $manager->tags);
+$manager = di::get(metrics_manager::class)->sync(delete: true);
+$overview = new overview(
+    metrics: $manager->filter(tagnames: $tagnames),
+    tags: metric_tag::get_all_with_names(...$tagnames),
+);
 echo $OUTPUT->header();
 echo $OUTPUT->render($overview);
 echo $OUTPUT->footer();

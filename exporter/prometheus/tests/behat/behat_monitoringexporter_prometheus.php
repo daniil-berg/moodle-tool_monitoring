@@ -66,4 +66,5 @@ class behat_monitoringexporter_prometheus extends behat_base {
         }
         $this->getSession()->visit($this->locatePath($path));
     }
+    // TODO: Add a step to check the endpoint's response against a table of expected metrics quickly. Currently it is very slow.
 }

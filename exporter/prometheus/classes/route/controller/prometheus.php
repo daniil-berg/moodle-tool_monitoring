@@ -40,7 +40,6 @@ use monitoringexporter_prometheus\exporter as prometheus_exporter;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use tool_monitoring\exceptions\tag_not_found;
-use tool_monitoring\metrics_manager;
 
 /**
  * Provides the route for Prometheus to pull the current metrics.
@@ -74,8 +73,6 @@ class prometheus {
      * @param Request $request Incoming, server-side HTTP request.
      * @param Response $response Outgoing, server-side response; the returned response object is derived from this.
      * @return Response Plain text response in the Prometheus format.
-     * @throws coding_exception
-     * @throws dml_exception
      *
      * {@noinspection PhpUnused}
      */
@@ -110,18 +107,18 @@ class prometheus {
         if ($expectedtoken && $params['token'] !== $expectedtoken) {
             return $response->withStatus(403);
         }
-        $manager = new metrics_manager();
         if ($params['tag']) {
-            $tags = explode(',', $params['tag']);
+            $tagnames = explode(',', $params['tag']);
         } else {
-            $tags = [];
+            $tagnames = [];
         }
         try {
-            $metrics = $manager->fetch(tagnames: $tags)->metrics;
+            $body = Utils::streamFor(prometheus_exporter::export(...$tagnames));
         } catch (tag_not_found) {
             return $response->withStatus(422);
+        } catch (coding_exception | dml_exception) {
+            return $response->withStatus(500);
         }
-        $body = Utils::streamFor(prometheus_exporter::export($metrics));
         return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }
 }

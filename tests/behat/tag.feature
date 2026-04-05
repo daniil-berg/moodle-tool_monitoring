@@ -27,7 +27,7 @@ Feature: Tagging metrics
       | 1       | disabled                   | should not           |
       | 1       | enabled                    | should               |
 
-  Scenario: Tags can be added to metrics and the overview can be filtered by tags
+  Scenario: Metric tags can be added/removed and the overview can be filtered by tags
     Given I am logged in as "manager1"
     And I navigate to "Plugins > Admin tools > Monitoring > Overview" in site administration
     # Add tags to one metric.

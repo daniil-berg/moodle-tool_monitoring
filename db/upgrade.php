@@ -29,15 +29,17 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-use tool_monitoring\registered_metric;
+use core\exception\moodle_exception;
+use tool_monitoring\metric_tag;
 
 /**
  * Upgrade code for the monitoring tool.
  *
  * @param int $oldversion
  * @return bool
- * @throws ddl_exception
- * @throws dml_exception
+ * @throws moodle_exception
+ *
+ * {@noinspection PhpUnused}
  */
 function xmldb_tool_monitoring_upgrade(int $oldversion): bool {
     global $DB;
@@ -48,16 +50,16 @@ function xmldb_tool_monitoring_upgrade(int $oldversion): bool {
         // The tag itemtype must match an existing DB table name. Older versions used "metrics",
         // but the actual records live in "tool_monitoring_metrics", so migrate both area and instances.
         $DB->set_field(
-            'tag_area',
-            'itemtype',
-            registered_metric::TABLE,
-            ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
+            table: 'tag_area',
+            newfield: 'itemtype',
+            newvalue: metric_tag::ITEM_TYPE,
+            conditions: ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
         );
         $DB->set_field(
-            'tag_instance',
-            'itemtype',
-            registered_metric::TABLE,
-            ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
+            table: 'tag_instance',
+            newfield: 'itemtype',
+            newvalue: metric_tag::ITEM_TYPE,
+            conditions: ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
         );
 
         $transaction->allow_commit();

@@ -86,7 +86,7 @@ class config extends moodleform {
             label: new lang_string('settings:metric_enabled', 'tool_monitoring'),
         );
         $this->add_tags_field(
-            itemtype: 'metrics',
+            itemtype: registered_metric::TABLE,
             component: 'tool_monitoring',
         );
         if (!is_null($this->metric->configclass)) {

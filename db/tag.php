@@ -31,9 +31,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use tool_monitoring\registered_metric;
+
 $tagareas = [
     [
-        'itemtype' => 'metrics',
+        'itemtype' => registered_metric::TABLE,
         'customurl' => '/admin/tool/monitoring/',
         'collection' => 'monitoring',
         'searchable' => false,

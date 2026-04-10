@@ -148,7 +148,7 @@ final class metrics_manager {
         $where = '(m.component,m.name) IN (' . implode(',', $inplaceholders) . ')';
         $join = '';
         // Filter by tags.
-        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
+        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', registered_metric::TABLE);
         if ($tagsenabled) {
             if (!empty($tagnames)) {
                 $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
@@ -163,7 +163,7 @@ final class metrics_manager {
                 $params += $inparams;
                 $params += [
                     'tagcomponent' => 'tool_monitoring',
-                    'tagitemtype' => 'metrics',
+                    'tagitemtype' => registered_metric::TABLE,
                     'tagcount' => count($tagids),
                 ];
                 $subselect = "SELECT ti.itemid
@@ -252,7 +252,7 @@ final class metrics_manager {
             // Optionally, delete the former and insert the latter.
             if ($delete) {
                 foreach ($existingrecords as $record) {
-                    core_tag_tag::remove_all_item_tags('tool_monitoring', 'metrics', $record->id);
+                    core_tag_tag::remove_all_item_tags('tool_monitoring', registered_metric::TABLE, $record->id);
                 }
                 [$oprphansql, $orphanparams] = $DB->get_in_or_equal(array_column($existingrecords, 'id'), onemptyitems: null);
                 $DB->delete_records_select(registered_metric::TABLE, "id $oprphansql", $orphanparams);

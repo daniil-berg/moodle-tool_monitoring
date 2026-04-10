@@ -553,7 +553,7 @@ final class metrics_manager_test extends advanced_testcase {
         // Add tags alpha and beta to metric foo.
         core_tag_tag::set_item_tags(
             component: 'tool_monitoring',
-            itemtype: 'metrics',
+            itemtype: registered_metric::TABLE,
             itemid: $metricid,
             context: context_system::instance(),
             tagnames: ['alpha', 'beta'],
@@ -562,7 +562,7 @@ final class metrics_manager_test extends advanced_testcase {
             2,
             $DB->count_records('tag_instance', [
                 'component' => 'tool_monitoring',
-                'itemtype' => 'metrics',
+                'itemtype' => registered_metric::TABLE,
                 'itemid' => $metricid,
             ]),
         );
@@ -577,10 +577,10 @@ final class metrics_manager_test extends advanced_testcase {
             0,
             $DB->count_records('tag_instance', [
                 'component' => 'tool_monitoring',
-                'itemtype' => 'metrics',
+                'itemtype' => registered_metric::TABLE,
                 'itemid' => $metricid,
             ]),
         );
-        self::assertSame([], core_tag_tag::get_item_tags_array('tool_monitoring', 'metrics', $metricid));
+        self::assertSame([], core_tag_tag::get_item_tags_array('tool_monitoring', registered_metric::TABLE, $metricid));
     }
 }

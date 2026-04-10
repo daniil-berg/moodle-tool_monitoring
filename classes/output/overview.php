@@ -108,7 +108,7 @@ final readonly class overview implements renderable, templatable {
     public function export_for_template(renderer_base $output): array {
         global $DB;
         $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
-        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', 'metrics');
+        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', registered_metric::TABLE);
         $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $tagcollid]);
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
@@ -123,7 +123,7 @@ final readonly class overview implements renderable, templatable {
                 'config_url' => $configurl->out(escaped: false),
             ];
             if ($tagsenabled) {
-                $tags = core_tag_tag::get_item_tags('tool_monitoring', 'metrics', $metric->id);
+                $tags = core_tag_tag::get_item_tags('tool_monitoring', registered_metric::TABLE, $metric->id);
                 $line['tags'] = array_map(
                     fn (core_tag_tag $tag): array => [
                         'id' => $tag->id,

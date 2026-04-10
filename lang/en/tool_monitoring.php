@@ -77,7 +77,7 @@ $string['settings:type'] = 'Type';
 
 $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
 
-$string['tagarea_metrics'] = 'Metrics';
+$string['tagarea_tool_monitoring_metrics'] = 'Metrics';
 $string['tagcollection_monitoring'] = 'Monitoring';
 
 $string['testing:metric:testing_simple_metric_config:notpromotedstring'] = 'String with a default; not promoted to any property.';

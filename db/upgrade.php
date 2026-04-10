@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Upgrade steps for tool_monitoring.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -25,14 +25,45 @@
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- *
- * {@noinspection PhpUndefinedVariableInspection}
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'tool_monitoring';
-$plugin->release = '0.2.2';
-$plugin->version = 2026041000;
-$plugin->requires = 2025041400; // Moodle 5.0.
-$plugin->maturity = MATURITY_ALPHA;
+use tool_monitoring\registered_metric;
+
+/**
+ * Upgrade code for the monitoring tool.
+ *
+ * @param int $oldversion
+ * @return bool
+ * @throws ddl_exception
+ * @throws dml_exception
+ */
+function xmldb_tool_monitoring_upgrade(int $oldversion): bool {
+    global $DB;
+
+    if ($oldversion < 2026041000) {
+        $transaction = $DB->start_delegated_transaction();
+
+        // The tag itemtype must match an existing DB table name. Older versions used "metrics",
+        // but the actual records live in "tool_monitoring_metrics", so migrate both area and instances.
+        $DB->set_field(
+            'tag_area',
+            'itemtype',
+            registered_metric::TABLE,
+            ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
+        );
+        $DB->set_field(
+            'tag_instance',
+            'itemtype',
+            registered_metric::TABLE,
+            ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
+        );
+
+        $transaction->allow_commit();
+
+        upgrade_plugin_savepoint(true, 2026041000, 'tool', 'monitoring');
+    }
+
+    return true;
+}

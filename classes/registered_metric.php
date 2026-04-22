@@ -188,12 +188,11 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         }
         $inlist = implode(', ', $inplaceholders);
         $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
-        $records = $DB->get_records_select(
-            table:  self::TABLE,
-            select: "(component, name) IN ($inlist)",
-            params: $params,
-            fields: "$sqlqname AS qname, *"
-        );
+        $tablename = self::TABLE;
+        $sql = "SELECT $sqlqname, m.*
+                  FROM {{$tablename}} AS m
+                 WHERE (m.component, m.name) IN ($inlist)";
+        $records = $DB->get_records_sql($sql, $params);
         $tags = metric_tag::get_for_metric_ids(...array_column($records, 'id'));
         foreach ($records as $qname => $record) {
             $instance = $results[$qname];

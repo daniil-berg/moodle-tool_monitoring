@@ -4,7 +4,7 @@ The **`tool_monitoring`** Plugin makes it easy to integrate standard monitoring 
 
 Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp, where the project [won 1st prize][moodlemootdach 2025 votes], showing strong community demand for a standardized monitoring solution for Moodle.
 
-📈 ==**TODO: Screenshot Grafana Dashboard**==
+![Grafana Dashboard](docs/img/screenshot_grafana_dashboard.png)
 
 <details open>
   <summary><strong>Table of Contents</strong> (Click to expand/collapse)</summary>
@@ -152,7 +152,11 @@ For exhaustive details about the various config options, see the official [Prome
 
 ### Setting up a Grafana dashboard
 
-🚧 TODO
+This assumes you have configured Prometheus as described above.
+You can import the example Grafana dashboard from [docs/examples/grafana_dashboard.json](docs/examples/grafana_dashboard.json) into grafana:
+
+Go to "Dashboards" > "New" and select "import" and select the json-file or paste its content there.
+Select the Prometheus data source and click "import". 
 
 ### Adding a custom metric
 

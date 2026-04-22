@@ -90,7 +90,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         'timecreated' => 'timecreated',
         'timemodified' => 'timemodified',
         'usermodified' => 'usermodified',
-        'configclass' => 'configclass',
         'tags' => 'tags',
     ];
 
@@ -450,7 +449,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         }
         $missing = array_diff_key(self::CACHE_FIELDS, $data);
         if (!empty($missing)) {
-            throw new coding_exception("Missing cache fields for registered_metric {$data['id']}: " . implode(', ', $missing));
+            throw new coding_exception('Missing cache fields for registered_metric: ' . implode(', ', $missing));
         }
         $extra = array_diff_key($data, self::CACHE_FIELDS);
         if (!empty($extra)) {

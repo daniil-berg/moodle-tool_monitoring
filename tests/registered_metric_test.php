@@ -33,6 +33,7 @@ namespace tool_monitoring;
 
 use advanced_testcase;
 use ArrayIterator;
+use core\di;
 use core\event\base as base_event;
 use core\event\tag_added;
 use core\event\tag_created;
@@ -41,6 +42,8 @@ use dml_exception;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionProperty;
+use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\custom_metric_config;
 use tool_monitoring\local\testing\metric_settable_values;
@@ -61,10 +64,63 @@ use tool_monitoring\local\testing\metric_with_custom_config;
 #[CoversClass(registered_metric::class)]
 final class registered_metric_test extends advanced_testcase {
     /**
+     * Tests the {@see registered_metric::from_metric} method.
+     *
+     * @param metric $metric Metric to pass to the method.
+     * @param array<string, string> $expected Array of expected instance properties of the returned object.
+     * @throws JsonException
+     */
+    #[DataProvider('provider_test_from_metric')]
+    public function test_from_metric(metric $metric, array $expected): void {
+        $instance = registered_metric::from_metric($metric);
+        $metricprop = new ReflectionProperty(registered_metric::class, 'metric');
+        self::assertSame($metric, $metricprop->getValue($instance));
+        if ($metric instanceof metric_with_config) {
+            $configclassprop = new ReflectionProperty(registered_metric::class, 'configclass');
+            self::assertSame(custom_metric_config::class, $configclassprop->getValue($instance));
+            self::assertNotNull($metric->configjson);
+            self::assertSame($instance->config, $metric->configjson);
+        }
+        foreach ($expected as $name => $value) {
+            self::assertSame($value, $instance->$name, "Unexpected $name on the instance");
+        }
+    }
+
+    /**
+     * Provides test data for the {@see test_from_metric} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_from_metric(): array {
+        $defaults = [
+            'component'    => 'tool_monitoring',
+            'enabled'      => false,
+            'config'       => null,
+            'timecreated'  => null,
+            'timemodified' => null,
+            'usermodified' => null,
+            'id'           => null,
+        ];
+        return [
+            'Non-configurable metric' => [
+                'metric' => new metric_settable_values(),
+                'expected' => ['name' => 'metric_settable_values', ...$defaults],
+            ],
+            'Configurable metric' => [
+                'metric' => new metric_with_custom_config(),
+                'expected' => [
+                    'name' => 'metric_with_custom_config',
+                    'config' => '{"foo":"bar","spam":1234567}',
+                ] + $defaults,
+            ],
+        ];
+    }
+
+    /**
      * Tests the {@see registered_metric::get_for_metrics} method.
      *
      * @param array<array<string, string>> $indb DB records to insert before calling the method.
-     * @param array $metrics Metric instances to pass to the  method.
+     * @param array $metrics Metric instances to pass to the method.
      * @param array<string, array<string, string>> $expected Arrays of expected instance properties of the returned objects indexed
      *                                                       by qualified name.
      * @throws coding_exception
@@ -188,6 +244,104 @@ final class registered_metric_test extends advanced_testcase {
         ];
     }
 
+    #[DataProvider('provider_test_to_db')]
+    public function test_to_db(registered_metric $metric, array|null $fields, array $expected): void {
+        $output = $metric->to_db($fields);
+        self::assertSame($expected, $output);
+    }
+
+    /**
+     * Provides test data for the {@see test_to_db} method.
+     *
+     * @return array[] Arguments for the test method.
+     * @throws JsonException
+     */
+    public static function provider_test_to_db(): array {
+        $metric = registered_metric::from_metric(new metric_settable_values());
+        $metric->timecreated = 123;
+        $metric->timemodified = 456;
+        $metric->usermodified = 1;
+        $metricwithid = registered_metric::from_metric(new metric_settable_values());
+        $metricwithid->id = 42;
+        return [
+            'No fields specified' => [
+                'metric' => $metric,
+                'fields' => null,
+                'expected' => [
+                    'component'    => 'tool_monitoring',
+                    'name'         => 'metric_settable_values',
+                    'enabled'      => false,
+                    'config'       => null,
+                    'timecreated'  => 123,
+                    'timemodified' => 456,
+                    'usermodified' => 1,
+                    'id'           => null,
+                ],
+            ],
+            'Subset of fields specified' => [
+                'metric' => $metric,
+                'fields' => ['name', 'enabled', 'usermodified'],
+                'expected' => [
+                    'name'         => 'metric_settable_values',
+                    'enabled'      => false,
+                    'usermodified' => 1,
+                ],
+            ],
+            'Subset of fields specified, but metric has ID' => [
+                'metric' => $metricwithid,
+                'fields' => ['name', 'enabled'],
+                'expected' => [
+                    'id'           => 42,
+                    'name'         => 'metric_settable_values',
+                    'enabled'      => false,
+                ],
+            ],
+            'Non-fields specified' => [
+                'metric' => $metric,
+                'fields' => ['name', 'enabled', 'quux'],
+                'expected' => [
+                    'name'    => 'metric_settable_values',
+                    'enabled' => false,
+                ],
+            ],
+        ];
+    }
+
+    public function test_to_form_data(): void {
+        // Set up mock tag objects.
+        $mocktag1 = $this->createMock(metric_tag::class);
+        $mocktag2 = $this->createMock(metric_tag::class);
+        $mocktag1->expects(self::exactly(2))->method('get_display_name')->willReturn('foo');
+        $mocktag1->expects(self::exactly(2))->method('__get')->willReturnMap([['id', 1]]);
+        $mocktag2->expects(self::exactly(2))->method('get_display_name')->willReturn('bar');
+        $mocktag2->expects(self::exactly(2))->method('__get')->willReturnMap([['id', 2]]);
+        $tagsprop = new ReflectionProperty(registered_metric::class, 'tags');
+
+        // Test with regular metric.
+        $instance = registered_metric::from_metric(new metric_settable_values());
+        $instance->enabled = true;
+        $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
+        $formdata = $instance->to_form_data();
+        self::assertSame(
+            ['enabled' => true, 'tags' => [1 => 'foo', 2 => 'bar']],
+            $formdata,
+        );
+
+        // Now with a configurable metric.
+        $instance = registered_metric::from_metric(new metric_with_custom_config());
+        $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
+        $formdata = $instance->to_form_data();
+        self::assertSame(
+            [
+                'foo' => 'bar',
+                'spam' => 1234567,
+                'enabled' => false,
+                'tags' => [1 => 'foo', 2 => 'bar'],
+            ],
+            $formdata,
+        );
+    }
+
     /**
      * Tests the {@see IteratorAggregate} implementation of the {@see registered_metric} class.
      *
@@ -270,19 +424,23 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::__get} method.
+     * Tests the {@see registered_metric::__get} and {@see registered_metric::__isset} method.
      *
      * @throws coding_exception
      * @throws JsonException
      */
-    public function test___get(): void {
+    public function test___get___isset(): void {
         $instance = registered_metric::from_metric(new metric_settable_values());
+        self::assertTrue(isset($instance->qualifiedname));
         self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
+        self::assertTrue(isset($instance->description));
         self::assertEquals(metric_settable_values::get_description(), $instance->description);
+        self::assertTrue(isset($instance->type));
         self::assertSame(metric_settable_values::get_type(), $instance->type);
-        self::assertSame([], $instance->tags);
         self::assertTrue(isset($instance->tags));
+        self::assertSame([], $instance->tags);
         $instance = registered_metric::from_metric(new metric_with_custom_config());
+        self::assertTrue(isset($instance->configclass));
         self::assertSame(custom_metric_config::class, $instance->configclass);
     }
 
@@ -590,6 +748,130 @@ final class registered_metric_test extends advanced_testcase {
                     tag_added::class,
                     event\metric_config_updated::class,
                 ],
+            ],
+        ];
+    }
+
+    /**
+     * Test the {@see registered_metric::prepare_to_cache} method.
+     *
+     * @throws JsonException
+     */
+    public function test_prepare_to_cache(): void {
+        $instance = registered_metric::from_metric(new metrics\user_accounts());
+        $instance->id = 42;
+        $instance->enabled = true;
+        $instance->timecreated = 123;
+        $instance->timemodified = 456;
+        $instance->usermodified = 789;
+        $output = $instance->prepare_to_cache();
+        self::assertSame([
+            'id'           => 42,
+            'component'    => 'tool_monitoring',
+            'name'         => 'user_accounts',
+            'enabled'      => true,
+            'config'       => null,
+            'timecreated'  => 123,
+            'timemodified' => 456,
+            'usermodified' => 789,
+            'tags'         => [],
+        ], $output);
+    }
+
+    /**
+     * Tests the {@see registered_metric::wake_from_cache} method.
+     *
+     * @param mixed $data Data to pass to the method.
+     * @param array<string, mixed>|string $expected Expected properties on the new instance or exception class name.
+     * @throws coding_exception
+     * @throws JsonException
+     */
+    #[DataProvider('provider_test_wake_from_cache')]
+    public function test_wake_from_cache(mixed $data, array|string $expected): void {
+        if (is_string($expected)) {
+            $this->expectException($expected);
+            registered_metric::wake_from_cache($data);
+            return;
+        }
+        $instance = registered_metric::wake_from_cache($data);
+        foreach ($expected as $name => $value) {
+            if ($name === 'tags') {
+                continue;
+            }
+            self::assertEquals($value, $instance->$name);
+        }
+        // Check that the metric assigned to the new instance is the same as the one collected by the hook.
+        $collection = di::get(metric_collection::class);
+        $metric = $collection->get($instance->component, $instance->name);
+        $metricprop = new ReflectionProperty(registered_metric::class, 'metric');
+        self::assertSame($metric, $metricprop->getValue($instance));
+    }
+
+    /**
+     * Provides test data for the {@see test_wake_from_cache} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_wake_from_cache(): array {
+        return [
+            'All relevant data present' => [
+                'data' => (object) [
+                    'id'           => 1,
+                    'component'    => 'tool_monitoring',
+                    'name'         => 'user_accounts',
+                    'enabled'      => true,
+                    'config'       => '{"foo":"baz,"spam":42}',
+                    'timecreated'  => 123,
+                    'timemodified' => 456,
+                    'usermodified' => 1,
+                    'tags'         => [],
+                ],
+                'expected' => [
+                    'id'           => 1,
+                    'component'    => 'tool_monitoring',
+                    'name'         => 'user_accounts',
+                    'enabled'      => true,
+                    'config'       => '{"foo":"baz,"spam":42}',
+                    'timecreated'  => 123,
+                    'timemodified' => 456,
+                    'usermodified' => 1,
+                    'tags'         => [],
+                ],
+            ],
+            'Data is not an array/stdClass' => [
+                'data' => 'oops',
+                'expected' => coding_exception::class,
+            ],
+            'Data is a list' => [
+                'data' => ['foo', 'bar', 'baz'],
+                'expected' => coding_exception::class,
+            ],
+            'Data is missing a required key (id)' => [
+                'data' => [
+                    'component'    => 'tool_monitoring',
+                    'name'         => 'user_accounts',
+                    'enabled'      => true,
+                    'config'       => '{"foo":"baz,"spam":42}',
+                    'timecreated'  => 123,
+                    'timemodified' => 456,
+                    'usermodified' => 1,
+                    'tags'         => [],
+                ],
+                'expected' => coding_exception::class,
+            ],
+            'No matching metric instance collected' => [
+                'data' => [
+                    'id'           => 1,
+                    'component'    => 'beans',
+                    'name'         => 'toast',
+                    'enabled'      => true,
+                    'config'       => '{"foo":"baz,"spam":42}',
+                    'timecreated'  => 123,
+                    'timemodified' => 456,
+                    'usermodified' => 1,
+                    'tags'         => [],
+                ],
+                'expected' => coding_exception::class,
             ],
         ];
     }

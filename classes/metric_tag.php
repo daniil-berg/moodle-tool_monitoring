@@ -257,7 +257,7 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
         }
         $missing = array_diff_key(self::CACHE_FIELDS, $data);
         if (!empty($missing)) {
-            throw new coding_exception("Missing cache fields for metric_tag {$data['id']}: " . implode(', ', $missing));
+            throw new coding_exception('Missing cache fields for metric_tag: ' . implode(', ', $missing));
         }
         $extra = array_diff_key($data, self::CACHE_FIELDS);
         if (!empty($extra)) {

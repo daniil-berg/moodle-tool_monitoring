@@ -37,6 +37,7 @@ use core\event\base as base_event;
 use core\exception\coding_exception;
 use dml_exception;
 use JsonException;
+use moodle_database;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionProperty;
@@ -417,6 +418,16 @@ final class registered_metric_test extends advanced_testcase {
                 'expected'  => 'foo+-*/bar_ this is fine ',
             ],
         ];
+    }
+
+    public function test_get_qualified_name_sql(): void {
+        $mocksql = 'sql snippet';
+        $mockdb = $this->createMock(moodle_database::class);
+        $mockdb->expects(self::once())
+            ->method('sql_concat_join')
+            ->with(separator: "'_'", elements: ['component', 'name'])
+            ->willReturn($mocksql);
+        self::assertEquals($mocksql, registered_metric::get_qualified_name_sql($mockdb));
     }
 
     /**

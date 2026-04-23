@@ -183,7 +183,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
             // Fetch all records that we did not get before.
             // These should only be newly inserted ones (if any) and orphans (without a collected metric).
             [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
-            $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
+            $sqlqname = registered_metric::get_qualified_name_sql($DB);
             $otherids = $DB->get_records_select_menu(
                 table:  registered_metric::TABLE,
                 select: "id $notexistingsql",

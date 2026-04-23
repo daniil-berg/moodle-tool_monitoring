@@ -37,10 +37,12 @@ use moodleform;
 use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metric;
 
+// @codeCoverageIgnoreStart
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once("$CFG->libdir/formslib.php");
+// @codeCoverageIgnoreEnd
 
 /**
  * Configuration form for a metric.
@@ -167,6 +169,8 @@ class config extends moodleform {
         if (is_null($formdata = $this->get_data())) {
             return;
         }
-        $this->metric->update_with_form_data($formdata);
+        // Since this implies proper POST data, session token, and so on, covering this with a unit test would be too clumsy.
+        // There are Behat acceptance tests for actually configuring metrics.
+        $this->metric->update_with_form_data($formdata); // @codeCoverageIgnore
     }
 }

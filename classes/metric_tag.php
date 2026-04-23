@@ -40,6 +40,7 @@ use dml_exception;
 use moodle_url;
 use stdClass;
 use tool_monitoring\exceptions\tag_not_found;
+use Traversable;
 
 /**
  * Convenience class that maps instances to records in the `tag` table, but only those related to the monitoring tag collection.
@@ -61,7 +62,7 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
     public const COLLECTION_NAME = 'monitoring';
 
     /** @var string List of fields of interest for fetching from the DB. */
-    private const DB_TABLE_FIELDS = 'name, id, userid, rawname, isstandard, description, descriptionformat, flag, timemodified';
+    private const DB_TABLE_FIELDS = 'name,id,userid,tagcollid,rawname,isstandard,description,descriptionformat,flag,timemodified';
 
     /** @var array<string, string> Properties of interest that are cached; for convenience, keys and values are the same. */
     private const CACHE_FIELDS = [
@@ -88,7 +89,7 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
         // This function caches the result, so we don't need to worry about it.
         $tagarea = core_tag_area::get_areas()[self::ITEM_TYPE]['tool_monitoring'] ?? null;
         if (is_null($tagarea)) {
-            throw new coding_exception("Could not find the '" . self::ITEM_TYPE . "' tag area");
+            throw new coding_exception("Could not find the '" . self::ITEM_TYPE . "' tag area"); // @codeCoverageIgnore
         }
         return $tagarea->tagcollid;
     }
@@ -96,16 +97,23 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
     /**
      * Fetches all tags from our collection from the database.
      *
-     * @return array<string, static> Array of tags indexed by tag name.
+     * @return Traversable<string, static> Instances indexed by tag name.
      * @throws coding_exception Tag area for our {@see self::ITEM_TYPE `ITEM_TYPE`} not found.
      * @throws dml_exception
      */
-    private static function fetch_all(): array {
+    private static function fetch_all(): Traversable {
         global $DB;
-        return array_map(
-            callback: fn (stdClass $record): self => new static($record),
-            array:    $DB->get_records('tag', ['tagcollid' => static::get_collection_id()], fields: self::DB_TABLE_FIELDS)
+        $recordset = $DB->get_recordset(
+            table:      'tag',
+            conditions: ['tagcollid' => static::get_collection_id()],
+            fields:     self::DB_TABLE_FIELDS,
         );
+        foreach ($recordset as $name => $record) {
+            $tag = new static($record);
+            // No idea why this exists as a separate property; it is uncorrelated with the record's `timemodified` field.
+            unset($tag->timemodified);
+            yield $name => $tag;
+        }
     }
 
     /**
@@ -134,7 +142,7 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
         if ($missingtags) {
             // Cache miss for at least one name. Fetch all tags and cache them.
             // Do explicit `null`-caching for those names that are not in the DB to avoid querying it again.
-            $alltags = static::fetch_all();
+            $alltags = iterator_to_array(static::fetch_all());
             $cache->set_many(array_merge($missingtags, $alltags));
             // Go through all previously missing tags and add those from the DB to the `$tags` array.
             // If one of them is still missing, throw an exception.
@@ -264,6 +272,9 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
             debugging("Unexpected cache fields for metric_tag {$data['id']}:" . implode(', ', $extra), DEBUG_DEVELOPER);
         }
         $data['tagcollid'] = static::get_collection_id();
-        return new static((object) $data);
+        $tag = new static((object) $data);
+        // No idea why this exists as a separate property; it is uncorrelated with the record's `timemodified` field.
+        unset($tag->timemodified);
+        return $tag;
     }
 }

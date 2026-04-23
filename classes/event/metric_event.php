@@ -61,7 +61,7 @@ abstract class metric_event extends base {
     }
 
     /**
-     * Initialises event properties.
+     * Initializes event properties.
      *
      * @throws dml_exception
      */

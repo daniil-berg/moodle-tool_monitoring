@@ -36,6 +36,7 @@ use core_cache\cacheable_object_interface;
 use dml_exception;
 use IteratorAggregate;
 use JsonException;
+use moodle_database;
 use moodleform;
 use stdClass;
 use tool_monitoring\form\config as config_form;
@@ -187,7 +188,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
             $params["name$i"] = $instance->name;
         }
         $inlist = implode(', ', $inplaceholders);
-        $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
+        $sqlqname = self::get_qualified_name_sql($DB);
         $tablename = self::TABLE;
         $sql = "SELECT $sqlqname, m.*
                   FROM {{$tablename}} AS m
@@ -300,6 +301,15 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     public static function get_qualified_name(string $component, string $name): string {
         return "{$component}_$name";
+    }
+
+    /**
+     * Returns the proper SQL snippet to construct the qualified name.
+     *
+     * @return string Qualified name SQL.
+     */
+    public static function get_qualified_name_sql(moodle_database $db): string {
+        return $db->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }
 
     /**

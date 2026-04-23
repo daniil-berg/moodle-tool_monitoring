@@ -70,7 +70,7 @@ final class observer {
         if ($event->other['itemtype'] !== metric_tag::ITEM_TYPE) {
             return;
         }
-        $sqlqname = $DB->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
+        $sqlqname = registered_metric::get_qualified_name_sql($DB);
         $qname = $DB->get_field(registered_metric::TABLE, $sqlqname, ['id' => $event->other['itemid']]);
         metrics_cache::delete($qname);
     }

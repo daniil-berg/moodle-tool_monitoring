@@ -52,6 +52,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(json_invalid::class)]
 #[CoversClass(json_key_missing::class)]
 #[CoversClass(metric_config_not_implemented::class)]
+#[CoversClass(metric_not_found::class)]
 #[CoversClass(simple_metric_config_constructor_missing::class)]
 #[CoversClass(tag_not_found::class)]
 #[CoversClass(tool_monitoring_exception::class)]
@@ -120,6 +121,13 @@ final class tool_monitoring_exception_test extends advanced_testcase {
                 'errorcode' => 'error:metric_config_not_implemented',
                 'module' => 'tool_monitoring',
                 'message' => 'The "baz" class does not implement the "metric_config" interface.',
+            ],
+            [
+                'exceptionclass' => metric_not_found::class,
+                'properties' => ['qualifiedname' => 'quux'],
+                'errorcode' => 'error:metric_not_found',
+                'module' => 'tool_monitoring',
+                'message' => 'No metric with the qualified name "quux" is registered.',
             ],
             [
                 'exceptionclass' => simple_metric_config_constructor_missing::class,

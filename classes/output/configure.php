@@ -74,10 +74,13 @@ final readonly class configure implements renderable, templatable {
      */
     public function process_form(): bool {
         if ($this->form->is_cancelled()) {
-            return true;
+            // Since this implies proper POST data, session token, and so on, covering this with a unit test would be too clumsy.
+            // There are Behat acceptance tests for actually configuring metrics.
+            return true; // @codeCoverageIgnore
         } else if ($this->form->is_submitted() && $this->form->is_validated()) {
-            $this->form->save();
-            return true;
+            // Same as above, Behat tests exist for this.
+            $this->form->save(); // @codeCoverageIgnore
+            return true; // @codeCoverageIgnore
         }
         return false;
     }

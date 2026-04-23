@@ -76,7 +76,7 @@ final class config_test extends advanced_testcase {
         array $validationerrors,
     ): void {
         global $PAGE;
-        $PAGE->set_url('/admin/tool/monitoring/config.php', ['metric' => $metric->qualifiedname]);
+        $PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $metric->qualifiedname]);
         // Construction runs all the definition methods.
         $form = config::for_metric($metric);
         $errors = $form->validation($validationdata, []);

@@ -65,5 +65,9 @@ $ADMIN->add('tool_monitoring', $monitoringexportercategory);
 // Underneath the exporter category, add all exporter settings pages.
 /** @var monitoringexporter $subplugin */
 foreach (core_plugin_manager::instance()->get_plugins_of_type('monitoringexporter') as $subplugin) {
-    $subplugin->load_settings($ADMIN, 'tool_monitoring_exporters', $hassiteconfig);
+    $subplugin->load_settings(
+        adminroot: $ADMIN,
+        parentnodename: 'tool_monitoring_exporters',
+        hassiteconfig: $hassiteconfig,
+    );
 }

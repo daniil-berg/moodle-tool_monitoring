@@ -29,7 +29,7 @@
 
 namespace tool_monitoring\plugininfo;
 
-use admin_root;
+use admin_category;
 use admin_settingpage;
 use coding_exception;
 use core\plugininfo\base;
@@ -62,15 +62,13 @@ class monitoringexporter extends base {
      * Sub-plugins can immediately add settings to their dedicated {@see admin_settingpage} via the `$settings` variable in their
      * own `settings.php` file. The file will be automatically included if the user has the `moodle/site:config` capability.
      *
-     * @param part_of_admin_tree $adminroot Admin tree root.
+     * @param admin_category $adminroot **Must be an actual admin category**, not just any {@see part_of_admin_tree} instance.
      * @param string $parentnodename Name of the parent node in the tree.
      * @param bool $hassiteconfig Whether the current user has the `moodle/site:config` capability.
      * @throws coding_exception
      */
     #[\Override]
     public function load_settings(part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig): void {
-        global $ADMIN;
-
         if (!$this->is_installed_and_upgraded()) {
             return;
         }
@@ -81,13 +79,12 @@ class monitoringexporter extends base {
             name: $this->get_settings_section_name(),
             visiblename: $this->displayname,
             req_capability: 'moodle/site:config',
-            hidden: $this->is_enabled() === false, // Can be `null`, therefore the identity comparison.
+            hidden: $this->is_enabled() === false, // Can be `null`, hence the identity comparison.
         );
-        include($this->full_path('settings.php'));
+        include($this->full_path('settings.php')); // This may modify the `$settings` variable.
         if ($settings->settings != new stdClass()) {
             // Only if settings were actually added to the page, do we want to add it to the tree.
-            /** @var admin_root $ADMIN */
-            $ADMIN->add($parentnodename, $settings);
+            $adminroot->add($parentnodename, $settings);
         }
     }
 }

@@ -32,15 +32,15 @@ namespace tool_monitoring\external;
 use context_system;
 use core\di;
 use core\exception\coding_exception;
+use core\exception\invalid_parameter_exception;
+use core\exception\required_capability_exception;
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
 use core_external\restricted_context_exception;
 use dml_exception;
-use invalid_parameter_exception;
 use JsonException;
-use required_capability_exception;
 use tool_monitoring\metrics_manager;
 
 /**

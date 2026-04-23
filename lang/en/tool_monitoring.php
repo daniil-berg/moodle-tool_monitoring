@@ -61,6 +61,8 @@ $string['monitoring:manage_metrics'] = 'Manage and configure monitoring metrics'
 
 $string['pluginname'] = 'Monitoring';
 
+$string['privacy:metadata'] = 'The Monitoring plugin does not store any personal data.';
+
 $string['settings:actions'] = 'Actions';
 $string['settings:component'] = 'Component';
 $string['settings:configure'] = 'Configure';
@@ -76,6 +78,7 @@ $string['settings:name'] = 'Name';
 $string['settings:tag_filter'] = 'Filter:';
 $string['settings:type'] = 'Type';
 
+$string['subplugintype_monitoringexporter'] = 'Exporter type';
 $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
 
 $string['tagarea_tool_monitoring_metrics'] = 'Metrics';

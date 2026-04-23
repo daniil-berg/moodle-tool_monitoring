@@ -474,7 +474,7 @@ Iteration will yield the [`metric_value`][. metric_value] objects.
 
 > [!TIP]
 > You can look at how the Prometheus exporter does this in its [`exporter`][. exporter] class.
-> Its `export` method receives the `metrics_manager::$metrics` array as an argument after the route controller called `fetch` on the manager.
+> The `export` method calls the `filter` method of the `metrics_manager` to get all enabled metrics that match the tags specified in the request.
 
 ## Terminology
 

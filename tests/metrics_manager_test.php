@@ -32,12 +32,13 @@
 namespace tool_monitoring;
 
 use advanced_testcase;
-use context_system;
+use core\di;
 use core\exception\coding_exception;
-use core_tag_tag;
 use dml_exception;
+use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
@@ -73,20 +74,12 @@ final class metrics_manager_test extends advanced_testcase {
     }
 
     public function test___construct(): void {
-        $manager = new metrics_manager();
-        self::assertSame([], iterator_to_array($manager->collection));
-        self::assertSame([], $manager->metrics);
-
+        // Test manual construction.
         $collection = new metric_collection();
         $manager = new metrics_manager($collection);
         self::assertSame($collection, $manager->collection);
-        self::assertSame([], $manager->metrics);
-    }
-
-    public function test_dispatch_collection(): void {
-        $collection = new metric_collection();
-        $manager = new metrics_manager($collection);
-        $manager->dispatch_hook();
+        // Check that DI dispatches the collection hook automatically and it subsequently contains our expected metrics.
+        $manager = di::get(metrics_manager::class);
         $expected = [
             metrics\courses::class,
             metrics\overdue_tasks::class,
@@ -102,29 +95,33 @@ final class metrics_manager_test extends advanced_testcase {
         }
         self::assertEmpty(array_diff($expected, $metricclasses));
         self::assertEmpty(array_diff($metricclasses, $expected));
+        // Check that the instances are the same when getting them repeatedly via the DI container.
+        self::assertSame($manager, di::get(metrics_manager::class));
     }
 
     /**
-     * Tests the {@see metrics_manager::fetch} method.
+     * Tests the {@see metrics_manager::getIterator} and {@see metrics_manager::filter} methods.
+     *
+     * Indirectly also tests the cache data source mechanism because iteration first attempts to load metrics from the cache.
      *
      * @param metric[] $collected Metric instances to add to the collection beforehand.
      * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see registered_metric::TABLE}
      *                                           before calling the tested function.
      * @param array<string, array<string, mixed>> $expected Associative arrays of property name-value-pairs expected to be present
      *                                                      on the metric instances. Indexed by qualified name.
-     * @param bool|null $enabled Passed to the tested function.
-     * @param string|null $expectedwarning If passed a string, a warning is expected to be triggered containing that text.
+     * @param bool|null $enabled Passed to the {@see metrics_manager::filter} function.
+     * @param array $tagnames Passed to the {@see metrics_manager::filter} function.
      * @throws coding_exception
      * @throws dml_exception
      * @throws tag_not_found
      */
-    #[DataProvider('provider_test_fetch')]
-    public function test_fetch(
+    #[DataProvider('provider_test_filter')]
+    public function test_filter(
         array $collected,
         array $registered,
         array $expected,
         bool|null $enabled = null,
-        string|null $expectedwarning = null,
+        array $tagnames = [],
     ): void {
         global $DB;
         $this->resetAfterTest();
@@ -133,45 +130,41 @@ final class metrics_manager_test extends advanced_testcase {
         foreach ($collected as $metric) {
             $collection->add($metric);
         }
-        $manager = new metrics_manager($collection);
+        di::set(metric_collection::class, $collection);
+        $manager = di::get(metrics_manager::class);
         // Sanity check.
         self::assertSame(0, $DB->count_records(registered_metric::TABLE));
         // Add pre-existing metrics records.
+        $defaults = [
+            'component'    => 'tool_monitoring',
+            'timecreated'  => 123,
+            'timemodified' => 456,
+            'usermodified' => 1,
+        ];
         foreach ($registered as $toinsert) {
-            $DB->insert_record(registered_metric::TABLE, $toinsert);
+            $metricid = $DB->insert_record(registered_metric::TABLE, $toinsert + $defaults);
+            if (isset($toinsert['tags'])) {
+                metric_tag::set_for_metric($metricid, ...$toinsert['tags']);
+            }
         }
         $records = $DB->get_records(registered_metric::TABLE);
-        // Get ready to intercept warnings.
-        $lastwarning = null;
-        set_error_handler(
-            static function (int $errno, string $errstr) use (&$lastwarning): void {
-                $lastwarning = $errstr;
-            },
-        );
-        // Do the thing.
-        $manager->fetch(enabled: $enabled);
-        restore_error_handler();
-        if (!is_null($expectedwarning)) {
-            self::assertNotNull($lastwarning);
-            self::assertStringContainsString($expectedwarning, $lastwarning);
-        } else {
-            self::assertNull($lastwarning);
-        }
-        // The number of registered metrics should be as expected.
-        self::assertCount(count($expected), $manager->metrics);
+        // Consume the iterator.
+        $metrics = $manager->filter(enabled: $enabled, tagnames: $tagnames);
         // The records in the DB table should be unchanged.
         self::assertEquals($records, $DB->get_records(registered_metric::TABLE));
+        // The number of registered metrics should be as expected.
+        self::assertCount(count($expected), $metrics);
         // Check that the registered metrics are exactly as we expect them and there is a DB record for each of them.
         // To be extra sure, store already checked metric IDs.
         $checkedids = [];
         foreach ($expected as $qname => $properties) {
-            self::assertArrayHasKey($qname, $manager->metrics);
-            $metric = $manager->metrics[$qname];
+            self::assertArrayHasKey($qname, $metrics);
+            $metric = $metrics[$qname];
             self::assertNotNull($metric->id);
             self::assertNotContains($metric->id, $checkedids);
             self::assertArrayHasKey($metric->id, $records);
             $record = $records[$metric->id];
-            foreach ($properties as $name => $expectedvalue) {
+            foreach ($properties + $defaults as $name => $expectedvalue) {
                 self::assertEquals($expectedvalue, $record->$name);
                 self::assertEquals($expectedvalue, $metric->$name);
             }
@@ -180,11 +173,11 @@ final class metrics_manager_test extends advanced_testcase {
     }
 
     /**
-     * Provides test data for the {@see test_fetch} method.
+     * Provides test data for the {@see test_filter} method.
      *
      * @return array[] Arguments for the test method.
      */
-    public static function provider_test_fetch(): array {
+    public static function provider_test_filter(): array {
         return [
             'Collection of 3 different metrics; no pre-existing DB entries' => [
                 'collected' => [
@@ -203,32 +196,20 @@ final class metrics_manager_test extends advanced_testcase {
                 ],
                 'registered' => [
                     [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'foo',
-                        'enabled'      => false,
-                        'config'       => '{"a":1}',
-                        'timecreated'  => 10,
-                        'timemodified' => 20,
-                        'usermodified' => 1,
+                        'name'    => 'foo',
+                        'enabled' => false,
+                        'config'  => '{"a":1}',
                     ],
                     [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'bar',
-                        'enabled'      => true,
-                        'timecreated'  => 30,
-                        'timemodified' => 40,
-                        'usermodified' => 0,
+                        'name'    => 'bar',
+                        'enabled' => true,
                     ],
                 ],
                 'expected' => [
                     'tool_monitoring_foo' => [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'foo',
-                        'enabled'      => false,
-                        'config'       => '{"a":1}',
-                        'timecreated'  => 10,
-                        'timemodified' => 20,
-                        'usermodified' => 1,
+                        'name'    => 'foo',
+                        'enabled' => false,
+                        'config'  => '{"a":1}',
                     ],
                 ],
             ],
@@ -240,15 +221,10 @@ final class metrics_manager_test extends advanced_testcase {
                 ],
                 'registered' => [
                     [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'bar',
-                        'timecreated'  => 2,
-                        'timemodified' => 1,
-                        'usermodified' => 0,
+                        'name' => 'bar',
                     ],
                 ],
                 'expected' => [],
-                'expectedwarning' => "Collected more than one metric with the qualified name 'tool_monitoring_foo'",
             ],
             'Collection of 2 metrics, both registered, 1 disabled; getting enabled only' => [
                 'collected' => [
@@ -257,33 +233,18 @@ final class metrics_manager_test extends advanced_testcase {
                 ],
                 'registered' => [
                     [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'foo',
-                        'enabled'      => false,
-                        'config'       => '{"a":1}',
-                        'timecreated'  => 10,
-                        'timemodified' => 20,
-                        'usermodified' => 1,
+                        'name'    => 'foo',
+                        'enabled' => false,
                     ],
                     [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'bar',
-                        'enabled'      => true,
-                        'config'       => null,
-                        'timecreated'  => 30,
-                        'timemodified' => 40,
-                        'usermodified' => 0,
+                        'name'    => 'bar',
+                        'enabled' => true,
                     ],
                 ],
                 'expected' => [
                     'tool_monitoring_bar' => [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'bar',
-                        'enabled'      => true,
-                        'config'       => null,
-                        'timecreated'  => 30,
-                        'timemodified' => 40,
-                        'usermodified' => 0,
+                        'name'    => 'bar',
+                        'enabled' => true,
                     ],
                 ],
                 'enabled' => true,
@@ -295,38 +256,147 @@ final class metrics_manager_test extends advanced_testcase {
                 ],
                 'registered' => [
                     [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'foo',
-                        'enabled'      => false,
-                        'config'       => '{"a":1}',
-                        'timecreated'  => 10,
-                        'timemodified' => 20,
-                        'usermodified' => 1,
+                        'name'    => 'foo',
+                        'enabled' => false,
+                        'config'  => '{"a":1}',
                     ],
                     [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'bar',
-                        'enabled'      => true,
-                        'config'       => null,
-                        'timecreated'  => 30,
-                        'timemodified' => 40,
-                        'usermodified' => 0,
+                        'name'    => 'bar',
+                        'enabled' => true,
                     ],
                 ],
                 'expected' => [
                     'tool_monitoring_foo' => [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'foo',
-                        'enabled'      => false,
-                        'config'       => '{"a":1}',
-                        'timecreated'  => 10,
-                        'timemodified' => 20,
-                        'usermodified' => 1,
+                        'name'    => 'foo',
+                        'enabled' => false,
+                        'config'  => '{"a":1}',
                     ],
                 ],
                 'enabled' => false,
             ],
+            'Collection of 3 metrics, with 2 matching the single specified tag' => [
+                'collected' => [
+                    self::named_metric_factory(name: 'foo'),
+                    self::named_metric_factory(name: 'bar'),
+                    self::named_metric_factory(name: 'baz'),
+                ],
+                'registered' => [
+                    [
+                        'name' => 'foo',
+                        'tags' => ['spam', 'eggs'],
+                    ],
+                    [
+                        'name' => 'bar',
+                        'tags' => ['eggs', 'ham'],
+                    ],
+                    [
+                        'name' => 'baz',
+                        'tags' => ['spam', 'ham'],
+                    ],
+                ],
+                'expected' => [
+                    'tool_monitoring_foo' => [
+                        'name' => 'foo',
+                    ],
+                    'tool_monitoring_bar' => [
+                        'name' => 'bar',
+                    ],
+                ],
+                'enabled' => null,
+                'tagnames' => ['eggs'],
+            ],
+            'Collection of 3 metrics, only 1 matching all specified tags' => [
+                'collected' => [
+                    self::named_metric_factory(name: 'foo'),
+                    self::named_metric_factory(name: 'bar'),
+                    self::named_metric_factory(name: 'baz'),
+                ],
+                'registered' => [
+                    [
+                        'name' => 'foo',
+                        'tags' => ['spam', 'eggs'],
+                    ],
+                    [
+                        'name' => 'bar',
+                        'tags' => ['eggs', 'ham'],
+                    ],
+                    [
+                        'name' => 'baz',
+                        'tags' => ['spam', 'ham'],
+                    ],
+                ],
+                'expected' => [
+                    'tool_monitoring_foo' => [
+                        'name' => 'foo',
+                    ],
+                ],
+                'enabled' => null,
+                'tagnames' => ['eggs', 'spam'],
+            ],
         ];
+    }
+
+    /**
+     * Tests that the manager continues to produce the expected metrics after changes are made to tag instances.
+     *
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws tag_not_found
+     */
+    public function test_tag_instance_changes(): void {
+        global $DB;
+        $this->resetAfterTest();
+        // Add and register two metrics with some tag overlap.
+        $collection = new metric_collection();
+        $collection->add(self::named_metric_factory(name: 'foo'));
+        $collection->add(self::named_metric_factory(name: 'bar'));
+        di::set(metric_collection::class, $collection);
+        $manager = di::get(metrics_manager::class);
+        $defaults = [
+            'component'    => 'tool_monitoring',
+            'timecreated'  => 1,
+            'timemodified' => 1,
+            'usermodified' => 1,
+        ];
+        $metricidfoo = $DB->insert_record(registered_metric::TABLE, ['name' => 'foo', ...$defaults]);
+        $metricidbar = $DB->insert_record(registered_metric::TABLE, ['name' => 'bar', ...$defaults]);
+        metric_tag::set_for_metric($metricidfoo, 'spam', 'eggs');
+        metric_tag::set_for_metric($metricidbar, 'spam', 'beans');
+
+        // Sanity checks.
+        $metrictagsfoo = array_column($manager['tool_monitoring_foo']->tags, 'name');
+        self::assertSame(['spam', 'eggs'], $metrictagsfoo);
+        $metrics = $manager->filter(tagnames: ['spam', 'eggs']);
+        self::assertCount(1, $metrics);
+        self::assertSame($metricidfoo, reset($metrics)->id);
+
+        // Now we remove the tag instance; a new manager should no longer return the metric when filtering.
+        metric_tag::remove_item_tag(
+            component: 'tool_monitoring',
+            itemtype: metric_tag::ITEM_TYPE,
+            itemid: $metricidfoo,
+            tagname: 'spam',
+        );
+        di::reset_container();
+        di::set(metric_collection::class, $collection);
+        $manager = di::get(metrics_manager::class);
+        $metrics = $manager->filter(tagnames: ['spam', 'eggs']);
+        self::assertEmpty($metrics);
+        // The metric should no longer carry the tag when grabbed explicitly.
+        $metrictagsfoo = array_column($manager['tool_monitoring_foo']->tags, 'name');
+        self::assertSame(['eggs'], $metrictagsfoo);
+
+        // Now link the `eggs` tag to the `bar` metric as well; it should now be returned by a new manager.
+        metric_tag::set_for_metric($metricidbar, 'spam', 'eggs', 'beans');
+        di::reset_container();
+        di::set(metric_collection::class, $collection);
+        $manager = di::get(metrics_manager::class);
+        $metrics = $manager->filter(tagnames: ['spam', 'eggs']);
+        self::assertCount(1, $metrics);
+        self::assertSame($metricidbar, reset($metrics)->id);
+        // The metric should now carry the tag when grabbed explicitly.
+        $metrictagsbar = array_column($manager['tool_monitoring_bar']->tags, 'name');
+        self::assertSame(['spam', 'eggs', 'beans'], $metrictagsbar);
     }
 
     /**
@@ -339,9 +409,10 @@ final class metrics_manager_test extends advanced_testcase {
      *                                                      on the {@see registered_metric} instances as well as on the
      *                                                      corresponding raw database records. Indexed by qualified name.
      * @param bool $delete Passed to the tested method; `false` by default.
-     * @param string|null $expectedwarning If passed a string, a warning is expected to be triggered containing that text.
      * @throws coding_exception
      * @throws dml_exception
+     * @throws JsonException
+     * @throws tag_not_found
      */
     #[DataProvider('provider_test_sync')]
     public function test_sync(
@@ -349,7 +420,6 @@ final class metrics_manager_test extends advanced_testcase {
         array $registered,
         array $expected,
         bool $delete = false,
-        string|null $expectedwarning = null,
     ): void {
         global $DB;
         $this->resetAfterTest();
@@ -358,40 +428,27 @@ final class metrics_manager_test extends advanced_testcase {
         foreach ($collected as $metric) {
             $collection->add($metric);
         }
-        $manager = new metrics_manager($collection);
+        di::set(metric_collection::class, $collection);
+        $manager = di::get(metrics_manager::class);
         // Sanity check.
         self::assertSame(0, $DB->count_records(registered_metric::TABLE));
         // Add pre-existing metrics records.
         foreach ($registered as $toinsert) {
             $DB->insert_record(registered_metric::TABLE, $toinsert);
         }
-        // Prepare to intercept warnings.
-        $lastwarning = null;
-        set_error_handler(
-            static function (int $errno, string $errstr) use (&$lastwarning): void {
-                $lastwarning = $errstr;
-            },
-        );
         // Do the thing.
-        $manager->sync(collect: false, delete: $delete);
-        restore_error_handler();
-        if (!is_null($expectedwarning)) {
-            self::assertNotNull($lastwarning);
-            self::assertStringContainsString($expectedwarning, $lastwarning);
-        } else {
-            self::assertNull($lastwarning);
-        }
+        $metrics = $manager->sync(delete: $delete)->filter();
         // The number of registered metrics should be the same as the number of records in the DB table.
         $expectedcount = count($expected);
         $records = $DB->get_records(registered_metric::TABLE);
-        self::assertCount($expectedcount, $manager->metrics);
+        self::assertCount($expectedcount, $metrics);
         self::assertCount($expectedcount, $records);
         // Check that both the registered metrics and the raw DB records are exactly as we expect them.
         // To be extra sure, store already checked metric IDs.
         $checkedids = [];
         foreach ($expected as $qname => $properties) {
-            self::assertArrayHasKey($qname, $manager->metrics);
-            $metric = $manager->metrics[$qname];
+            $metric = $metrics[$qname] ?? null;
+            self::assertInstanceOf(registered_metric::class, $metric);
             self::assertNotNull($metric->id);
             self::assertNotContains($metric->id, $checkedids);
             self::assertArrayHasKey($metric->id, $records);
@@ -496,42 +553,15 @@ final class metrics_manager_test extends advanced_testcase {
                 ],
                 'delete' => true,
             ],
-            'Collection of 3 metrics with the same qualified name; 1 different pre-existing record; with deletion' => [
-                'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'foo'),
-                ],
-                'registered' => [
-                    [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'bar',
-                        'enabled'      => true,
-                        'config'       => null,
-                        'timecreated'  => 30,
-                        'timemodified' => 40,
-                        'usermodified' => 0,
-                    ],
-                ],
-                'expected' => [
-                    'tool_monitoring_foo' => [
-                        'component'    => 'tool_monitoring',
-                        'name'         => 'foo',
-                        'enabled'      => false,
-                        'config'       => null,
-                        'usermodified' => $USER->id,
-                    ],
-                ],
-                'delete' => true,
-                'expectedwarning' => "Collected more than one metric with the qualified name 'tool_monitoring_foo'",
-            ],
         ];
     }
 
     /**
-     * Tests that deleting a metric also removes its tag associations.
+     * Tests that the {@see metrics_manager::sync} method removes tag associations when deleting a metric.
      *
+     * @throws coding_exception
      * @throws dml_exception
+     * @throws JsonException
      */
     public function test_sync_deletes_tag_instances_for_deleted_metrics(): void {
         global $DB;
@@ -551,28 +581,23 @@ final class metrics_manager_test extends advanced_testcase {
         self::assertNotNull($metricid);
 
         // Add tags alpha and beta to metric foo.
-        core_tag_tag::set_item_tags(
-            component: 'tool_monitoring',
-            itemtype: registered_metric::TABLE,
-            itemid: $metricid,
-            context: context_system::instance(),
-            tagnames: ['alpha', 'beta'],
-        );
+        metric_tag::set_for_metric($metricid, 'alpha', 'beta');
         self::assertSame(
             2,
             $DB->count_records('tag_instance', [
                 'component' => 'tool_monitoring',
-                'itemtype' => registered_metric::TABLE,
+                'itemtype' => metric_tag::ITEM_TYPE,
                 'itemid' => $metricid,
             ]),
         );
 
-        // Delete metric foo.
-        $deletemanager = new metrics_manager(new metric_collection());
-        $deletemanager->sync(collect: false, delete: true);
+        di::set(metric_collection::class, new metric_collection());
+        $manager = di::get(metrics_manager::class);
+        // This should delete the `foo` metric.
+        $manager->sync(delete: true);
         self::assertFalse($DB->record_exists(registered_metric::TABLE, ['id' => $metricid]));
 
-        // Assert that tags are gone, too.
+        // Ensure that tags are gone, too.
         self::assertSame(
             0,
             $DB->count_records('tag_instance', [
@@ -581,6 +606,52 @@ final class metrics_manager_test extends advanced_testcase {
                 'itemid' => $metricid,
             ]),
         );
-        self::assertSame([], core_tag_tag::get_item_tags_array('tool_monitoring', registered_metric::TABLE, $metricid));
+        self::assertSame([$metricid => []], metric_tag::get_for_metric_ids($metricid));
+    }
+
+    /**
+     * Tests {@see metrics_manager::offsetExists}, {@see metrics_manager::offsetGet}, and {@see metrics_manager::offsetUnset}.
+     *
+     * Indirectly also tests the cache data source mechanism because getter first attempts to load a metric from the cache.
+     *
+     * @throws dml_exception
+     */
+    public function test_array_access(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $collection = new metric_collection();
+        $collection->add(self::named_metric_factory(name: 'foo'));
+        di::set(metric_collection::class, $collection);
+        $manager = di::get(metrics_manager::class);
+        $toinsert = [
+            'component'    => 'tool_monitoring',
+            'name'         => 'foo',
+            'enabled'      => false,
+            'timecreated'  => 10,
+            'timemodified' => 20,
+            'usermodified' => 1,
+        ];
+        $DB->insert_record(registered_metric::TABLE, $toinsert);
+        $qname = 'tool_monitoring_foo';
+        self::assertTrue(isset($manager[$qname]));
+        $metric = $manager[$qname];
+        self::assertInstanceOf(registered_metric::class, $metric);
+        self::assertSame($qname, $metric->qualifiedname);
+        // Ensure we cannot unset a metric.
+        $this->expectException(coding_exception::class);
+        unset($manager[$qname]);
+    }
+
+    public function test_array_metric_not_found(): void {
+        $manager = di::get(metrics_manager::class);
+        self::assertFalse(isset($manager['foo']));
+        $this->expectException(metric_not_found::class);
+        $manager['foo'];
+    }
+
+    public function test_array_set_error(): void {
+        $manager = di::get(metrics_manager::class);
+        $this->expectException(coding_exception::class);
+        $manager['foo'] = self::named_metric_factory(name: 'foo');
     }
 }

@@ -34,6 +34,7 @@ use core\lang_string;
 use dml_exception;
 use JsonException;
 use moodleform;
+use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metric;
 
 defined('MOODLE_INTERNAL') || die();
@@ -86,7 +87,7 @@ class config extends moodleform {
             label: new lang_string('settings:metric_enabled', 'tool_monitoring'),
         );
         $this->add_tags_field(
-            itemtype: registered_metric::TABLE,
+            itemtype: metric_tag::ITEM_TYPE,
             component: 'tool_monitoring',
         );
         if (!is_null($this->metric->configclass)) {

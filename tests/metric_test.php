@@ -36,6 +36,7 @@ use core\exception\coding_exception;
 use core\lang_string;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionClass;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics\overdue_tasks;
 use tool_monitoring\local\metrics\users_online;
@@ -55,6 +56,15 @@ use tool_monitoring\local\testing\metric_settable_values;
  */
 #[CoversClass(metric::class)]
 final class metric_test extends advanced_testcase {
+    public function test___construct(): void {
+        $cls = new ReflectionClass(metric::class);
+        $constructor = $cls->getConstructor();
+        self::assertNotNull($constructor);
+        self::assertTrue($constructor->isPublic());
+        self::assertTrue($constructor->isFinal());
+        self::assertSame([], $constructor->getParameters());
+    }
+
     public function test_collect(): void {
         $collection = new metric_collection();
         // The collection should not yet have the test metric.

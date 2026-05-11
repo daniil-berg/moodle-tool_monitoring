@@ -94,7 +94,21 @@ Out of the box, `tool_monitoring` comes with the following metrics:
 #### Metric configuration
 
 Some metrics have their own specific configuration options.
-🚧 TODO
+As an example, the pre-isntalled `users_online` metric has configurable time windows for counting users' most recent access.
+
+To configure it, click on the gear icon next to it on the [dashboard](#dashboard).
+A config page for that metric will open that looks like this:
+
+![Metic Config users_online](docs/img/screenshot_metric_config_users_online.png)
+
+All metrics share basic settings, namely the enabled/disbaled state and associated tags.
+But for [configurable metrics](#configurable-metrics-advanced) there can be arbitrary additional form fields.
+
+In this example, the `users_online` metric has an input field for the time windows in seconds.
+The form validates the input to be a comma-separated list of positive integers.
+During export a separate labeled metric value will be produced for every specified time window.
+
+After modifying the form data, clicking the "Save changes" button redirects you back to the dashboard.
 
 #### Exporters
 

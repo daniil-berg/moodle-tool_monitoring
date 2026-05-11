@@ -64,9 +64,11 @@ class prometheus {
      * - `tags` for filtering specific metrics.
      *
      * Possible response codes for errors:
-     * - **500** if the `prometheus_token` config value is not set.
      * - **403** if the `token` query parameter does not match the `prometheus_token` config value.
      * - **422** if the `tags` query parameter is invalid.
+     * - **500** for coding or DB errors.
+     *
+     * Consider the status codes (not the response texts) part of the public API.
      *
      * @link https://prometheus.io/docs/instrumenting/exposition_formats Prometheus format documentation
      *
@@ -98,27 +100,34 @@ class prometheus {
     )]
     public function get_metrics(Request $request, Response $response): Response {
         $params = $request->getQueryParams();
+        // Define a closure for conveniently deriving a new response object from the original.
+        $makeresponse = fn (string $text, int $status = 200, string $contenttype = 'text/plain; charset=utf-8'): Response
+        => $response->withHeader('Content-Type', $contenttype)->withStatus($status)->withBody(Utils::streamFor($text));
+        // Ensure the config is valid.
         try {
             $expectedtoken = get_config('monitoringexporter_prometheus', 'prometheus_token');
         } catch (dml_exception $e) {
             debugging("Failed to get `prometheus_token` from config: {$e->getMessage()}");
-            return $response->withStatus(500);
+            return $makeresponse('Error in Prometheus exporter', 500);
         }
+        // Check auth.
         if ($expectedtoken && $params['token'] !== $expectedtoken) {
-            return $response->withStatus(403);
+            return $makeresponse('Invalid auth token', 403);
         }
+        // Parse tags.
         if ($params['tag']) {
             $tagnames = explode(',', $params['tag']);
         } else {
             $tagnames = [];
         }
+        // Export metrics.
         try {
-            $body = Utils::streamFor(prometheus_exporter::export(...$tagnames));
-        } catch (tag_not_found) {
-            return $response->withStatus(422);
+            $text = prometheus_exporter::export(...$tagnames);
+        } catch (tag_not_found $e) {
+            return $makeresponse($e->getMessage(), 422);
         } catch (coding_exception | dml_exception) {
-            return $response->withStatus(500);
+            return $makeresponse('Error in Prometheus exporter', 500);
         }
-        return $response->withBody($body)->withHeader('Content-Type', 'text/plain; charset=utf-8');
+        return $makeresponse($text);
     }
 }

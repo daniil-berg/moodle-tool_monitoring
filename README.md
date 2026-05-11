@@ -128,7 +128,35 @@ So if your Moodle web root is `https://example.com` and you set the `prometheus_
 
 ### Grouping metrics with tags (optional)
 
-🚧 TODO
+Sometimes it is useful to not export all available metrics at the same time.
+Perhaps some of your metrics are cheap and quick to calculate, allowing tight scrape intervals, while others would impact performance too much if the exporter were called too often.
+Or maybe you have different export destinations for some metrics.
+
+Whatever the use case, `tool_monitoring` allows you to easily group metrics by leaveraging [Moodle's Tag API][moodle docs tag api].
+You can assign arbitrary tags (scoped to their own distinct "metrics" tag area) to any metric.
+Exporters can then provide a parameter to filter the produced metrics by the tags they carry.
+For example, the included Prometheus exporter accepts a `tag` query parameter in the URL.
+Passing a single tag name will filter out all metrics that do not carry that tag.
+Passing a comma-separated **list of tags** will ensure only metrics that carry **all** of those tags will be exported.
+(Note the **AND**-condition being applied here.)
+For implementation details, take a look at the Prometheus [`exporter`][. exporter] class.
+
+To assign tags to a metric, go to its [configuration page](#metric-configuration).
+Then simply enter the tag names in the "Tags" field.
+
+![Metic Config Tags users_online](docs/img/screenshot_metric_config_tags_users_online.png)
+
+You can add multiple tags at once by putting a comma after each one.
+Clicking the "Save changes" button redirects you back to the dashboard.
+You'll notice the tags you just added show up in the list there.
+
+![Metrics Overview Tags](docs/img/screenshot_metrics_overview_tags.png)
+
+Clicking on one of them will filter the list of metrics accordingly.
+
+![Metrics Overview Tags filtered](docs/img/screenshot_metrics_overview_tags_filtered.png)
+
+The "Manage tags" button will bring you Moodle's usual tag overview/management page for the monitoring tag collection.
 
 ### Prometheus configuration
 

@@ -508,8 +508,8 @@ If you have admin settings to configure, a `settings.php` script placed in the p
 That page will be added under _Plugins_ > _Admin tools_ > _Monitoring_ > _Available Exporters_ and named the same as the sub-plugin.
 
 Since any exporter will need access to the actual metrics available in the system, at some point it should probably make use of the [`metrics_manager`][. metrics_manager].
-Instantiating it and calling its `fetch` method will be enough in most cases.
-That will store all [`registered_metric`][. registered_metric] instances in its `metrics` property.
+Instantiating it and calling its `filter` method will be enough in most cases.
+That returns [`registered_metric`][. registered_metric] instances as an array (indexed by their qualified names).
 
 To calculate and retrieve the current value(s) of a given metric, the associated `registered_metric` instance just needs to be iterated over.
 Iteration will yield the [`metric_value`][. metric_value] objects.

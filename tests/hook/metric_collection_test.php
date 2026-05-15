@@ -33,7 +33,9 @@ namespace tool_monitoring\hook;
 
 use advanced_testcase;
 use PHPUnit\Framework\Attributes\CoversClass;
-use tool_monitoring\local\testing\metric_settable_values;
+use tool_monitoring\local\metrics\courses;
+use tool_monitoring\local\metrics\quiz_attempts_in_progress;
+use tool_monitoring\local\metrics\user_accounts;
 
 /**
  * Unit tests for the {@see metric_collection} hook.
@@ -50,16 +52,25 @@ use tool_monitoring\local\testing\metric_settable_values;
 #[CoversClass(metric_collection::class)]
 final class metric_collection_test extends advanced_testcase {
     /**
-     * Tests the {@see metric_collection::add} method and the {@see IteratorAggregate} implementation.
+     * Tests adding and retrieving metrics.
+     *
+     * - The {@see metric_collection::add `add`} method.
+     * - The {@see metric_collection::get `get`} method.
+     * - The {@see IteratorAggregate} implementation.
      */
-    public function test_add_and_iterator(): void {
-        $metric1 = new metric_settable_values();
-        $metric2 = new metric_settable_values();
-        $metric3 = new metric_settable_values();
+    public function test_add_get_and_iterator(): void {
+        $metric0 = new courses();
+        $metric1 = new courses();
+        $metric2 = new quiz_attempts_in_progress();
+        $metric3 = new user_accounts();
         $collection = new metric_collection();
-        $collection->add($metric1);
+        $collection->add($metric0);
+        $collection->add($metric1); // Should replace `$metric0`.
         $collection->add($metric2);
         $collection->add($metric3);
+        self::assertSame($metric1, $collection->get('tool_monitoring', 'courses'));
+        self::assertSame($metric2, $collection->get('tool_monitoring', 'quiz_attempts_in_progress'));
+        self::assertSame($metric3, $collection->get('tool_monitoring', 'user_accounts'));
         $metrics = iterator_to_array($collection);
         self::assertSame([$metric1, $metric2, $metric3], $metrics);
     }

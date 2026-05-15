@@ -72,9 +72,9 @@ final class metric_test extends advanced_testcase {
         $metric = metric_settable_values::collect($collection);
         // Now the collection should have the test metric.
         self::assertSame([$metric], iterator_to_array($collection));
-        // Doing the same thing again should create a new instance and extend the collection.
+        // Doing the same thing again should create a new instance and replace the previous one in the collection.
         $metric2 = metric_settable_values::collect($collection);
-        self::assertSame([$metric, $metric2], iterator_to_array($collection));
+        self::assertSame([$metric2], iterator_to_array($collection));
     }
 
     /**

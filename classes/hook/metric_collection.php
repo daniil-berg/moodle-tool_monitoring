@@ -61,27 +61,46 @@ use Traversable;
 #[label('Provides the ability to register custom metrics.')]
 #[tags('metric', 'monitoring', 'tool_monitoring')]
 final class metric_collection implements IteratorAggregate {
-    /** @var metric[] All added metrics. */
+    /** @var array<string, array<string, metric>> All added metrics indexed first by component, then by name. */
     private array $metrics = [];
 
     /**
      * Adds the specified metric to the collection.
      *
+     * If a metric with the same component and name already exists, it will be silently replaced.
+     *
      * @param metric $metric Metric instance to add.
      */
     public function add(metric $metric): void {
-        $this->metrics[] = $metric;
+        $component = $metric::get_component();
+        if (!isset($this->metrics[$component])) {
+            $this->metrics[$component] = [];
+        }
+        $this->metrics[$component][$metric::get_name()] = $metric;
     }
 
     /**
-     * Yields the metrics from the collection in the order they were added.
+     * Returns the metric with the given component and name.
+     *
+     * @param string $component Moodle component name.
+     * @param string $name Metric name.
+     * @return metric|null Metric with the given component and name, or `null` if no such metric was added to the collection.
+     */
+    public function get(string $component, string $name): metric|null {
+        return $this->metrics[$component][$name] ?? null;
+    }
+
+    /**
+     * Yields the metrics from the collection.
      *
      * @return Traversable<metric> Previously added metrics.
      */
     #[\Override]
     public function getIterator(): Traversable {
-        foreach ($this->metrics as $metric) {
-            yield $metric;
+        foreach ($this->metrics as $inner) {
+            foreach ($inner as $metric) {
+                yield $metric;
+            }
         }
     }
 

@@ -29,6 +29,7 @@
 
 namespace tool_monitoring;
 
+use core\di;
 use core\exception\coding_exception;
 use core\lang_string;
 use core_cache\cacheable_object_interface;
@@ -38,6 +39,7 @@ use JsonException;
 use moodleform;
 use stdClass;
 use tool_monitoring\form\config as config_form;
+use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics_cache;
 use Traversable;
 
@@ -88,7 +90,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         'timecreated' => 'timecreated',
         'timemodified' => 'timemodified',
         'usermodified' => 'usermodified',
-        'metric' => 'metric',
         'configclass' => 'configclass',
         'tags' => 'tags',
     ];
@@ -423,7 +424,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         foreach (self::CACHE_FIELDS as $field) {
             $data[$field] = match ($field) {
                 'tags' => array_map(fn (metric_tag $tag): array => $tag->prepare_to_cache(), $this->tags),
-                'metric' => get_class($this->metric), // Store just the class name.
                 default => $this->$field,
             };
         }
@@ -453,9 +453,15 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         if (!empty($extra)) {
             debugging("Unexpected cache fields for registered_metric {$data['id']}:" . implode(', ', $extra), DEBUG_DEVELOPER);
         }
+        // Construct the instance using only the DB fields first.
         $instance = new self(...array_intersect_key($data, array_flip(self::FIELDS)));
-        $metric = new $data['metric'](); // Construct from the class name.
+        // Next, find the matching metric instance from the collection and set it on the new object.
+        $collection = di::get(metric_collection::class);
+        if (is_null($metric = $collection->get($instance->component, $instance->name))) {
+            throw new coding_exception("No metric collected for component '$instance->component' and name '$instance->name'");
+        }
         $instance->set_metric($metric);
+        // Finally, wake the associated tag instances and assign those to the new object as well.
         $instance->tags = array_map(fn (array $tag): metric_tag => metric_tag::wake_from_cache($tag), $data['tags']);
         return $instance;
     }

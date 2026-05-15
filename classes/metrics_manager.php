@@ -130,13 +130,14 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         $tags = metric_tag::get_all_with_names(...$tagnames);
         $qnames = [];
         foreach ($this->collection as $metric) {
-            $qname = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());
-            $qnames[$qname] = true;
+            $qnames[] = registered_metric::get_qualified_name($metric::get_component(), $metric::get_name());
         }
         return array_filter(
-            metrics_cache::get_many(...array_keys($qnames)),
-            fn (registered_metric|null $metric): bool
-            => !is_null($metric) && (is_null($enabled) || $metric->enabled === $enabled) && !array_diff_key($tags, $metric->tags),
+            metrics_cache::get_many(...$qnames),
+            fn (registered_metric|null $cachedmetric): bool
+            => !is_null($cachedmetric)
+               && (is_null($enabled) || $cachedmetric->enabled === $enabled)
+               && !array_diff_key($tags, $cachedmetric->tags),
         );
     }
 
@@ -337,7 +338,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         }
         $registeredmetrics = array_filter(
             array:    registered_metric::get_for_metrics(...$metrics), // The function discards variadic argument names.
-            callback: fn (registered_metric $metric): bool => !is_null($metric->id),
+            callback: fn (registered_metric $registeredmetric): bool => !is_null($registeredmetric->id),
         );
         return array_merge($output, $registeredmetrics);
     }

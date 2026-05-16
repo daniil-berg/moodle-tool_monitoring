@@ -101,7 +101,7 @@ final class config_test extends advanced_testcase {
         $testmetric = registered_metric::from_metric(new metric_settable_values());
         $usersonline = registered_metric::from_metric(new users_online());
         return [
-            'Empty data' =>[
+            'Empty data' => [
                 'metric' => $testmetric,
                 'validationdata' => [],
                 'validationerrors' => [],

@@ -53,21 +53,27 @@ final readonly class mock_registered_metric {
     /**
      * Constructor without additional logic.
      *
-     * @param string $name
-     * @param string $component
-     * @param metric_type $type
-     * @param lang_string $description
-     * @param bool $enabled
-     * @param array<string, metric_tag> $tags
+     * @param string $name Name of the metric.
+     * @param string $component Name of the component that owns the metric.
+     * @param metric_type $type Type of the metric.
+     * @param lang_string $description Description of the metric.
+     * @param bool $enabled Whether the metric is enabled.
+     * @param array<string, metric_tag> $tags Tags associated with the metric.
      *
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
+        /** @var string Name of the metric. */
         public string $name,
+        /** @var string Name of the component that owns the metric. */
         public string $component = 'tool_monitoring',
+        /** @var metric_type Type of the metric. */
         public metric_type $type = metric_type::COUNTER,
+        /** @var lang_string Description of the metric. */
         public lang_string $description = new lang_string('pluginname', 'tool_monitoring'),
+        /** @var bool Whether the metric is enabled. */
         public bool $enabled = false,
+        /** @var array<string, metric_tag> Tags associated with the metric. */
         public array $tags = [],
     ) {}
 }

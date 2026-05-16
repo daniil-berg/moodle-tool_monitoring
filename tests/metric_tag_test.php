@@ -140,12 +140,14 @@ final class metric_tag_test extends advanced_testcase {
         $this->resetAfterTest();
         $tagarea = core_tag_area::get_areas()[metric_tag::ITEM_TYPE]['tool_monitoring'];
         metric_tag::create_if_missing($tagarea->tagcollid, ['foo', 'bar', 'baz']);
+        $exception = null;
         try {
             // Populate cache including a `null` for a non-existent tag.
             metric_tag::get_all_with_names('quux');
         } catch (tag_not_found $e) {
+            $exception = $e;
         }
-        self::assertTrue(isset($e)); // Sanity check.
+        self::assertNotNull($exception); // Sanity check.
         $this->resetAfterTest();
         $tags = metric_tag::get_all_with_names('foo', 'bar', 'baz');
         self::assertSame(['foo', 'bar', 'baz'], array_keys($tags));

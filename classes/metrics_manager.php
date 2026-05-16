@@ -127,6 +127,9 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @throws tag_not_found At least one of the provided `$tagnames` does not match any existing metric tag.
      */
     public function filter(bool|null $enabled = null, array $tagnames = []): array {
+        if ($tagnames && !metric_tag::is_enabled()) {
+            throw new tag_not_found(reset($tagnames), metric_tag::COLLECTION_NAME);
+        }
         $tags = metric_tag::get_all_with_names(...$tagnames);
         $qnames = [];
         foreach ($this->collection as $metric) {

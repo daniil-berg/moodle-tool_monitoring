@@ -129,8 +129,19 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
         }
         $names = parent::normalize($names);
         $cache = cache::make('tool_monitoring', 'metric_tags');
-        $tags = array_filter($cache->get_many($names));
-        $missingtags = array_diff_key(array_fill_keys($names, null), $tags);
+        [$tags, $missingtags] = [[], []];
+        foreach ($cache->get_many($names) as $name => $tag) {
+            if (is_null($tag)) {
+                // Null-cache hit; no need to query the DB.
+                throw new tag_not_found($name, self::COLLECTION_NAME);
+            } else if ($tag === false) {
+                // Actual cache miss; prepare for null-caching.
+                $missingtags[$name] = null;
+            } else {
+                // Actual cache hit; all good.
+                $tags[$name] = $tag;
+            }
+        }
         if ($missingtags) {
             // Cache miss for at least one name. Fetch all tags and cache them.
             // Do explicit `null`-caching for those names that are not in the DB to avoid querying it again.

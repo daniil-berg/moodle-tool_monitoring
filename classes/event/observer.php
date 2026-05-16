@@ -86,5 +86,10 @@ final class observer {
      */
     public static function tag_created_or_deleted_or_updated(tag_created|tag_deleted|tag_updated $event): void {
         cache::make('tool_monitoring', 'metric_tags')->delete($event->other['name']);
+        if ($event instanceof tag_updated) {
+            // If a tag is renamed, instances of that tag carried by registered metrics become invalid.
+            // TODO: Query the DB for the actual metrics carrying the updated tag and only remove those from the cache.
+            metrics_cache::purge();
+        }
     }
 }

@@ -124,7 +124,7 @@ final class monitoringexporter_test extends advanced_testcase {
                 'hassiteconfig' => false,
                 'rootdir' => __DIR__ . '/../../exporter/prometheus', // Just a directory that has a `settings.php`.
             ],
-            'No `settings.php` found' => [
+            'No "settings.php" found' => [
                 'hassiteconfig' => true,
                 'rootdir' => 'foo/bar/baz',
             ],
@@ -134,9 +134,5 @@ final class monitoringexporter_test extends advanced_testcase {
                 'installedandupgraded' => false,
             ],
         ];
-    }
-
-    public function test_load_settings_not_installed(): void {
-
     }
 }

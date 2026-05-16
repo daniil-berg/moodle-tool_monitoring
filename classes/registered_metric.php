@@ -390,6 +390,9 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
             }
         }
         metric_tag::set_for_metric($this, ...$formdata->tags);
+        if (metric_tag::normalize($formdata->tags) !== array_keys($this->tags)) {
+            $this->tags = metric_tag::get_for_metric_ids($this->id)[$this->id];
+        }
         if (empty($events)) {
             return;
         }

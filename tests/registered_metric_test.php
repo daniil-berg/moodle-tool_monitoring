@@ -34,6 +34,8 @@ namespace tool_monitoring;
 use advanced_testcase;
 use ArrayIterator;
 use core\event\base as base_event;
+use core\event\tag_added;
+use core\event\tag_created;
 use core\exception\coding_exception;
 use dml_exception;
 use JsonException;
@@ -429,6 +431,13 @@ final class registered_metric_test extends advanced_testcase {
             // Time modified should have been updated.
             self::assertGreaterThan($creationtime, $record->timemodified);
         }
+        // Check that tags are consistent and as expected.
+        if (isset($expected['tags'])) {
+            self::assertSame($expected['tags'], array_keys($metric->tags));
+            $tags = metric_tag::get_for_metric_ids($metric->id)[$metric->id];
+            self::assertSame($expected['tags'], array_keys($tags));
+            unset($expected['tags']);
+        }
         // Check the expected values.
         foreach ($expected as $name => $value) {
             self::assertEquals($value, $record->$name, "Unexpected $name on DB record");
@@ -560,6 +569,25 @@ final class registered_metric_test extends advanced_testcase {
                 ],
                 'events'   => [
                     event\metric_enabled::class,
+                    event\metric_config_updated::class,
+                ],
+            ],
+            'Changing tags and updating config at the same time' => [
+                'metric'   => $metricenabledwithconfig,
+                'formdata' => [
+                    'enabled' => true,
+                    'tags' => ['beans'],
+                    'foo'     => 'bar',
+                    'spam'    => 1,
+                ],
+                'expected' => [
+                    'config'  => '{"foo":"bar","spam":1}',
+                    'enabled' => true,
+                    'tags'    => ['beans'],
+                ],
+                'events'   => [
+                    tag_created::class,
+                    tag_added::class,
                     event\metric_config_updated::class,
                 ],
             ],

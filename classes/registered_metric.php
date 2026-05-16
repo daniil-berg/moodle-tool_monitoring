@@ -267,7 +267,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         $this->timemodified = time();
         $this->usermodified = $USER->id;
         $DB->update_record(self::TABLE, $this->to_db($fields));
-        metrics_cache::set($this);
+        metrics_cache::delete($this->qualifiedname);
     }
 
     /**

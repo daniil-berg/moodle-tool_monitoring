@@ -204,8 +204,8 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
                 foreach ($otherids as $id) {
                     metric_tag::remove_all_for_metric($id);
                 }
-                [$oprphansql, $orphanparams] = $DB->get_in_or_equal($otherids, onemptyitems: null);
-                $DB->delete_records_select(registered_metric::TABLE, "id $oprphansql", $orphanparams);
+                [$orphansql, $orphanparams] = $DB->get_in_or_equal($otherids, onemptyitems: null);
+                $DB->delete_records_select(registered_metric::TABLE, "id $orphansql", $orphanparams);
                 // TODO: Trigger individual deletion events here.
             }
             $transaction->allow_commit();

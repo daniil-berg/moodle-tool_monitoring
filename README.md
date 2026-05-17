@@ -94,14 +94,14 @@ Out of the box, `tool_monitoring` comes with the following metrics:
 #### Metric configuration
 
 Some metrics have their own specific configuration options.
-As an example, the pre-isntalled `users_online` metric has configurable time windows for counting users' most recent access.
+As an example, the pre-installed `users_online` metric has configurable time windows for counting users' most recent access.
 
 To configure it, click on the gear icon next to it on the [dashboard](#dashboard).
 A config page for that metric will open that looks like this:
 
-![Metic Config users_online](docs/img/screenshot_metric_config_users_online.png)
+![Metric Config users_online](docs/img/screenshot_metric_config_users_online.png)
 
-All metrics share basic settings, namely the enabled/disbaled state and associated tags.
+All metrics share basic settings, namely the enabled/disabled state and associated tags.
 But for [configurable metrics](#configurable-metrics-advanced) there can be arbitrary additional form fields.
 
 In this example, the `users_online` metric has an input field for the time windows in seconds.
@@ -132,7 +132,7 @@ Sometimes it is useful to not export all available metrics at the same time.
 Perhaps some of your metrics are cheap and quick to calculate, allowing tight scrape intervals, while others would impact performance too much if the exporter were called too often.
 Or maybe you have different export destinations for some metrics.
 
-Whatever the use case, `tool_monitoring` allows you to easily group metrics by leaveraging [Moodle's Tag API][moodle docs tag api].
+Whatever the use case, `tool_monitoring` allows you to easily group metrics by leveraging [Moodle's Tag API][moodle docs tag api].
 You can assign arbitrary tags (scoped to their own distinct "metrics" tag area) to any metric.
 Exporters can then provide a parameter to filter the produced metrics by the tags they carry.
 For example, the included Prometheus exporter accepts a `tag` query parameter in the URL.
@@ -144,7 +144,7 @@ For implementation details, take a look at the Prometheus [`exporter`][. exporte
 To assign tags to a metric, go to its [configuration page](#metric-configuration).
 Then simply enter the tag names in the "Tags" field.
 
-![Metic Config Tags users_online](docs/img/screenshot_metric_config_tags_users_online.png)
+![Metric Config Tags users_online](docs/img/screenshot_metric_config_tags_users_online.png)
 
 You can add multiple tags at once by putting a comma after each one.
 Clicking the "Save changes" button redirects you back to the dashboard.

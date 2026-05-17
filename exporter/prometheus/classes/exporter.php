@@ -81,7 +81,8 @@ class exporter {
      */
     private static function export_metric(registered_metric $metric): string {
         $name = $metric->qualifiedname;
-        $output = "# HELP $name {$metric->description->out()}\n";
+        $help = self::escape_help($metric->description->out());
+        $output = "# HELP $name $help\n";
         $output .= "# TYPE $name {$metric->type->value}";
         foreach ($metric as $metricvalue) {
             $output .= "\n" . self::get_metric_value_line($metricvalue, $name);
@@ -102,8 +103,36 @@ class exporter {
         }
         $pairs = [];
         foreach ($metricvalue->label as $labelname => $labelvalue) {
-            $pairs[] = "$labelname=\"$labelvalue\"";
+            $pairs[] = $labelname . '="' . self::escape_label_value($labelvalue) . '"';
         }
         return "$metricname{" . implode(', ', $pairs) . "} $metricvalue->value";
+    }
+
+    /**
+     * Escapes a string for use as the `HELP` text in the Prometheus text exposition format.
+     *
+     * Backslash and line feed characters must be escaped as `\\` and `\n`.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
+     *
+     * @param string $help Raw help text.
+     * @return string Escaped help text.
+     */
+    private static function escape_help(string $help): string {
+        return strtr($help, ['\\' => '\\\\', "\n" => '\\n']);
+    }
+
+    /**
+     * Escapes a string for use as a label value in the Prometheus text exposition format.
+     *
+     * Backslash, double-quote, and line feed characters must be escaped as `\\`, `\"`, and `\n` respectively.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
+     *
+     * @param string $value Raw label value.
+     * @return string Escaped label value (without the surrounding double-quotes).
+     */
+    private static function escape_label_value(string $value): string {
+        return strtr($value, ['\\' => '\\\\', '"' => '\\"', "\n" => '\\n']);
     }
 }

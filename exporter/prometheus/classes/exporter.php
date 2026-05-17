@@ -29,12 +29,7 @@
 
 namespace monitoringexporter_prometheus;
 
-use core\di;
-use core\exception\coding_exception;
-use dml_exception;
-use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\metric_value;
-use tool_monitoring\metrics_manager;
 use tool_monitoring\registered_metric;
 
 /**
@@ -53,26 +48,17 @@ use tool_monitoring\registered_metric;
  */
 class exporter {
     /**
-     * Exports enabled metrics in the Prometheus text format.
+     * Calculates and exports the provided metrics in the Prometheus text format.
      *
-     * @param string ...$tagnames Names of tags to filter the metrics by. Exports only metrics that carry all the specified tags.
-     *                            Names will be normalized before looking up the tags. Not passing any disables this filter.
+     * @param registered_metric ...$metrics Metrics to export.
      * @return string Prometheus text format.
-     * @throws coding_exception
-     * @throws dml_exception
-     * @throws tag_not_found At least one of the provided `$tagnames` does not match any existing metric tag.
      */
-    public static function export(string ...$tagnames): string {
-        $manager = di::get(metrics_manager::class);
-        $lines = [];
-        foreach ($manager->filter(enabled: true, tagnames: $tagnames) as $metric) {
-            $lines[] = self::export_metric($metric);
-        }
-        return implode("\n", $lines);
+    public static function export(registered_metric ...$metrics): string {
+        return implode("\n", array_map([self::class, 'export_metric'], $metrics));
     }
 
     /**
-     * Exports the provided metric in the Prometheus text format, including `HELP` and `TYPE` comments.
+     * Calculates and exports a single metric in the Prometheus text format, including `HELP` and `TYPE` comments.
      *
      * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
      *

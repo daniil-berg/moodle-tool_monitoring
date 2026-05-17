@@ -38,9 +38,9 @@ use Traversable;
 /**
  * Base class for all metrics.
  *
- * Concrete subclasses only **need** to implement the {@see calculate}, {@see get_description} and {@see get_type} methods.
+ * Concrete subclasses only **need** to implement the {@see calculate} and {@see get_type} methods.
  *
- * Inheriting classes _may_ also override the {@see get_name} method to provide a custom identifier.
+ * Inheriting classes _may_ also override the {@see get_name} and {@see get_description} methods.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -93,35 +93,34 @@ abstract class metric {
      *
      * @return metric_type
      */
-    abstract public static function get_type(): metric_type;
+    abstract public function get_type(): metric_type;
 
     /**
      * Returns the localized description of the metric.
      *
      * Subclasses may override this. Defaults to a language string with the ID `"metric:{$name}_desc"` where `$name` is the
-     * metric's name as returned by the {@see static::get_name `get_name`} method, residing in the language file of the defining
-     * component as returned by the {@see static::get_component `get_component`} method.
+     * metric's name as returned by the {@see self::get_name `get_name`} method, residing in the language file of the defining
+     * component as returned by the {@see self::get_component `get_component`} method.
      *
      * @return lang_string Metric description/help text.
      * @throws coding_exception
      */
-    public static function get_description(): lang_string {
-        $name = static::get_name();
-        return new lang_string("metric:{$name}_desc", static::get_component());
+    public function get_description(): lang_string {
+        return new lang_string("metric:{$this->get_name()}_desc", $this->get_component());
     }
 
     /**
      * Returns the name of the metric to be used as an identifier.
      *
      * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the defining component as returned by the {@see static::get_component `get_component`} method; it _must_ be no longer than
+     * the defining component as returned by the {@see self::get_component `get_component`} method; it _must_ be no longer than
      * 100 characters.
      *
      * Defaults to the unqualified class name.
      *
      * @return string Unique metric name/identifier.
      */
-    public static function get_name(): string {
+    public function get_name(): string {
         $name = static::class;
         if (($pos = strrpos($name, '\\')) === false) {
             return $name; // @codeCoverageIgnore
@@ -134,7 +133,7 @@ abstract class metric {
      *
      * @return string Moodle component name.
      */
-    final public static function get_component(): string {
+    final public function get_component(): string {
         return component::get_component_from_classname(static::class);
     }
 }

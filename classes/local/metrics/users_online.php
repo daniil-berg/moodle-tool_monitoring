@@ -50,7 +50,7 @@ use tool_monitoring\metric_with_config;
  */
 class users_online extends metric_with_config {
     #[\Override]
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 

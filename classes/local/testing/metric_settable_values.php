@@ -60,13 +60,13 @@ class metric_settable_values extends metric {
     }
 
     #[\Override]
-    public static function get_description(): lang_string {
+    public function get_description(): lang_string {
         // Just an arbitrary existing language string.
         return new lang_string('pluginname', 'tool_monitoring');
     }
 
     #[\Override]
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::COUNTER;
     }
 }

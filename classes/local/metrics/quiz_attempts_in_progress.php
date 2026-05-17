@@ -53,7 +53,7 @@ use tool_monitoring\metric_with_config;
  */
 class quiz_attempts_in_progress extends metric_with_config {
     #[\Override]
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 

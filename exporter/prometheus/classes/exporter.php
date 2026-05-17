@@ -50,11 +50,17 @@ class exporter {
     /**
      * Calculates and exports the provided metrics in the Prometheus text format.
      *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#details Documentation
+     *
      * @param registered_metric ...$metrics Metrics to export.
      * @return string Prometheus text format.
      */
     public static function export(registered_metric ...$metrics): string {
-        return implode("\n", array_map([self::class, 'export_metric'], $metrics));
+        if (!$metrics) {
+            return '';
+        }
+        // The Prometheus spec explicitly calls for a trailing line feed character. (See documentation link.)
+        return implode("\n", array_map([self::class, 'export_metric'], $metrics)) . "\n";
     }
 
     /**

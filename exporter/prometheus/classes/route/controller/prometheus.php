@@ -29,6 +29,7 @@
 
 namespace monitoringexporter_prometheus\route\controller;
 
+use core\di;
 use core\exception\coding_exception;
 use core\param;
 use core\router\route;
@@ -40,6 +41,7 @@ use monitoringexporter_prometheus\exporter as prometheus_exporter;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use tool_monitoring\exceptions\tag_not_found;
+use tool_monitoring\metrics_manager;
 
 /**
  * Provides the route for Prometheus to pull the current metrics.
@@ -120,14 +122,16 @@ class prometheus {
         } else {
             $tagnames = [];
         }
-        // Export metrics.
+        // Get the relevant metrics.
         try {
-            $text = prometheus_exporter::export(...$tagnames);
+            $metrics = di::get(metrics_manager::class)->filter(enabled: true, tagnames: $tagnames);
         } catch (tag_not_found $e) {
             return $makeresponse($e->getMessage(), 422);
         } catch (coding_exception | dml_exception) {
             return $makeresponse('Error in Prometheus exporter', 500);
         }
+        // Calculate and export the metrics.
+        $text = prometheus_exporter::export(...$metrics);
         return $makeresponse($text);
     }
 }

@@ -515,8 +515,8 @@ To calculate and retrieve the current value(s) of a given metric, the associated
 Iteration will yield the [`metric_value`][. metric_value] objects.
 
 > [!TIP]
-> You can look at how the Prometheus exporter does this in its [`exporter`][. exporter] class.
-> The `export` method calls the `filter` method of the `metrics_manager` to get all enabled metrics that match the tags specified in the request.
+> You can look at how the Prometheus exporter does this in its [`route\controller\prometheus`][. route/controller/prometheus] and [`exporter`][. exporter] classes.
+> The `filter` method of the `metrics_manager` is called to get all **enabled** metrics that match the **tags** specified in the request.
 
 ## Terminology
 
@@ -675,6 +675,7 @@ You should have received a copy of the GNU General Public License along with `to
 [. metric_with_config]: classes/metric_with_config.php
 [. metrics_manager]: classes/metrics_manager.php
 [. registered_metric]: classes/registered_metric.php
+[. route/controller/prometheus]: exporter/prometheus/classes/route/controller/prometheus.php
 [. simple_metric_config]: classes/simple_metric_config.php
 [grafana oss home]: https://grafana.com/oss/grafana
 [moodle docs blocks]: https://docs.moodle.org/en/Blocks

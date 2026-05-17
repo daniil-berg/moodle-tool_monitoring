@@ -85,19 +85,31 @@ class exporter {
     /**
      * Generates a metric value line in the Prometheus format.
      *
+     * The metric value is simply cast to a string assuming locale-independent representation.
+     * Exceptions are made for `NAN`, `INF`, and `-INF` values, which are represented as `NaN`, `+Inf`, and `-Inf`, respectively.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
+     *
      * @param metric_value $metricvalue Potentially labeled metric value.
      * @param string $metricname Name of the metric.
      * @return string Line for exporting the metric value.
      */
     private static function get_metric_value_line(metric_value $metricvalue, string $metricname): string {
+        // NOTE: `match` uses strict comparison and `NAN !== NAN`, so that must be detected via `is_nan`.
+        $value = match (true) {
+            is_nan($metricvalue->value) => 'NaN',
+            $metricvalue->value === INF => '+Inf',
+            $metricvalue->value === -INF => '-Inf',
+            default => $metricvalue->value,
+        };
         if (!$metricvalue->label) {
-            return "$metricname $metricvalue->value";
+            return "$metricname $value";
         }
         $pairs = [];
         foreach ($metricvalue->label as $labelname => $labelvalue) {
             $pairs[] = $labelname . '="' . self::escape_label_value($labelvalue) . '"';
         }
-        return "$metricname{" . implode(', ', $pairs) . "} $metricvalue->value";
+        return "$metricname{" . implode(', ', $pairs) . "} $value";
     }
 
     /**

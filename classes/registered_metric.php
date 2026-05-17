@@ -146,7 +146,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * @throws JsonException The metric is configurable but it's default config could not be serialized.
      */
     public static function from_metric(metric $metric): self {
-        $instance = new self(component: $metric::get_component(), name: $metric::get_name());
+        $instance = new self(component: $metric->get_component(), name: $metric->get_name());
         $instance->set_metric($metric);
         return $instance;
     }
@@ -324,8 +324,8 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     public function __get(string $name): mixed {
         return match ($name) {
             'qualifiedname' => self::get_qualified_name($this->component, $this->name),
-            'description'   => $this->metric::get_description(),
-            'type'          => $this->metric::get_type(),
+            'description'   => $this->metric->get_description(),
+            'type'          => $this->metric->get_type(),
             'configclass'   => $this->configclass,
             'tags'          => $this->tags,
             default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),

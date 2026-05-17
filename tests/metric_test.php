@@ -80,13 +80,13 @@ final class metric_test extends advanced_testcase {
     /**
      * Tests the {@see metric::get_description} method.
      *
-     * @param class-string<metric> $class Metric class name.
+     * @param metric $metric Metric to test with.
      * @param lang_string $expected Expected return value.
      * @throws coding_exception
      */
     #[DataProvider('provider_test_get_description')]
-    public function test_get_description(string $class, lang_string $expected): void {
-        $description = $class::get_description();
+    public function test_get_description(metric $metric, lang_string $expected): void {
+        $description = $metric->get_description();
         self::assertEquals($expected, $description);
         self::assertSame($expected->get_identifier(), $description->get_identifier());
         self::assertSame($expected->get_component(), $description->get_component());
@@ -100,11 +100,11 @@ final class metric_test extends advanced_testcase {
     public static function provider_test_get_description(): array {
         return [
             [
-                'class'    => overdue_tasks::class,
+                'metric'   => new overdue_tasks(),
                 'expected' => new lang_string('metric:overdue_tasks_desc', 'tool_monitoring'),
             ],
             [
-                'class'    => users_online::class,
+                'metric'   => new users_online(),
                 'expected' => new lang_string('metric:users_online_desc', 'tool_monitoring'),
             ],
         ];
@@ -113,12 +113,12 @@ final class metric_test extends advanced_testcase {
     /**
      * Tests the {@see metric::get_name} method.
      *
-     * @param class-string<metric> $class Metric class name.
+     * @param metric $metric Metric to test with.
      * @param string $expected Expected return value.
      */
     #[DataProvider('provider_test_get_name')]
-    public function test_get_name(string $class, string $expected): void {
-        self::assertSame($expected, $class::get_name());
+    public function test_get_name(metric $metric, string $expected): void {
+        self::assertSame($expected, $metric->get_name());
     }
 
     /**
@@ -129,15 +129,15 @@ final class metric_test extends advanced_testcase {
     public static function provider_test_get_name(): array {
         return [
             [
-                'class'    => metric_settable_values::class,
+                'metric'   => new metric_settable_values(),
                 'expected' => 'metric_settable_values',
             ],
             [
-                'class'    => overdue_tasks::class,
+                'metric'   => new overdue_tasks(),
                 'expected' => 'overdue_tasks',
             ],
             [
-                'class'    => users_online::class,
+                'metric'   => new users_online(),
                 'expected' => 'users_online',
             ],
         ];
@@ -146,12 +146,12 @@ final class metric_test extends advanced_testcase {
     /**
      * Tests the {@see metric::get_component} method.
      *
-     * @param class-string<metric> $class Metric class name.
+     * @param metric $metric Metric to test with.
      * @param string $expected Expected return value.
      */
     #[DataProvider('provider_test_get_component')]
-    public function test_get_component(string $class, string $expected): void {
-        self::assertSame($expected, $class::get_component());
+    public function test_get_component(metric $metric, string $expected): void {
+        self::assertSame($expected, $metric->get_component());
     }
 
     /**
@@ -162,15 +162,15 @@ final class metric_test extends advanced_testcase {
     public static function provider_test_get_component(): array {
         return [
             [
-                'class'    => metric_settable_values::class,
+                'metric'   => new metric_settable_values(),
                 'expected' => 'tool_monitoring',
             ],
             [
-                'class'    => overdue_tasks::class,
+                'metric'   => new overdue_tasks(),
                 'expected' => 'tool_monitoring',
             ],
             [
-                'class'    => users_online::class,
+                'metric'   => new users_online(),
                 'expected' => 'tool_monitoring',
             ],
         ];

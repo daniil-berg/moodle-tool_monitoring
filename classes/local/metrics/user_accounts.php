@@ -49,7 +49,7 @@ use tool_monitoring\metric_value;
  */
 class user_accounts extends metric {
     #[\Override]
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 

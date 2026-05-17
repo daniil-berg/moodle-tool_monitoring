@@ -67,7 +67,7 @@ final class metrics_manager_test extends advanced_testcase {
     private static function named_metric_factory(string $name): metric_settable_values {
         // @phpcs:disable moodle.PHP.ForbiddenTokens.Found
         return eval("return new class() extends \\tool_monitoring\\local\\testing\\metric_settable_values {
-            public static function get_name(): string {
+            public function get_name(): string {
                 return '$name';
             }
         };");
@@ -89,7 +89,7 @@ final class metrics_manager_test extends advanced_testcase {
         ];
         $metricclasses = [];
         foreach ($manager->collection as $metric) {
-            if ($metric::get_component() === 'tool_monitoring') {
+            if ($metric->get_component() === 'tool_monitoring') {
                 $metricclasses[] = $metric::class;
             }
         }

@@ -229,7 +229,7 @@ use tool_monitoring\metric_value;
  * Measures the current number of blocks used on the site.
  */
 class blocks_used extends metric {
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
@@ -414,7 +414,7 @@ use tool_monitoring\metric_with_config;
  * Measures the current number of blocks used on the site.
  */
 class blocks_used extends metric_with_config {
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
@@ -548,7 +548,7 @@ There are currently only two types of metrics that `tool_monitoring` supports, *
 - A **gauge** is a metric with values that can increase or decrease over time.
 - A **counter** is a special kind of gauge that must only ever increase.
 
-The metric type is static and encapsulated by the [`metric_type`][. metric_type] enum.
+The metric type is encapsulated by the [`metric_type`][. metric_type] enum.
 
 ### Label
 

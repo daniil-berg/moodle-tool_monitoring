@@ -58,13 +58,13 @@ class metric_with_custom_config extends metric_with_config {
     }
 
     #[\Override]
-    public static function get_description(): lang_string {
+    public function get_description(): lang_string {
         // Just an arbitrary existing language string.
         return new lang_string('pluginname', 'tool_monitoring');
     }
 
     #[\Override]
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::COUNTER;
     }
 

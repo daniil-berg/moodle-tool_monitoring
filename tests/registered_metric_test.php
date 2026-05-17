@@ -441,13 +441,14 @@ final class registered_metric_test extends advanced_testcase {
      * @throws JsonException
      */
     public function test___get___isset(): void {
-        $instance = registered_metric::from_metric(new metric_settable_values());
+        $metric = new metric_settable_values();
+        $instance = registered_metric::from_metric($metric);
         self::assertTrue(isset($instance->qualifiedname));
         self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
         self::assertTrue(isset($instance->description));
-        self::assertEquals(metric_settable_values::get_description(), $instance->description);
+        self::assertEquals($metric->get_description(), $instance->description);
         self::assertTrue(isset($instance->type));
-        self::assertSame(metric_settable_values::get_type(), $instance->type);
+        self::assertSame($metric->get_type(), $instance->type);
         self::assertTrue(isset($instance->tags));
         self::assertSame([], $instance->tags);
         $instance = registered_metric::from_metric(new metric_with_custom_config());

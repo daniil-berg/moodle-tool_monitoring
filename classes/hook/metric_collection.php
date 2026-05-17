@@ -72,11 +72,11 @@ final class metric_collection implements IteratorAggregate {
      * @param metric $metric Metric instance to add.
      */
     public function add(metric $metric): void {
-        $component = $metric::get_component();
+        $component = $metric->get_component();
         if (!isset($this->metrics[$component])) {
             $this->metrics[$component] = [];
         }
-        $this->metrics[$component][$metric::get_name()] = $metric;
+        $this->metrics[$component][$metric->get_name()] = $metric;
     }
 
     /**

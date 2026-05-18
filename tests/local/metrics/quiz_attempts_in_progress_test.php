@@ -59,8 +59,7 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $metric = new quiz_attempts_in_progress();
-        // Simulate the default config being applied here.
-        $metric->configjson = '{"maxdeadlineseconds": 10800, "maxidleseconds": 1200}';
+        $config = new quiz_attempts_in_progress_config();
         // Generate some quiz attempts.
         $now = time();
         $generator = $this->getDataGenerator();
@@ -109,7 +108,7 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
             'quiz_attempts',
             ['id' => $attempt23->id, 'timecheckstate' => $now, 'state' => 'finished'], // Finished.
         );
-        $output = $metric->calculate();
+        $output = $metric->calculate($config);
         self::assertEquals(2, $output->value);
         self::assertSame(['deadline_within' => '10800s', 'idle_within' => '1200s'], $output->label);
     }

@@ -30,6 +30,7 @@
 namespace tool_monitoring\local\metrics;
 
 use dml_exception;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric;
 use tool_monitoring\metric_value;
@@ -55,11 +56,12 @@ class courses extends metric {
     /**
      * Produces the current metric values.
      *
+     * @param metric_config|null $config Ignored; metric is not configurable.
      * @return metric_value[] Two metric values, one for visible courses and one for hidden courses.
      * @throws dml_exception
      */
     #[\Override]
-    public function calculate(): array {
+    public function calculate(metric_config|null $config = null): array {
         global $DB;
         $sql = "SELECT SUM(visible)                                 AS numvisible,
                        SUM(CASE WHEN visible = 0 THEN 1 ELSE 0 END) AS numhidden

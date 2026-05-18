@@ -29,14 +29,12 @@
 
 namespace tool_monitoring;
 
-use core\exception\coding_exception;
-use tool_monitoring\exceptions\metric_config_not_implemented;
-
 /**
  * Extends a {@see metric} allowing it to define a custom {@see metric_config} for itself.
  *
- * For convenience and type safety, the {@see self::parse_config `parse_config`} method allows subclasses to retrieve their
- * configuration object, typically from within the {@see static::calculate `calculate`} method.
+ * @phpcs:disable moodle.Commenting.ValidTags.Invalid
+ * @template TConf of metric_config
+ * @extends metric<TConf>
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -48,29 +46,6 @@ use tool_monitoring\exceptions\metric_config_not_implemented;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class metric_with_config extends metric {
-    /** @var string|null Metric-specific config in JSON format; subclasses _should_ never write to this. */
-    public string|null $configjson = null;
-
-    /**
-     * Calls the {@see metric_config::from_json} method of the specified class to parse the config JSON.
-     *
-     * @phpcs:disable moodle.Commenting.ValidTags.Invalid
-     * @template ConfT of metric_config
-     * @param class-string<ConfT> $class Config class implementing {@see metric_config} to construct the object from.
-     * @return ConfT Config object of the provided class.
-     * @throws coding_exception The {@see configjson} is not set.
-     * @throws metric_config_not_implemented Provided class does not implement the {@see metric_config} interface.
-     */
-    public function parse_config(string $class): metric_config {
-        if (!isset($this->configjson)) {
-            throw new coding_exception('Metric config JSON is not set.');
-        }
-        if (!is_subclass_of($class, metric_config::class)) {
-            throw new metric_config_not_implemented($class);
-        }
-        return $class::from_json($this->configjson);
-    }
-
     /**
      * Returns the default config for the metric.
      *

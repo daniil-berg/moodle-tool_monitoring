@@ -58,8 +58,8 @@ final class users_online_test extends advanced_testcase {
     public function test_calculate(): void {
         $this->resetAfterTest();
         $metric = new users_online();
-        // Simulate the default config being applied here.
-        $metric->configjson = '{"timewindows": [60, 300, 900, 3600]}';
+        // Emulate the default config.
+        $config = new users_online_config(60, 300, 900, 3600);
         // Generate some users with different last access times.
         $now = time();
         $generator = $this->getDataGenerator();
@@ -71,7 +71,7 @@ final class users_online_test extends advanced_testcase {
         $generator->create_user(['lastaccess' => $now - 20]);
         $generator->create_user(['lastaccess' => $now - 10]);
         $generator->create_user(['lastaccess' => $now]);
-        $values = $metric->calculate();
+        $values = $metric->calculate($config);
         self::assertCount(4, $values);
         self::assertEquals(
             [

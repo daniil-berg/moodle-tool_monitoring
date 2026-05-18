@@ -208,8 +208,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     /**
      * Assigns the provided metric to the instance.
      *
-     * If the metric is configurable, sets the instance's {@see self::$configclass `configclass`} and {@see self::config `config`}
-     * properties consistently and updates the metric's {@see metric_with_config::$configjson `configjson`} property.
+     * If the metric is configurable, sets the instance's {@see self::$configclass `configclass`} and {@see self::config `config`}.
      *
      * @param metric $metric Metric to assign to the instance.
      * @throws JsonException No {@see self::config `config`} was set and the default config could not be serialized.
@@ -222,7 +221,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
                 // No config set yet; fall back to the default.
                 $this->config = json_encode($defaultconfig, JSON_THROW_ON_ERROR);
             }
-            $metric->configjson = $this->config;
         }
         $this->metric = $metric;
     }
@@ -422,7 +420,12 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     #[\Override]
     public function getIterator(): Traversable {
-        $values = $this->metric->calculate();
+        if (!is_null($this->config) && !is_null($this->configclass)) {
+            $config = $this->configclass::from_json($this->config);
+        } else {
+            $config = null;
+        }
+        $values = $this->metric->calculate($config);
         if ($values instanceof metric_value) {
             yield $values;
         } else {

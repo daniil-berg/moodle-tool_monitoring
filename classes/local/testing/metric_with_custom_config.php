@@ -30,6 +30,7 @@
 namespace tool_monitoring\local\testing;
 
 use core\lang_string;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
@@ -52,7 +53,7 @@ use tool_monitoring\metric_with_config;
  */
 class metric_with_custom_config extends metric_with_config {
     #[\Override]
-    public function calculate(): metric_value {
+    public function calculate(metric_config|null $config = null): metric_value {
         // Just an arbitrary value. Not used anyway.
         return new metric_value(1);
     }

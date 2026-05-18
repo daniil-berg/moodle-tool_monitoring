@@ -31,13 +31,15 @@ namespace tool_monitoring\local\metrics;
 
 use core\exception\coding_exception;
 use dml_exception;
-use tool_monitoring\exceptions\metric_config_not_implemented;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
 
 /**
  * Gauges the number of users online within certain time windows.
+ *
+ * @extends metric_with_config<users_online_config>
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -57,15 +59,13 @@ class users_online extends metric_with_config {
     /**
      * Produces the current metric values.
      *
+     * @param users_online_config|null $config Metric configuration.
      * @return metric_value[] One metric value per configured time window, labeled with that same time window, in ascending order.
-     * @throws coding_exception
      * @throws dml_exception
-     * @throws metric_config_not_implemented
      */
     #[\Override]
-    public function calculate(): array {
+    public function calculate(metric_config|null $config = null): array {
         global $DB;
-        $config = $this->parse_config(users_online_config::class);
         $fieldssqlfragments = [];
         $params = [];
         $now = time();

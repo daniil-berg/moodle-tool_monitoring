@@ -222,6 +222,7 @@ Let's say we have our own `local_example` plugin and the metric class is suppose
 namespace local_example\metrics;
 
 use tool_monitoring\metric;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
@@ -233,7 +234,7 @@ class blocks_used extends metric {
         return metric_type::GAUGE;
     }
 
-    public function calculate(): array {
+    public function calculate(metric_config|null $config = null): array {
         global $DB;
         [$insql, $params] = $DB->get_in_or_equal(['course_list', 'course_summary']);
         $sql = "SELECT b.name,
@@ -405,22 +406,26 @@ And the `calculate` method now also relies on an instance of our config class.
 namespace local_example\metrics;
 
 use core\lang_string;
-use tool_monitoring\metric;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
 
 /**
  * Measures the current number of blocks used on the site.
+ *
+ * @extends metric_with_config<blocks_used_config>
  */
 class blocks_used extends metric_with_config {
     public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
-    public function calculate(): metric_value {
+    /**
+     * @param blocks_used_config|null $config Metric configuration.
+     */
+    public function calculate(metric_config|null $config = null): metric_value {
         global $DB;
-        $config = $this->parse_config(blocks_used_config::class);
         $sql = "SELECT COUNT(*)
                   FROM {block_instances} AS binst
                   JOIN {block} AS b ON b.name = binst.blockname
@@ -440,9 +445,10 @@ class blocks_used extends metric_with_config {
 
 </details>
 
-Using the helper method `parse_config` we get an instance of our config class constructed with the data from the database.
-The return type is _guaranteed_ to be an instance of the supplied config class.
-We use it to construct the necessary SQL query.
+Notice that unlike before, we are actually using the `$config` object here for our calculation of the metric value.
+The stored configuration JSON will be deserialized into an instance of the config class and passed to `calculate`.
+
+<sub>The parameter type cannot be narrowed in the signature, so the concrete config class is declared twice: `@extends metric_with_config<blocks_used_config>` (static analysis) and `@param blocks_used_config|null $config` on `calculate` (IDE autocompletion).</sub>
 
 Lastly, since we defined default values for the config parameters in the `blocks_used_config` constructor, the implementation of the `get_default_config` method is trivial.
 

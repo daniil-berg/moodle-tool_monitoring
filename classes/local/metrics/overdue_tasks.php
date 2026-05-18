@@ -32,6 +32,7 @@ namespace tool_monitoring\local\metrics;
 use dml_exception;
 use Generator;
 use tool_monitoring\metric;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
@@ -59,11 +60,12 @@ class overdue_tasks extends metric {
     /**
      * Produces the current metric value.
      *
+     * @param metric_config|null $config Ignored; metric is not configurable.
      * @return Generator<metric_value> Yields one {@see metric_value} for adhoc and then one for scheduled tasks.
      * @throws dml_exception
      */
     #[\Override]
-    public function calculate(): Generator {
+    public function calculate(metric_config|null $config = null): Generator {
         global $DB;
         $where = 'nextruntime <= :next_runtime';
         $params = ['next_runtime' => time()];

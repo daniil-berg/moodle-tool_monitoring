@@ -42,6 +42,9 @@ use Traversable;
  *
  * Inheriting classes _may_ also override the {@see get_name} and {@see get_description} methods.
  *
+ * @phpcs:disable moodle.Commenting.ValidTags.Invalid
+ * @template TConf of metric_config
+ *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
@@ -84,9 +87,10 @@ abstract class metric {
      *
      * This method will be called to export values to the configured monitoring service(s).
      *
+     * @param TConf|null $config Metric configuration, if any.
      * @return iterable<metric_value>|metric_value Singular metric value or an array or traversable object of metric values.
      */
-    abstract public function calculate(): iterable|metric_value;
+    abstract public function calculate(metric_config|null $config = null): iterable|metric_value;
 
     /**
      * Returns the type of the metric.

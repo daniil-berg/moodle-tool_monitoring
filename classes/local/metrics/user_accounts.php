@@ -31,6 +31,7 @@ namespace tool_monitoring\local\metrics;
 
 use dml_exception;
 use Generator;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric;
 use tool_monitoring\metric_value;
@@ -56,11 +57,12 @@ class user_accounts extends metric {
     /**
      * Produces the current metric values.
      *
+     * @param metric_config|null $config Ignored; metric is not configurable.
      * @return Generator<metric_value> Yields a {@see metric_value} for each combination of auth type and suspended/deleted state.
      * @throws dml_exception
      */
     #[\Override]
-    public function calculate(): Generator {
+    public function calculate(metric_config|null $config = null): Generator {
         global $DB;
         $authtypes = get_enabled_auth_plugins();
         $fieldssqlfragments = [];

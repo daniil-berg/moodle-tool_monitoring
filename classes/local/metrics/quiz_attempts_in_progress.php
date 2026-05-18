@@ -32,6 +32,7 @@ namespace tool_monitoring\local\metrics;
 use core\exception\coding_exception;
 use dml_exception;
 use tool_monitoring\exceptions\metric_config_not_implemented;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
@@ -41,6 +42,8 @@ use tool_monitoring\metric_with_config;
  *
  * Attempts in quizzes that have no deadline approaching are excluded. As are attempts that have been idle for too long.
  * Both time windows are configurable.
+ *
+ * @extends metric_with_config<quiz_attempts_in_progress_config>
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -60,15 +63,13 @@ class quiz_attempts_in_progress extends metric_with_config {
     /**
      * Produces the current metric value.
      *
+     * @param quiz_attempts_in_progress_config|null $config Metric configuration.
      * @return metric_value Number of ongoing quiz attempts within the configured time windows.
-     * @throws coding_exception
      * @throws dml_exception
-     * @throws metric_config_not_implemented
      */
     #[\Override]
-    public function calculate(): metric_value {
+    public function calculate(metric_config|null $config = null): metric_value {
         global $DB;
-        $config = $this->parse_config(quiz_attempts_in_progress_config::class);
         $now = time();
         $where = 'state = :state AND timemodified >= :min_time_modified AND timecheckstate <= :max_time_check_state';
         $params = [

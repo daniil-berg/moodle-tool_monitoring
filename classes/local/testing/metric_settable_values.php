@@ -31,6 +31,7 @@ namespace tool_monitoring\local\testing;
 
 use core\lang_string;
 use tool_monitoring\metric;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
@@ -55,7 +56,7 @@ class metric_settable_values extends metric {
     public iterable|metric_value $values = [];
 
     #[\Override]
-    public function calculate(): iterable|metric_value {
+    public function calculate(metric_config|null $config = null): iterable|metric_value {
         return $this->values;
     }
 

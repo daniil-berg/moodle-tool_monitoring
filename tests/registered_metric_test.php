@@ -77,8 +77,8 @@ final class registered_metric_test extends advanced_testcase {
         $metricprop = new ReflectionProperty(registered_metric::class, 'metric');
         self::assertSame($metric, $metricprop->getValue($instance));
         if ($metric instanceof metric_with_config) {
-            $configclassprop = new ReflectionProperty(registered_metric::class, 'configclass');
-            self::assertSame(custom_metric_config::class, $configclassprop->getValue($instance));
+            $defaultconfigprop = new ReflectionProperty(registered_metric::class, 'defaultconfig');
+            self::assertInstanceOf(custom_metric_config::class, $defaultconfigprop->getValue($instance));
         }
         foreach ($expected as $name => $value) {
             self::assertSame($value, $instance->$name, "Unexpected $name on the instance");

@@ -34,6 +34,7 @@ use core\lang_string;
 use dml_exception;
 use JsonException;
 use moodleform;
+use tool_monitoring\metric_config_form_aware;
 use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metric;
 
@@ -92,7 +93,7 @@ class config extends moodleform {
             itemtype: metric_tag::ITEM_TYPE,
             component: 'tool_monitoring',
         );
-        if (!is_null($this->metric->configclass)) {
+        if (is_a($this->metric->configclass, metric_config_form_aware::class, allow_string: true)) {
             $this->metric->configclass::extend_form_definition($this, $this->_form);
         }
     }
@@ -137,7 +138,7 @@ class config extends moodleform {
     #[\Override]
     public function validation($data, $files): array {
         $errors = parent::validation($data, $files);
-        if (!is_null($this->metric->configclass)) {
+        if (is_a($this->metric->configclass, metric_config_form_aware::class, allow_string: true)) {
             $errors = array_merge($errors, $this->metric->configclass::extend_form_validation($data, $this, $this->_form));
         }
         return $errors;

@@ -97,8 +97,8 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     /** @var metric Underlying metric that the instance wraps. */
     private metric $metric;
 
-    /** @var class-string<metric_config>|null Name of the associated metric config class; `null` if not configurable. */
-    private string|null $configclass = null;
+    /** @var metric_config|null Default metric config; `null` if not configurable. */
+    private metric_config|null $defaultconfig = null;
 
     /** @var array<string, metric_tag> Tags on the metric, indexed by their normalized name. */
     private array $tags = [];
@@ -215,11 +215,10 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     private function set_metric(metric $metric): void {
         if ($metric instanceof metric_with_config) {
-            $defaultconfig = $metric::get_default_config();
-            $this->configclass = $defaultconfig::class;
+            $this->defaultconfig = $metric::get_default_config();
             if (is_null($this->config)) {
                 // No config set yet; fall back to the default.
-                $this->config = json_encode($defaultconfig, JSON_THROW_ON_ERROR);
+                $this->config = json_encode($this->defaultconfig, JSON_THROW_ON_ERROR);
             }
         }
         $this->metric = $metric;
@@ -324,7 +323,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
             'qualifiedname' => self::get_qualified_name($this->component, $this->name),
             'description'   => $this->metric->get_description(),
             'type'          => $this->metric->get_type(),
-            'configclass'   => $this->configclass,
+            'configclass'   => $this->defaultconfig ? $this->defaultconfig::class : null,
             'tags'          => $this->tags,
             default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
         };
@@ -352,7 +351,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * @return array<string, mixed> Associative array of form data.
      */
     public function to_form_data(): array {
-        if (!is_null($this->configclass) && !is_null($this->config)) {
+        if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true) && !is_null($this->config)) {
             $formdata = $this->configclass::from_json($this->config)->to_form_data();
         } else {
             $formdata = [];
@@ -389,7 +388,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
                 $events[] = event\metric_disabled::for_metric($this);
             }
         }
-        if (!is_null($this->configclass)) {
+        if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
             $config = json_encode($this->configclass::with_form_data($formdata), JSON_THROW_ON_ERROR);
             if ($config !== $this->config) {
                 $this->config = $config;

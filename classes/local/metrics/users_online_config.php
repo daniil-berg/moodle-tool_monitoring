@@ -34,7 +34,7 @@ use core\lang_string;
 use MoodleQuickForm;
 use stdClass;
 use tool_monitoring\form\config as config_form;
-use tool_monitoring\metric_config;
+use tool_monitoring\metric_config_form_aware;
 
 /**
  * Defines the config for the {@see users_online} metric.
@@ -48,7 +48,7 @@ use tool_monitoring\metric_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final readonly class users_online_config implements metric_config {
+final readonly class users_online_config implements metric_config_form_aware {
     /**
      * @var array<float|int> Maximum number of seconds since the last user access for it to be counted.
      *                       A separate (labeled) metric value shall be produced for each value in this array.

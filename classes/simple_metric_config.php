@@ -45,7 +45,7 @@ use tool_monitoring\exceptions\simple_metric_config_constructor_missing;
 use tool_monitoring\form\config as config_form;
 
 /**
- * Helper base class for simple metric configurations; fully implements the **{@see metric_config}** interface.
+ * Helper base class for simple metric configurations; fully implements the **{@see metric_config_form_aware}** interface.
  *
  * During JSON serialization, the **public** properties of an instance are turned into the JSON object (saved in the DB).
  * See the {@see self::jsonSerialize `jsonSerialize`} method for details.
@@ -111,7 +111,7 @@ use tool_monitoring\form\config as config_form;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class simple_metric_config implements metric_config {
+abstract class simple_metric_config implements metric_config_form_aware {
     /** @var array<string, array<string, ReflectionParameter>> Cache for constructor parameters indexed by config class name. */
     private static array $constructorparameters = [];
 

@@ -51,7 +51,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(form_data_value_missing::class)]
 #[CoversClass(json_invalid::class)]
 #[CoversClass(json_key_missing::class)]
-#[CoversClass(metric_config_not_implemented::class)]
 #[CoversClass(metric_not_found::class)]
 #[CoversClass(simple_metric_config_constructor_missing::class)]
 #[CoversClass(tag_not_found::class)]
@@ -114,13 +113,6 @@ final class tool_monitoring_exception_test extends advanced_testcase {
                 'errorcode' => 'error:json_key_missing',
                 'module' => 'tool_monitoring',
                 'message' => 'JSON object is missing the "bar" key.',
-            ],
-            [
-                'exceptionclass' => metric_config_not_implemented::class,
-                'properties' => ['classname' => 'baz'],
-                'errorcode' => 'error:metric_config_not_implemented',
-                'module' => 'tool_monitoring',
-                'message' => 'The "baz" class does not implement the "metric_config" interface.',
             ],
             [
                 'exceptionclass' => metric_not_found::class,

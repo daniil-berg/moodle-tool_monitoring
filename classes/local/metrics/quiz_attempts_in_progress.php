@@ -29,9 +29,7 @@
 
 namespace tool_monitoring\local\metrics;
 
-use core\exception\coding_exception;
 use dml_exception;
-use tool_monitoring\exceptions\metric_config_not_implemented;
 use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;

@@ -44,6 +44,7 @@ use moodle_database;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionProperty;
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\test_simple_metric_config_minimal;
@@ -299,6 +300,11 @@ final class registered_metric_test extends advanced_testcase {
         ];
     }
 
+    /**
+     * Tests the {@see registered_metric::to_form_data} method.
+     *
+     * @throws metric_config_invalid
+     */
     public function test_to_form_data(): void {
         // Set up mock tag objects.
         $mocktag1 = $this->createMock(metric_tag::class);

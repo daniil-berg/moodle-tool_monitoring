@@ -34,6 +34,7 @@ use core\lang_string;
 use dml_exception;
 use JsonException;
 use moodleform;
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\metric_config_form_aware;
 use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metric;
@@ -149,6 +150,7 @@ class config extends moodleform {
      *
      * @param registered_metric $metric Metric for which to return the form.
      * @return self New config form instance.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
     public static function for_metric(registered_metric $metric): self {
         global $PAGE;

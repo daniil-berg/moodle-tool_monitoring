@@ -34,6 +34,7 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use JsonException;
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\form\config as config_form;
 use tool_monitoring\registered_metric;
 
@@ -57,6 +58,7 @@ final readonly class configure implements renderable, templatable {
      * Instantiates the underlying {@see config_form} for the specified metric.
      *
      * @param registered_metric $metric Metric for which to render the config form.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
     public function __construct(registered_metric $metric) {
         $this->form = config_form::for_metric($metric);

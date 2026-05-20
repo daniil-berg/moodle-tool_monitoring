@@ -29,6 +29,7 @@
 
 namespace monitoringexporter_prometheus;
 
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\metric_value;
 use tool_monitoring\registered_metric;
 
@@ -50,17 +51,20 @@ class exporter {
     /**
      * Calculates and exports the provided metrics in the Prometheus text format.
      *
+     * Preserves the order of the provided metrics in the output.
+     *
      * @link https://prometheus.io/docs/instrumenting/exposition_formats/#details Documentation
      *
      * @param registered_metric ...$metrics Metrics to export.
      * @return string Prometheus text format.
      */
     public static function export(registered_metric ...$metrics): string {
-        if (!$metrics) {
+        $parts = array_filter(array_map([self::class, 'export_metric'], $metrics));
+        if (!$parts) {
             return '';
         }
         // The Prometheus spec explicitly calls for a trailing line feed character. (See documentation link.)
-        return implode("\n", array_map([self::class, 'export_metric'], $metrics)) . "\n";
+        return implode("\n", $parts) . "\n";
     }
 
     /**
@@ -76,8 +80,16 @@ class exporter {
         $help = self::escape_help($metric->description->out());
         $output = "# HELP $name $help\n";
         $output .= "# TYPE $name {$metric->type->value}";
-        foreach ($metric as $metricvalue) {
-            $output .= "\n" . self::get_metric_value_line($metricvalue, $name);
+        try {
+            foreach ($metric as $metricvalue) {
+                $output .= "\n" . self::get_metric_value_line($metricvalue, $name);
+            }
+        } catch (metric_config_invalid $e) {
+            debugging(
+                message: "Skipping metric '$metric->qualifiedname' due to invalid config: {$e->getMessage()}",
+                backtrace: $e->getTrace(),
+            );
+            return '';
         }
         return $output;
     }

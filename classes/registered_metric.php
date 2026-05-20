@@ -39,6 +39,7 @@ use JsonException;
 use moodle_database;
 use moodleform;
 use stdClass;
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\form\config as config_form;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics_cache;
@@ -263,6 +264,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * Returns the deserialized config object.
      *
      * @return metric_config|null Metric config object or `null` if the metric is not configurable.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
     private function get_config(): metric_config|null {
         if (!$this->is_configurable()) {
@@ -400,6 +402,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * Returns config form data from the instance to set via {@see config_form::set_data}.
      *
      * @return array<string, mixed> Associative array of form data.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
     public function to_form_data(): array {
         if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
@@ -467,6 +470,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * This allows the instance to be iterated over in a `foreach` loop.
      *
      * @return Traversable<metric_value> Values of the metric.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
     #[\Override]
     public function getIterator(): Traversable {

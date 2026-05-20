@@ -41,7 +41,7 @@ namespace tool_monitoring\exceptions;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class json_key_missing extends tool_monitoring_exception {
+class json_key_missing extends tool_monitoring_exception implements metric_config_invalid {
     /**
      * Passes the arguments through to the parent constructor as the {@see parent::$a `a`} context.
      *

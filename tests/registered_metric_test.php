@@ -46,9 +46,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionProperty;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
-use tool_monitoring\local\testing\custom_metric_config;
-use tool_monitoring\local\testing\metric_settable_values;
-use tool_monitoring\local\testing\metric_with_custom_config;
+use tool_monitoring\local\testing\test_simple_metric_config_minimal;
+use tool_monitoring\local\testing\test_metric;
+use tool_monitoring\local\testing\test_metric_with_config;
 
 /**
  * Unit tests for the {@see registered_metric} class.
@@ -69,7 +69,6 @@ final class registered_metric_test extends advanced_testcase {
      *
      * @param metric $metric Metric to pass to the method.
      * @param array<string, string> $expected Array of expected instance properties of the returned object.
-     * @throws JsonException
      */
     #[DataProvider('provider_test_from_metric')]
     public function test_from_metric(metric $metric, array $expected): void {
@@ -78,7 +77,7 @@ final class registered_metric_test extends advanced_testcase {
         self::assertSame($metric, $metricprop->getValue($instance));
         if ($metric instanceof metric_with_config) {
             $defaultconfigprop = new ReflectionProperty(registered_metric::class, 'defaultconfig');
-            self::assertInstanceOf(custom_metric_config::class, $defaultconfigprop->getValue($instance));
+            self::assertInstanceOf(test_simple_metric_config_minimal::class, $defaultconfigprop->getValue($instance));
         }
         foreach ($expected as $name => $value) {
             self::assertSame($value, $instance->$name, "Unexpected $name on the instance");
@@ -102,15 +101,12 @@ final class registered_metric_test extends advanced_testcase {
         ];
         return [
             'Non-configurable metric' => [
-                'metric' => new metric_settable_values(),
-                'expected' => ['name' => 'metric_settable_values', ...$defaults],
+                'metric' => new test_metric(),
+                'expected' => ['name' => 'test_metric', ...$defaults],
             ],
             'Configurable metric' => [
-                'metric' => new metric_with_custom_config(),
-                'expected' => [
-                    'name' => 'metric_with_custom_config',
-                    'config' => '{"foo":"bar","spam":1234567}',
-                ] + $defaults,
+                'metric' => new test_metric_with_config(),
+                'expected' => ['name' => 'test_metric_with_config', ...$defaults],
             ],
         ];
     }
@@ -124,7 +120,6 @@ final class registered_metric_test extends advanced_testcase {
      *                                                       by qualified name.
      * @throws coding_exception
      * @throws dml_exception
-     * @throws JsonException
      */
     #[DataProvider('provider_test_get_for_metrics')]
     public function test_get_for_metrics(array $indb, array $metrics, array $expected): void {
@@ -156,7 +151,7 @@ final class registered_metric_test extends advanced_testcase {
             'timemodified' => null,
             'usermodified' => null,
         ];
-        $metricmissing = new metric_settable_values();
+        $metricmissing = new test_metric();
         $metricquizattempts = new metrics\quiz_attempts_in_progress();
         $metricuseraccounts = new metrics\user_accounts();
         return [
@@ -182,12 +177,11 @@ final class registered_metric_test extends advanced_testcase {
                     $metricuseraccounts,
                 ],
                 'expected' => [
-                    'tool_monitoring_metric_settable_values' => [
-                        'name' => 'metric_settable_values',
+                    'tool_monitoring_test_metric' => [
+                        'name' => 'test_metric',
                     ] + $defaults,
                     'tool_monitoring_quiz_attempts_in_progress' => [
                         'name'   => 'quiz_attempts_in_progress',
-                        'config' => '{"maxidleseconds":1200,"maxdeadlineseconds":10800}',
                     ] + $defaults,
                     'tool_monitoring_user_accounts' => [
                         'name' => 'user_accounts',
@@ -221,8 +215,8 @@ final class registered_metric_test extends advanced_testcase {
                     $metricuseraccounts,
                 ],
                 'expected' => [
-                    'tool_monitoring_metric_settable_values' => [
-                        'name' => 'metric_settable_values',
+                    'tool_monitoring_test_metric' => [
+                        'name' => 'test_metric',
                     ] + $defaults,
                     'tool_monitoring_quiz_attempts_in_progress' => [
                         'name'         => 'quiz_attempts_in_progress',
@@ -253,14 +247,13 @@ final class registered_metric_test extends advanced_testcase {
      * Provides test data for the {@see test_to_db} method.
      *
      * @return array[] Arguments for the test method.
-     * @throws JsonException
      */
     public static function provider_test_to_db(): array {
-        $metric = registered_metric::from_metric(new metric_settable_values());
+        $metric = registered_metric::from_metric(new test_metric());
         $metric->timecreated = 123;
         $metric->timemodified = 456;
         $metric->usermodified = 1;
-        $metricwithid = registered_metric::from_metric(new metric_settable_values());
+        $metricwithid = registered_metric::from_metric(new test_metric());
         $metricwithid->id = 42;
         return [
             'No fields specified' => [
@@ -268,7 +261,7 @@ final class registered_metric_test extends advanced_testcase {
                 'fields' => null,
                 'expected' => [
                     'component'    => 'tool_monitoring',
-                    'name'         => 'metric_settable_values',
+                    'name'         => 'test_metric',
                     'enabled'      => false,
                     'config'       => null,
                     'timecreated'  => 123,
@@ -281,7 +274,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric' => $metric,
                 'fields' => ['name', 'enabled', 'usermodified'],
                 'expected' => [
-                    'name'         => 'metric_settable_values',
+                    'name'         => 'test_metric',
                     'enabled'      => false,
                     'usermodified' => 1,
                 ],
@@ -291,7 +284,7 @@ final class registered_metric_test extends advanced_testcase {
                 'fields' => ['name', 'enabled'],
                 'expected' => [
                     'id'           => 42,
-                    'name'         => 'metric_settable_values',
+                    'name'         => 'test_metric',
                     'enabled'      => false,
                 ],
             ],
@@ -299,7 +292,7 @@ final class registered_metric_test extends advanced_testcase {
                 'metric' => $metric,
                 'fields' => ['name', 'enabled', 'quux'],
                 'expected' => [
-                    'name'    => 'metric_settable_values',
+                    'name'    => 'test_metric',
                     'enabled' => false,
                 ],
             ],
@@ -317,7 +310,7 @@ final class registered_metric_test extends advanced_testcase {
         $tagsprop = new ReflectionProperty(registered_metric::class, 'tags');
 
         // Test with regular metric.
-        $instance = registered_metric::from_metric(new metric_settable_values());
+        $instance = registered_metric::from_metric(new test_metric());
         $instance->enabled = true;
         $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
         $formdata = $instance->to_form_data();
@@ -327,7 +320,7 @@ final class registered_metric_test extends advanced_testcase {
         );
 
         // Now with a configurable metric.
-        $instance = registered_metric::from_metric(new metric_with_custom_config());
+        $instance = registered_metric::from_metric(new test_metric_with_config());
         $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
         $formdata = $instance->to_form_data();
         self::assertSame(
@@ -345,13 +338,11 @@ final class registered_metric_test extends advanced_testcase {
      * Tests the {@see IteratorAggregate} implementation of the {@see registered_metric} class.
      *
      * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
-     * @throws JsonException
      */
     #[DataProvider('provider_test_iterator')]
     public function test_iterator(iterable|metric_value $testvalues): void {
         $this->resetAfterTest();
-        $metric = new metric_settable_values();
-        $metric->values = $testvalues;
+        $metric = test_metric::create(values: $testvalues);
         $instance = registered_metric::from_metric($metric);
         // Consume the metric iterator.
         $metricvalues = iterator_to_array($instance);
@@ -436,10 +427,9 @@ final class registered_metric_test extends advanced_testcase {
      * Tests the {@see registered_metric::__get} and {@see registered_metric::__isset} method.
      *
      * @throws coding_exception
-     * @throws JsonException
      */
     public function test___get___isset(): void {
-        $metric = new metric_settable_values();
+        $metric = new test_metric();
         $instance = registered_metric::from_metric($metric);
         self::assertTrue(isset($instance->qualifiedname));
         self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
@@ -449,9 +439,9 @@ final class registered_metric_test extends advanced_testcase {
         self::assertSame($metric->get_type(), $instance->type);
         self::assertTrue(isset($instance->tags));
         self::assertSame([], $instance->tags);
-        $instance = registered_metric::from_metric(new metric_with_custom_config());
+        $instance = registered_metric::from_metric(new test_metric_with_config());
         self::assertTrue(isset($instance->configclass));
-        self::assertSame(custom_metric_config::class, $instance->configclass);
+        self::assertSame(test_simple_metric_config_minimal::class, $instance->configclass);
     }
 
     /**
@@ -468,7 +458,7 @@ final class registered_metric_test extends advanced_testcase {
     public function test_persist_enabled_state(bool $from, bool $to, array $events): void {
         global $DB, $USER;
         $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new metric_settable_values());
+        $metric = registered_metric::from_metric(new test_metric());
         $metric->enabled = $from;
         // Set modification time in the past and arbitrary user.
         $generator = $this->getDataGenerator();
@@ -564,7 +554,7 @@ final class registered_metric_test extends advanced_testcase {
         $metric->timemodified = $creationtime;
         $metric->usermodified = $newuserid;
         // Insert record manually.
-        $data = (array) $metric;
+        $data = $metric->to_db();
         $metric->id = $DB->insert_record(registered_metric::TABLE, $data);
         $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
         // Do some sanity checks.
@@ -620,19 +610,17 @@ final class registered_metric_test extends advanced_testcase {
      * Provides test data for the {@see test_update_with_form_data} method.
      *
      * @return array[] Arguments for the test method.
-     * @throws JsonException
      */
     public static function provider_test_update_with_form_data(): array {
-        $metricenabled = registered_metric::from_metric(new metric_settable_values());
+        $metricenabled = registered_metric::from_metric(new test_metric());
         $metricenabled->enabled = true;
-        $metricdisabledwithconfig = registered_metric::from_metric(new metric_with_custom_config());
-        $metricdisabledwithconfig->config = '{"foo":"baz","spam":0}';
-        $metricenabledwithconfig = registered_metric::from_metric(new metric_with_custom_config());
-        $metricenabledwithconfig->enabled = true;
-        $metricenabledwithconfig->config = '{"foo":"baz","spam":0}';
-        $metricenabledwithoutconfig = registered_metric::from_metric(new metric_with_custom_config());
-        $metricenabledwithoutconfig->enabled = true;
-        $metricenabledwithoutconfig->config = '{}';
+        $configprop = new ReflectionProperty(registered_metric::class, 'config');
+        $getmetricwithconfig = function (bool $enabled = false, string|null $config = null) use ($configprop): registered_metric {
+            $metric = registered_metric::from_metric(new test_metric_with_config());
+            $metric->enabled = $enabled;
+            $configprop->setValue($metric, $config);
+            return $metric;
+        };
         return [
             'Enabled basic metric, nothing changed' => [
                 'metric'   => $metricenabled,
@@ -663,7 +651,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Enabled configurable metric, nothing changed' => [
-                'metric'   => $metricenabledwithconfig,
+                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
@@ -677,22 +665,22 @@ final class registered_metric_test extends advanced_testcase {
                 'events'   => [],
             ],
             'Enabled configurable metric, having config updated' => [
-                'metric'   => $metricenabledwithoutconfig,
+                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
-                    'foo'  => 'baz',
-                    'spam' => 0,
+                    'foo'  => 'quux',
+                    'spam' => -1,
                 ],
                 'expected' => [
-                    'config' => '{"foo":"baz","spam":0}',
+                    'config' => '{"foo":"quux","spam":-1}',
                 ],
                 'events'   => [
                     event\metric_config_updated::class,
                 ],
             ],
             'Enabled configurable metric, being disabled' => [
-                'metric'   => $metricenabledwithconfig,
+                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => false,
                     'tags' => [],
@@ -708,7 +696,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Disabled configurable metric, being enabled' => [
-                'metric'   => $metricenabledwithconfig,
+                'metric'   => $getmetricwithconfig(config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
@@ -724,7 +712,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Disabled configurable metric, being enabled and having config updated' => [
-                'metric'   => $metricdisabledwithconfig,
+                'metric'   => $getmetricwithconfig(config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
                     'tags' => [],
@@ -741,7 +729,7 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Changing tags and updating config at the same time' => [
-                'metric'   => $metricenabledwithconfig,
+                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
                 'formdata' => [
                     'enabled' => true,
                     'tags' => ['beans'],
@@ -762,11 +750,6 @@ final class registered_metric_test extends advanced_testcase {
         ];
     }
 
-    /**
-     * Test the {@see registered_metric::prepare_to_cache} method.
-     *
-     * @throws JsonException
-     */
     public function test_prepare_to_cache(): void {
         $instance = registered_metric::from_metric(new metrics\user_accounts());
         $instance->id = 42;
@@ -794,7 +777,6 @@ final class registered_metric_test extends advanced_testcase {
      * @param mixed $data Data to pass to the method.
      * @param array<string, mixed>|string $expected Expected properties on the new instance or exception class name.
      * @throws coding_exception
-     * @throws JsonException
      */
     #[DataProvider('provider_test_wake_from_cache')]
     public function test_wake_from_cache(mixed $data, array|string $expected): void {
@@ -828,7 +810,7 @@ final class registered_metric_test extends advanced_testcase {
                 'data' => (object) [
                     'id'           => 1,
                     'component'    => 'tool_monitoring',
-                    'name'         => 'user_accounts',
+                    'name'         => 'users_online',
                     'enabled'      => true,
                     'config'       => '{"foo":"baz,"spam":42}',
                     'timecreated'  => 123,
@@ -839,7 +821,7 @@ final class registered_metric_test extends advanced_testcase {
                 'expected' => [
                     'id'           => 1,
                     'component'    => 'tool_monitoring',
-                    'name'         => 'user_accounts',
+                    'name'         => 'users_online',
                     'enabled'      => true,
                     'config'       => '{"foo":"baz,"spam":42}',
                     'timecreated'  => 123,

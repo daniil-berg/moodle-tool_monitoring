@@ -44,9 +44,9 @@ use tool_monitoring\exceptions\json_invalid;
 use tool_monitoring\exceptions\json_key_missing;
 use tool_monitoring\exceptions\simple_metric_config_constructor_missing;
 use tool_monitoring\form\config as config_form;
-use tool_monitoring\local\testing\testing_simple_metric_config;
-use tool_monitoring\local\testing\testing_simple_metric_config_cache;
-use tool_monitoring\local\testing\testing_simple_metric_config_missing_constructor;
+use tool_monitoring\local\testing\test_simple_metric_config;
+use tool_monitoring\local\testing\test_simple_metric_config_minimal;
+use tool_monitoring\local\testing\test_simple_metric_config_missing_constructor;
 
 /**
  * Unit tests for the {@see simple_metric_config} class.
@@ -71,7 +71,7 @@ final class simple_metric_config_test extends advanced_testcase {
     }
 
     public function test_serialize(): void {
-        $config = new testing_simple_metric_config('spam');
+        $config = new test_simple_metric_config('spam');
         $output = $config->jsonSerialize();
         self::assertSame($output, $config);
         self::assertSame(
@@ -93,10 +93,10 @@ final class simple_metric_config_test extends advanced_testcase {
     public function test_from_json(string $json, array|string $expected): void {
         if (is_string($expected)) {
             $this->expectException($expected);
-            testing_simple_metric_config::from_json($json);
+            test_simple_metric_config::from_json($json);
             return;
         }
-        $config = testing_simple_metric_config::from_json($json);
+        $config = test_simple_metric_config::from_json($json);
         foreach ($expected as $name => $value) {
             self::assertEquals($value, $config->$name);
         }
@@ -154,10 +154,10 @@ final class simple_metric_config_test extends advanced_testcase {
     public function test_with_form_data(stdClass $formdata, array|string $expected): void {
         if (is_string($expected)) {
             $this->expectException($expected);
-            testing_simple_metric_config::with_form_data($formdata);
+            test_simple_metric_config::with_form_data($formdata);
             return;
         }
-        $config = testing_simple_metric_config::with_form_data($formdata);
+        $config = test_simple_metric_config::with_form_data($formdata);
         foreach ($expected as $name => $value) {
             self::assertEquals($value, $config->$name);
         }
@@ -188,7 +188,7 @@ final class simple_metric_config_test extends advanced_testcase {
     }
 
     public function test_to_form_data(): void {
-        $config = new testing_simple_metric_config('spam');
+        $config = new test_simple_metric_config('spam');
         self::assertEquals(
             [
                 'notpromotedstring' => 'bar',
@@ -250,22 +250,22 @@ final class simple_metric_config_test extends advanced_testcase {
                 $calls[] = ['addHelpButton', $name, $identifier, $component];
             }
         );
-        testing_simple_metric_config::extend_form_definition($mockconfigform, $mockmform);
+        test_simple_metric_config::extend_form_definition($mockconfigform, $mockmform);
         self::assertEquals($expectedcalls, $calls);
     }
 
     /**
-     * Returns the correct language string ID for the given field name of {@see testing_simple_metric_config}.
+     * Returns the correct language string ID for the given field name of {@see test_simple_metric_config}.
      *
      * @param string $name Name of the field.
      * @return string Valid language string ID.
      */
     private static function get_lang_string_id(string $name): string {
-        return "testing:metric:testing_simple_metric_config:$name";
+        return "testing:metric:test_simple_metric_config:$name";
     }
 
     /**
-     * Returns the correct testing language string for the given field name of {@see testing_simple_metric_config}.
+     * Returns the correct testing language string for the given field name of {@see test_simple_metric_config}.
      *
      * @param string $name Name of the field.
      * @return lang_string Valid language string.
@@ -279,7 +279,7 @@ final class simple_metric_config_test extends advanced_testcase {
         $mockdata = [];
         $mockconfigform = $this->createMock(config_form::class);
         $mockmform = $this->createMock(MoodleQuickForm::class);
-        $output = testing_simple_metric_config::extend_form_validation($mockdata, $mockconfigform, $mockmform);
+        $output = test_simple_metric_config::extend_form_validation($mockdata, $mockconfigform, $mockmform);
         self::assertSame([], $output);
     }
 
@@ -291,9 +291,9 @@ final class simple_metric_config_test extends advanced_testcase {
      * @throws simple_metric_config_constructor_missing
      */
     public function test_missing_constructor(): void {
-        $classname = testing_simple_metric_config_missing_constructor::class;
+        $classname = test_simple_metric_config_missing_constructor::class;
         $this->expectExceptionObject(new simple_metric_config_constructor_missing($classname));
-        testing_simple_metric_config_missing_constructor::from_json('{"foo":"bar"}');
+        test_simple_metric_config_missing_constructor::from_json('{"foo":"bar"}');
     }
 
     /**
@@ -305,18 +305,18 @@ final class simple_metric_config_test extends advanced_testcase {
      */
     public function test_constructorparameters_cache(): void {
         $cache = new ReflectionProperty(simple_metric_config::class, 'constructorparameters');
-        // Verify there is no entry for that test class in the cache yet.
-        self::assertArrayNotHasKey(testing_simple_metric_config_cache::class, $cache->getValue());
+        // Clear the cache first. May be populated by other tests that instantiate the same test config class.
+        $cache->setValue(null, []);
         // Call the method once. This should add an entry to the cache.
-        testing_simple_metric_config_cache::from_json('{"foo":"baz","spam":1}');
-        self::assertArrayHasKey(testing_simple_metric_config_cache::class, $cache->getValue());
+        test_simple_metric_config_minimal::from_json('{"foo":"baz","spam":1}');
+        self::assertArrayHasKey(test_simple_metric_config_minimal::class, $cache->getValue());
         // Save cache entry for later. Should be an array of parameters.
-        $cacheentry1 = $cache->getValue()[testing_simple_metric_config_cache::class];
+        $cacheentry1 = $cache->getValue()[test_simple_metric_config_minimal::class];
         self::assertSame(['foo', 'spam'], array_keys($cacheentry1));
         // Call the method again.
-        testing_simple_metric_config_cache::from_json('{"foo":"quux","spam":2}');
+        test_simple_metric_config_minimal::from_json('{"foo":"quux","spam":2}');
         // The cache entry should be the exact same array. Its values should be identical, not just equal.
-        $cacheentry2 = $cache->getValue()[testing_simple_metric_config_cache::class];
+        $cacheentry2 = $cache->getValue()[test_simple_metric_config_minimal::class];
         self::assertSame($cacheentry1, $cacheentry2);
     }
 }

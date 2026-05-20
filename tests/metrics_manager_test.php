@@ -42,7 +42,8 @@ use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
-use tool_monitoring\local\testing\metric_settable_values;
+use tool_monitoring\local\testing\test_metric;
+use tool_monitoring\local\testing\test_metric_with_config;
 
 /**
  * Unit tests for the {@see metrics_manager} class.
@@ -58,21 +59,6 @@ use tool_monitoring\local\testing\metric_settable_values;
  */
 #[CoversClass(metrics_manager::class)]
 final class metrics_manager_test extends advanced_testcase {
-    /**
-     * Returns an instance of an anonymous subclass of {@see metric_settable_values} with the specified name.
-     *
-     * @param string $name String to return from the class' {@see metric::get_name} method.
-     * @return metric_settable_values New metric instance.
-     */
-    private static function named_metric_factory(string $name): metric_settable_values {
-        // @phpcs:disable moodle.PHP.ForbiddenTokens.Found
-        return eval("return new class() extends \\tool_monitoring\\local\\testing\\metric_settable_values {
-            public function get_name(): string {
-                return '$name';
-            }
-        };");
-    }
-
     public function test___construct(): void {
         // Test manual construction.
         $collection = new metric_collection();
@@ -127,9 +113,7 @@ final class metrics_manager_test extends advanced_testcase {
         $this->resetAfterTest();
         // Set up metric collection and manager.
         $collection = new metric_collection();
-        foreach ($collected as $metric) {
-            $collection->add($metric);
-        }
+        array_walk($collected, fn (metric $m) => $collection->add($m));
         di::set(metric_collection::class, $collection);
         $manager = di::get(metrics_manager::class);
         // Sanity check.
@@ -148,13 +132,13 @@ final class metrics_manager_test extends advanced_testcase {
             }
         }
         $records = $DB->get_records(registered_metric::TABLE);
-        // Consume the iterator.
+        // Call the tested method.
         $metrics = $manager->filter(enabled: $enabled, tagnames: $tagnames);
         // The records in the DB table should be unchanged.
         self::assertEquals($records, $DB->get_records(registered_metric::TABLE));
         // The number of registered metrics should be as expected.
         self::assertCount(count($expected), $metrics);
-        // Check that the registered metrics are exactly as we expect them and there is a DB record for each of them.
+        // Check that the registered metrics are exactly as we expect them, and there is a DB record for each of them.
         // To be extra sure, store already checked metric IDs.
         $checkedids = [];
         foreach ($expected as $qname => $properties) {
@@ -181,18 +165,18 @@ final class metrics_manager_test extends advanced_testcase {
         return [
             'Collection of 3 different metrics; no pre-existing DB entries' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'bar'),
-                    self::named_metric_factory(name: 'baz'),
+                    test_metric::create('foo'),
+                    test_metric::create('bar'),
+                    test_metric::create('baz'),
                 ],
                 'registered' => [],
                 'expected' => [],
             ],
             'Collection of 3 metrics, 1 of those already registered; 1 orphan in DB' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'spam'),
-                    self::named_metric_factory(name: 'eggs'),
+                    test_metric_with_config::create('foo'),
+                    test_metric::create('spam'),
+                    test_metric::create('eggs'),
                 ],
                 'registered' => [
                     [
@@ -215,9 +199,9 @@ final class metrics_manager_test extends advanced_testcase {
             ],
             'Collection of 3 metrics, all with the same qualified name; 1 different pre-existing record' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'foo'),
+                    test_metric::create('foo'),
+                    test_metric::create('foo'),
+                    test_metric::create('foo'),
                 ],
                 'registered' => [
                     [
@@ -228,8 +212,8 @@ final class metrics_manager_test extends advanced_testcase {
             ],
             'Collection of 2 metrics, both registered, 1 disabled; getting enabled only' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'bar'),
+                    test_metric::create('foo'),
+                    test_metric::create('bar'),
                 ],
                 'registered' => [
                     [
@@ -251,8 +235,8 @@ final class metrics_manager_test extends advanced_testcase {
             ],
             'Collection of 2 metrics, both registered, 1 disabled; getting disabled only' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'bar'),
+                    test_metric_with_config::create('foo'),
+                    test_metric::create('bar'),
                 ],
                 'registered' => [
                     [
@@ -276,9 +260,9 @@ final class metrics_manager_test extends advanced_testcase {
             ],
             'Collection of 3 metrics, with 2 matching the single specified tag' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'bar'),
-                    self::named_metric_factory(name: 'baz'),
+                    test_metric::create('foo'),
+                    test_metric::create('bar'),
+                    test_metric::create('baz'),
                 ],
                 'registered' => [
                     [
@@ -307,9 +291,9 @@ final class metrics_manager_test extends advanced_testcase {
             ],
             'Collection of 3 metrics, only 1 matching all specified tags' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'bar'),
-                    self::named_metric_factory(name: 'baz'),
+                    test_metric::create('foo'),
+                    test_metric::create('bar'),
+                    test_metric::create('baz'),
                 ],
                 'registered' => [
                     [
@@ -348,8 +332,8 @@ final class metrics_manager_test extends advanced_testcase {
         $this->resetAfterTest();
         // Add and register two metrics with some tag overlap.
         $collection = new metric_collection();
-        $collection->add(self::named_metric_factory(name: 'foo'));
-        $collection->add(self::named_metric_factory(name: 'bar'));
+        $collection->add(test_metric::create('foo'));
+        $collection->add(test_metric::create('bar'));
         di::set(metric_collection::class, $collection);
         $manager = di::get(metrics_manager::class);
         $defaults = [
@@ -471,9 +455,9 @@ final class metrics_manager_test extends advanced_testcase {
         return [
             'Collection of 3 different metrics; no pre-existing DB entries' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'bar'),
-                    self::named_metric_factory(name: 'baz'),
+                    test_metric::create('foo'),
+                    test_metric::create('bar'),
+                    test_metric::create('baz'),
                 ],
                 'registered' => [],
                 'expected' => [
@@ -502,9 +486,9 @@ final class metrics_manager_test extends advanced_testcase {
             ],
             'Collection of 3 metrics, 1 of those already registered; 1 orphan in DB; with deletion' => [
                 'collected' => [
-                    self::named_metric_factory(name: 'foo'),
-                    self::named_metric_factory(name: 'spam'),
-                    self::named_metric_factory(name: 'eggs'),
+                    test_metric_with_config::create('foo'),
+                    test_metric::create('spam'),
+                    test_metric::create('eggs'),
                 ],
                 'registered' => [
                     [
@@ -620,7 +604,7 @@ final class metrics_manager_test extends advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $collection = new metric_collection();
-        $collection->add(self::named_metric_factory(name: 'foo'));
+        $collection->add(test_metric::create('foo'));
         di::set(metric_collection::class, $collection);
         $manager = di::get(metrics_manager::class);
         $toinsert = [
@@ -652,6 +636,6 @@ final class metrics_manager_test extends advanced_testcase {
     public function test_array_set_error(): void {
         $manager = di::get(metrics_manager::class);
         $this->expectException(coding_exception::class);
-        $manager['foo'] = self::named_metric_factory(name: 'foo');
+        $manager['foo'] = test_metric::create('foo');
     }
 }

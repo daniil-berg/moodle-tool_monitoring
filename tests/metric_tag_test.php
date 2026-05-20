@@ -41,8 +41,8 @@ use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\exceptions\tag_not_found;
-use tool_monitoring\local\testing\metric_settable_values;
-use tool_monitoring\local\testing\metric_with_custom_config;
+use tool_monitoring\local\testing\test_metric;
+use tool_monitoring\local\testing\test_metric_with_config;
 
 /**
  * Unit tests for the {@see metric_tag} class.
@@ -173,14 +173,14 @@ final class metric_tag_test extends advanced_testcase {
             'usermodified' => 1,
         ];
         $records = [
-            ['name' => 'metric_settable_values', ...$metricdefaults],
-            ['name' => 'metric_with_custom_config', ...$metricdefaults],
+            ['name' => 'test_metric', ...$metricdefaults],
+            ['name' => 'test_metric_with_config', ...$metricdefaults],
         ];
         $DB->insert_records(registered_metric::TABLE, $records);
         [
-            'tool_monitoring_metric_settable_values' => $metric1,
-            'tool_monitoring_metric_with_custom_config' => $metric2,
-        ] = registered_metric::get_for_metrics(new metric_settable_values(), new metric_with_custom_config());
+            'tool_monitoring_test_metric' => $metric1,
+            'tool_monitoring_test_metric_with_config' => $metric2,
+        ] = registered_metric::get_for_metrics(new test_metric(), new test_metric_with_config());
         // Assign tag instances.
         metric_tag::set_for_metric($metric1->id, 'foo', 'bar');
         metric_tag::set_for_metric($metric2, 'bar', 'baz');

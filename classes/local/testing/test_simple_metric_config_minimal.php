@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see custom_metric_config} class.
+ * Definition of the {@see test_simple_metric_config_minimal} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -32,7 +32,7 @@ namespace tool_monitoring\local\testing;
 use tool_monitoring\simple_metric_config;
 
 /**
- * Example of a custom metric config class.
+ * Extension of the {@see simple_metric_config} class for testing purposes.
  *
  * **TESTING ONLY: This exists purely to run unit tests.**
  *
@@ -47,7 +47,7 @@ use tool_monitoring\simple_metric_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class custom_metric_config extends simple_metric_config {
+class test_simple_metric_config_minimal extends simple_metric_config {
     /**
      * Constructor without additional logic.
      *

@@ -39,8 +39,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionClass;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics\overdue_tasks;
+use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\metrics\users_online;
-use tool_monitoring\local\testing\metric_settable_values;
 
 /**
  * Unit tests for the {@see metric} class.
@@ -69,11 +69,11 @@ final class metric_test extends advanced_testcase {
         $collection = new metric_collection();
         // The collection should not yet have the test metric.
         self::assertSame([], iterator_to_array($collection));
-        $metric = metric_settable_values::collect($collection);
+        $metric = test_metric::collect($collection);
         // Now the collection should have the test metric.
         self::assertSame([$metric], iterator_to_array($collection));
         // Doing the same thing again should create a new instance and replace the previous one in the collection.
-        $metric2 = metric_settable_values::collect($collection);
+        $metric2 = test_metric::collect($collection);
         self::assertSame([$metric2], iterator_to_array($collection));
     }
 
@@ -129,8 +129,8 @@ final class metric_test extends advanced_testcase {
     public static function provider_test_get_name(): array {
         return [
             [
-                'metric'   => new metric_settable_values(),
-                'expected' => 'metric_settable_values',
+                'metric'   => new test_metric(),
+                'expected' => 'test_metric',
             ],
             [
                 'metric'   => new overdue_tasks(),
@@ -162,7 +162,7 @@ final class metric_test extends advanced_testcase {
     public static function provider_test_get_component(): array {
         return [
             [
-                'metric'   => new metric_settable_values(),
+                'metric'   => new test_metric(),
                 'expected' => 'tool_monitoring',
             ],
             [

@@ -61,22 +61,28 @@ class test_metric extends metric {
     /** @var string String returned from the {@see self::get_name `get_name`} method. */
     private string $name = 'test_metric';
 
+    /** @var lang_string|null Language string returned from the {@see self::get_description `get_description`} method. */
+    private lang_string|null $description = null;
+
     /**
      * Returns a new instance with the specified attributes.
      *
      * @param string $name String to return from the {@see metric::get_name `get_name`} method.
+     * @param lang_string $description Language string to return from the {@see self::get_description `get_description`} method.
      * @param metric_type $type Type to return from the {@see metric::get_type `get_type`} method.
      * @param iterable|metric_value $values Values to produce from the {@see metric::calculate `calculate`} method.
      * @return static New configured instance.
      */
     public static function create(
         string $name = 'test_metric',
+        lang_string $description = new lang_string('pluginname', 'tool_monitoring'), // Just an arbitrary existing language string.
         metric_type $type = metric_type::COUNTER,
         iterable|metric_value $values = [],
     ): static {
         $metric = new static();
         $metric->values = $values;
         $metric->type = $type;
+        $metric->description = $description;
         $metric->name = $name;
         return $metric;
     }
@@ -93,8 +99,7 @@ class test_metric extends metric {
 
     #[\Override]
     public function get_description(): lang_string {
-        // Just an arbitrary existing language string.
-        return new lang_string('pluginname', 'tool_monitoring');
+        return $this->description ?? new lang_string('pluginname', 'tool_monitoring'); // Just an arbitrary existing language string.
     }
 
     #[\Override]

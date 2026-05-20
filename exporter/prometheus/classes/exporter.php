@@ -77,8 +77,11 @@ class exporter {
      */
     private static function export_metric(registered_metric $metric): string {
         $name = $metric->qualifiedname;
+        $output = '';
         $help = self::escape_help($metric->description->out());
-        $output = "# HELP $name $help\n";
+        if ($help !== '') {
+            $output = "# HELP $name $help\n";
+        }
         $output .= "# TYPE $name {$metric->type->value}";
         try {
             foreach ($metric as $metricvalue) {

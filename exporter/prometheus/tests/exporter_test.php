@@ -32,9 +32,9 @@
 namespace monitoringexporter_prometheus;
 
 use advanced_testcase;
-use core\lang_string;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\local\testing\test_lang_string;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
@@ -77,7 +77,6 @@ final class exporter_test extends advanced_testcase {
                     test_metric::create('foo', values: [new metric_value(42)]),
                 ],
                 'expected' => <<<'TEXT'
-                    # HELP tool_monitoring_foo Monitoring
                     # TYPE tool_monitoring_foo counter
                     tool_monitoring_foo 42
                     
@@ -88,16 +87,15 @@ final class exporter_test extends advanced_testcase {
                     test_metric::create('foo'),
                 ],
                 'expected' => <<<'TEXT'
-                    # HELP tool_monitoring_foo Monitoring
                     # TYPE tool_monitoring_foo counter
                     
                     TEXT,
             ],
-            'Single gauge metric, different description, three labeled values' => [
+            'Single gauge metric, custom description, three labeled values' => [
                 'metrics' => [
                     test_metric::create(
                         name: 'foo',
-                        description: new lang_string('subplugintype_monitoringexporter', 'tool_monitoring'),
+                        description: new test_lang_string('Lorem ipsum dolor sit amet...'),
                         type: metric_type::GAUGE,
                         values: [
                             new metric_value(1, ['spam' => 'eggs']),
@@ -107,7 +105,7 @@ final class exporter_test extends advanced_testcase {
                     ),
                 ],
                 'expected' => <<<'TEXT'
-                    # HELP tool_monitoring_foo Exporter type
+                    # HELP tool_monitoring_foo Lorem ipsum dolor sit amet...
                     # TYPE tool_monitoring_foo gauge
                     tool_monitoring_foo{spam="eggs"} 1
                     tool_monitoring_foo{spam="beans"} 2
@@ -123,9 +121,21 @@ final class exporter_test extends advanced_testcase {
                     ),
                 ],
                 'expected' => <<<'TEXT'
-                    # HELP tool_monitoring_foo Monitoring
                     # TYPE tool_monitoring_foo counter
                     tool_monitoring_foo{spam="doublequote\"backslash\\newline\n"} 1
+                    
+                    TEXT,
+            ],
+            'Metric with description that needs to be escaped' => [
+                'metrics' => [
+                    test_metric::create(
+                        name: 'foo',
+                        description: new test_lang_string("doublequote\"backslash\\newline\n"),
+                    ),
+                ],
+                'expected' => <<<'TEXT'
+                    # HELP tool_monitoring_foo doublequote"backslash\\newline\n
+                    # TYPE tool_monitoring_foo counter
                     
                     TEXT,
             ],
@@ -133,7 +143,7 @@ final class exporter_test extends advanced_testcase {
                 'metrics' => [
                     test_metric::create(
                         name: 'foo',
-                        description: new lang_string('subplugintype_monitoringexporter', 'tool_monitoring'),
+                        description: new test_lang_string('Lorem ipsum dolor sit amet...'),
                         values: [
                             new metric_value(1, ['spam' => 'eggs']),
                             new metric_value(2, ['spam' => 'beans']),
@@ -155,16 +165,14 @@ final class exporter_test extends advanced_testcase {
                     ),
                 ],
                 'expected' => <<<'TEXT'
-                    # HELP tool_monitoring_foo Exporter type
+                    # HELP tool_monitoring_foo Lorem ipsum dolor sit amet...
                     # TYPE tool_monitoring_foo counter
                     tool_monitoring_foo{spam="eggs"} 1
                     tool_monitoring_foo{spam="beans"} 2
                     tool_monitoring_foo{spam="toast"} 3
-                    # HELP tool_monitoring_bar Monitoring
                     # TYPE tool_monitoring_bar gauge
                     tool_monitoring_bar{spam="eggs"} 3.14
                     tool_monitoring_bar{spam="beans"} 420.69
-                    # HELP tool_monitoring_baz Monitoring
                     # TYPE tool_monitoring_baz gauge
                     tool_monitoring_baz 1.0E-10
                     
@@ -189,13 +197,10 @@ final class exporter_test extends advanced_testcase {
                     ),
                 ],
                 'expected' => <<<'TEXT'
-                    # HELP tool_monitoring_foo Monitoring
                     # TYPE tool_monitoring_foo gauge
                     tool_monitoring_foo +Inf
-                    # HELP tool_monitoring_bar Monitoring
                     # TYPE tool_monitoring_bar gauge
                     tool_monitoring_bar -Inf
-                    # HELP tool_monitoring_baz Monitoring
                     # TYPE tool_monitoring_baz gauge
                     tool_monitoring_baz NaN
                     

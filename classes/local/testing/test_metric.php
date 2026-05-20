@@ -75,7 +75,7 @@ class test_metric extends metric {
      */
     public static function create(
         string $name = 'test_metric',
-        lang_string $description = new lang_string('pluginname', 'tool_monitoring'), // Just an arbitrary existing language string.
+        lang_string $description = new test_lang_string(),
         metric_type $type = metric_type::COUNTER,
         iterable|metric_value $values = [],
     ): static {
@@ -99,7 +99,7 @@ class test_metric extends metric {
 
     #[\Override]
     public function get_description(): lang_string {
-        return $this->description ?? new lang_string('pluginname', 'tool_monitoring'); // Just an arbitrary existing language string.
+        return $this->description ?? new test_lang_string();
     }
 
     #[\Override]

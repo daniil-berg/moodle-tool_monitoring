@@ -40,7 +40,7 @@ use core\lang_string;
 use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use tool_monitoring\local\testing\metric_settable_values;
+use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\registered_metric;
 
 /**
@@ -105,7 +105,7 @@ final class metric_event_test extends advanced_testcase {
      */
     public static function provider_test_all_methods(): array {
         global $USER;
-        $metric = registered_metric::from_metric(new metric_settable_values());
+        $metric = registered_metric::from_metric(new test_metric());
         return [
             [
                 'eventclass'  => metric_config_updated::class,

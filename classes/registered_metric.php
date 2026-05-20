@@ -53,6 +53,7 @@ use Traversable;
  * @property-read string $qualifiedname Qualified name of the metric.
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
+ * @property-read string|null $config Metric-specific config as a JSON object; `null` if no specific config is defined for the metric.
  * @property-read class-string<metric_config>|null $configclass Name of the associated metric config class, if any.
  * @property-read array<string, metric_tag> $tags Tags on the metric, indexed by their normalized name.
  *
@@ -100,6 +101,9 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     /** @var metric_config|null Default metric config; `null` if not configurable. */
     private metric_config|null $defaultconfig = null;
 
+    /** @var metric_config|null Metric config cache; `null` if not yet cached or not configurable. */
+    private metric_config|null $configcache = null;
+
     /** @var array<string, metric_tag> Tags on the metric, indexed by their normalized name. */
     private array $tags = [];
 
@@ -125,7 +129,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         /** @var bool If `false` the metric is currently not supposed to be calculated/exported. */
         public bool $enabled = false,
         /** @var string|null Metric-specific config as a JSON object; `null` if no specific config is defined for the metric. */
-        public string|null $config = null,
+        private string|null $config = null,
         /** @var int|null Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet). */
         public int|null $timecreated = null,
         /** @var int|null Timestamp when the DB table entry was last modified; `null` if not (yet) saved. */
@@ -143,7 +147,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      *                       {@see self::$configclass `configclass`}, and {@see self::$config `config`} properties are derived from
      *                       {@see metric::get_component}, {@see metric::get_name}, and {@see metric::get_default_config}.
      * @return self New instance from the provided metric.
-     * @throws JsonException The metric is configurable but it's default config could not be serialized.
      */
     public static function from_metric(metric $metric): self {
         $instance = new self(component: $metric->get_component(), name: $metric->get_name());
@@ -162,30 +165,27 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      *                           Their qualified names **should** be unique, otherwise a warning will be emitted.
      * @return array<string, self> Associative array of instances, indexed by the qualified names of the provided metrics.
      * @throws dml_exception
-     * @throws JsonException A metric is configurable but it's default config could not be serialized.
      */
     public static function get_for_metrics(metric ...$metrics): array {
         global $DB;
         if (empty($metrics)) {
             return [];
         }
-        $results = [];
+        $uniquemetrics = [];
         // Construct the `IN` expression and parameters from all unique component-name-combinations.
         $inplaceholders = [];
         $params = [];
         foreach (array_values($metrics) as $i => $metric) {
-            // Create the instance now and store it in the `$results` array.
-            // If we find a matching record later, we will update that instance.
-            $instance = self::from_metric($metric);
-            $qname = $instance->qualifiedname;
-            if (array_key_exists($qname, $results)) {
+            [$component, $name] = [$metric->get_component(), $metric->get_name()];
+            $qname = self::get_qualified_name($component, $name);
+            if (array_key_exists($qname, $uniquemetrics)) {
                 trigger_error("More than one metric with the qualified name '$qname'", E_USER_WARNING);
                 continue;
             }
-            $results[$qname] = $instance;
+            $uniquemetrics[$qname] = $metric;
             $inplaceholders[] = "(:component$i, :name$i)";
-            $params["component$i"] = $instance->component;
-            $params["name$i"] = $instance->name;
+            $params["component$i"] = $component;
+            $params["name$i"] = $name;
         }
         $inlist = implode(', ', $inplaceholders);
         $sqlqname = self::get_qualified_name_sql($DB);
@@ -195,14 +195,28 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
                  WHERE (m.component, m.name) IN ($inlist)";
         $records = $DB->get_records_sql($sql, $params);
         $tags = metric_tag::get_for_metric_ids(...array_column($records, 'id'));
-        foreach ($records as $qname => $record) {
-            $instance = $results[$qname];
-            foreach (self::FIELDS as $name) {
-                $instance->$name = $record->$name;
+        $instances = [];
+        foreach ($uniquemetrics as $qname => $metric) {
+            if (array_key_exists($qname, $records)) {
+                $record = (array) $records[$qname];
+                $instance = new self(...array_intersect_key($record, array_flip(self::FIELDS)));
+                $instance->set_metric($metric);
+                $instance->tags = $tags[$record['id']] ?? []; // Tags may be disabled.
+            } else {
+                $instance = self::from_metric($metric);
             }
-            $instance->tags = $tags[$record->id] ?? []; // Tags may be disabled.
+            $instances[$qname] = $instance;
         }
-        return $results;
+        return $instances;
+    }
+
+    /**
+     * Returns whether the instance represents a configurable metric.
+     *
+     * @return bool `true` if the metric is configurable, `false` otherwise.
+     */
+    private function is_configurable(): bool {
+        return !is_null($this->defaultconfig);
     }
 
     /**
@@ -211,17 +225,53 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * If the metric is configurable, sets the instance's {@see self::$configclass `configclass`} and {@see self::config `config`}.
      *
      * @param metric $metric Metric to assign to the instance.
-     * @throws JsonException No {@see self::config `config`} was set and the default config could not be serialized.
      */
     private function set_metric(metric $metric): void {
-        if ($metric instanceof metric_with_config) {
-            $this->defaultconfig = $metric::get_default_config();
-            if (is_null($this->config)) {
-                // No config set yet; fall back to the default.
-                $this->config = json_encode($this->defaultconfig, JSON_THROW_ON_ERROR);
-            }
-        }
         $this->metric = $metric;
+        $this->defaultconfig = $metric instanceof metric_with_config ? $metric::get_default_config() : null;
+        $this->set_config($this->config);
+    }
+
+    /**
+     * Assigns the config JSON to the instance.
+     *
+     * Maintains the invariant: {@see self::config `config`} is not `null` => metric is configurable.
+     * (Equivalently, metric is _not_ configurable => {@see self::config `config`} is `null`.)
+     *
+     * The reverse is strictly _not_ true. A configurable metric with a {@see self::config `config`} of `null` just resolves the
+     * default config, when {@see self::get_config `get_config`} is called.
+     *
+     * This means that passing `null` here for a configurable metric is equivelnt to (re-)setting its config to the current default.
+     * Passing a string here for a non-configurable metric discards that argument, triggers a {@see debugging `debugging`} call,
+     * and assigns `null`.
+     *
+     * @param string|null $config JSON encoded string or `null` to assign to {@see self::config `config`}.
+     */
+    private function set_config(string|null $config): void {
+        if ($this->is_configurable()) {
+            $this->config = $config;
+        } else {
+            if (!is_null($config)) {
+                debugging("Cannot set config on a non-configurable metric", DEBUG_DEVELOPER);
+            }
+            $this->config = null;
+        }
+        $this->configcache = null;
+    }
+
+    /**
+     * Returns the deserialized config object.
+     *
+     * @return metric_config|null Metric config object or `null` if the metric is not configurable.
+     */
+    private function get_config(): metric_config|null {
+        if (!$this->is_configurable()) {
+            return null;
+        }
+        if (is_null($this->config)) {
+            return $this->configcache ??= clone $this->defaultconfig;
+        }
+        return $this->configcache ??= $this->configclass::from_json($this->config);
     }
 
     /**
@@ -323,6 +373,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
             'qualifiedname' => self::get_qualified_name($this->component, $this->name),
             'description'   => $this->metric->get_description(),
             'type'          => $this->metric->get_type(),
+            'config'        => $this->config,
             'configclass'   => $this->defaultconfig ? $this->defaultconfig::class : null,
             'tags'          => $this->tags,
             default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
@@ -339,7 +390,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     public function __isset(string $name): bool {
         return match ($name) {
-            'configclass', 'description', 'qualifiedname', 'type' => isset($this->metric),
+            'config', 'configclass', 'description', 'qualifiedname', 'type' => isset($this->metric),
             'tags' => isset($this->tags),
             default => false,
         };
@@ -351,8 +402,8 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * @return array<string, mixed> Associative array of form data.
      */
     public function to_form_data(): array {
-        if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true) && !is_null($this->config)) {
-            $formdata = $this->configclass::from_json($this->config)->to_form_data();
+        if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
+            $formdata = $this->get_config()->to_form_data();
         } else {
             $formdata = [];
         }
@@ -391,7 +442,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
             $config = json_encode($this->configclass::with_form_data($formdata), JSON_THROW_ON_ERROR);
             if ($config !== $this->config) {
-                $this->config = $config;
+                $this->set_config($config);
                 $events[] = event\metric_config_updated::for_metric($this);
             }
         }
@@ -419,12 +470,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     #[\Override]
     public function getIterator(): Traversable {
-        if (!is_null($this->config) && !is_null($this->configclass)) {
-            $config = $this->configclass::from_json($this->config);
-        } else {
-            $config = null;
-        }
-        $values = $this->metric->calculate($config);
+        $values = $this->metric->calculate($this->get_config());
         if ($values instanceof metric_value) {
             yield $values;
         } else {
@@ -450,7 +496,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * @param array<string, mixed>|stdClass $data Data to use for construction.
      * @return self New instance.
      * @throws coding_exception Data has an unexpected type or is missing required fields.
-     * @throws JsonException Should never happen.
      */
     #[\Override]
     public static function wake_from_cache(mixed $data): self {

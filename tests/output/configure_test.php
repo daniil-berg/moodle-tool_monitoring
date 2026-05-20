@@ -36,7 +36,7 @@ use core\exception\moodle_exception;
 use core\output\renderer_base;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
-use tool_monitoring\local\testing\metric_settable_values;
+use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\registered_metric;
 
 /**
@@ -65,7 +65,7 @@ final class configure_test extends advanced_testcase {
      */
     public function test_all_methods(): void {
         global $PAGE;
-        $metric = registered_metric::from_metric(new metric_settable_values());
+        $metric = registered_metric::from_metric(new test_metric());
         $PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $metric->qualifiedname]);
         $configure = new configure($metric);
         $mockrenderer = $this->createMock(renderer_base::class);

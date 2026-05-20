@@ -36,7 +36,6 @@ use core_cache\data_source_interface as cache_data_source_interface;
 use core_cache\definition as cache_definition;
 use dml_exception;
 use Exception;
-use JsonException;
 use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\hook\metric_collection;
@@ -157,7 +156,6 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @return $this Same instance.
      * @throws coding_exception
      * @throws dml_exception
-     * @throws JsonException A metric is configurable but it's default config could not be serialized.
      */
     public function sync(bool $delete = false): self {
         global $DB, $USER;
@@ -309,7 +307,6 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @param string $key Qualified name of the metric to fetch.
      * @return registered_metric|null Metric instance or `null` if no matching metric was not found in the DB.
      * @throws dml_exception
-     * @throws JsonException A metric is configurable but it's default config could not be serialized.
      */
     #[\Override]
     public function load_for_cache($key): registered_metric|null {
@@ -327,7 +324,6 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @return array<string, registered_metric|null> Associative array indexed with `$keys` mapped to {@see registered_metric}
      *                                               instances or `null` if no matching metric was not found in the DB.
      * @throws dml_exception
-     * @throws JsonException A metric is configurable but it's default config could not be serialized.
      */
     #[\Override]
     public function load_many_for_cache(array $keys): array {

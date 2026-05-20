@@ -47,7 +47,7 @@ use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\testing\metric_settable_values;
+use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\metric;
 use tool_monitoring\registered_metric;
 
@@ -176,25 +176,25 @@ final class set_metric_enabled_test extends advanced_testcase {
             ],
             'Enabling a metric that is collected but not (yet) registered' => [
                 'metricscollected' => [
-                    new metric_settable_values(),
+                    new test_metric(),
                 ],
                 'metricsregistered' => [
                     ['name' => 'foo', 'enabled' => true] + $defaults,
                     ['name' => 'bar', 'enabled' => true] + $defaults,
                 ],
-                'qualifiedname' => 'tool_monitoring_metric_settable_values',
+                'qualifiedname' => 'tool_monitoring_test_metric',
                 'enabled' => true,
             ],
             'Disabling a metric that is both collected and registered' => [
                 'metricscollected' => [
-                    new metric_settable_values(),
+                    new test_metric(),
                 ],
                 'metricsregistered' => [
-                    ['name' => 'metric_settable_values', 'enabled' => true] + $defaults,
+                    ['name' => 'test_metric', 'enabled' => true] + $defaults,
                     ['name' => 'foo', 'enabled' => true] + $defaults,
                     ['name' => 'bar', 'enabled' => true] + $defaults,
                 ],
-                'qualifiedname' => 'tool_monitoring_metric_settable_values',
+                'qualifiedname' => 'tool_monitoring_test_metric',
                 'enabled' => false,
             ],
         ];

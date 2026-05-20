@@ -30,6 +30,7 @@
 namespace tool_monitoring;
 
 use JsonSerializable;
+use tool_monitoring\exceptions\metric_config_invalid;
 
 /**
  * Defines the optional configuration interface used by a {@see metric_with_config}.
@@ -55,6 +56,7 @@ interface metric_config extends JsonSerializable {
      *
      * @param string $json String of a valid JSON object (not an array or any other type).
      * @return self New instance of the config class.
+     * @throws metric_config_invalid
      */
     public static function from_json(string $json): self;
 }

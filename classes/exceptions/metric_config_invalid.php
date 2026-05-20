@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see json_invalid} class.
+ * Definition of the {@see metric_config_invalid} interface.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,8 +29,10 @@
 
 namespace tool_monitoring\exceptions;
 
+use Throwable;
+
 /**
- * Invalid JSON encountered or the top-level type in that JSON is wrong.
+ * Marker interface for exceptions that arise when a metric-specific configuration cannot be reconstructed.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -43,4 +45,4 @@ namespace tool_monitoring\exceptions;
  *
  * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
  */
-class json_invalid extends tool_monitoring_exception implements metric_config_invalid {}
+interface metric_config_invalid extends Throwable {}

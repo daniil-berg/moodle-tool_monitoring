@@ -36,6 +36,7 @@ use core\exception\moodle_exception;
 use core\output\renderer_base;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\registered_metric;
 
@@ -61,6 +62,7 @@ final class configure_test extends advanced_testcase {
      * - {@see configure::export_for_template `export_for_template`}.
      *
      * @throws JsonException
+     * @throws metric_config_invalid
      * @throws moodle_exception
      */
     public function test_all_methods(): void {

@@ -38,6 +38,7 @@ use dml_exception;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\local\metrics\users_online;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\registered_metric;
@@ -68,6 +69,7 @@ final class config_test extends advanced_testcase {
      * @throws coding_exception
      * @throws dml_exception
      * @throws JsonException
+     * @throws metric_config_invalid
      */
     #[DataProvider('provider_test_all_methods')]
     public function test_all_methods(
@@ -95,7 +97,6 @@ final class config_test extends advanced_testcase {
      * Provides test data for the {@see test_all_methods} method.
      *
      * @return array[] Arguments for the test method.
-     * @throws JsonException
      */
     public static function provider_test_all_methods(): array {
         $testmetric = registered_metric::from_metric(new test_metric());

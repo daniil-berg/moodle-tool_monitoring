@@ -94,7 +94,7 @@ class users_online extends metric_with_config {
      * @throws coding_exception
      */
     #[\Override]
-    public static function get_default_config(): users_online_config {
+    public function get_default_config(): users_online_config {
         return new users_online_config(60, 300, 900, 3600);
     }
 }

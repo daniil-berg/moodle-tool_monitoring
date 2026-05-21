@@ -437,7 +437,7 @@ class blocks_used extends metric_with_config {
         return new metric_value($DB->count_records_sql($sql, $params));
     }
 
-    public static function get_default_config(): blocks_used_config {
+    public function get_default_config(): blocks_used_config {
         return new blocks_used_config();
     }
 }

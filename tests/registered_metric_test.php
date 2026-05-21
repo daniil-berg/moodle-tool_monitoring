@@ -76,7 +76,7 @@ final class registered_metric_test extends advanced_testcase {
         $instance = registered_metric::from_metric($metric);
         $metricprop = new ReflectionProperty(registered_metric::class, 'metric');
         self::assertSame($metric, $metricprop->getValue($instance));
-        if ($metric instanceof metric_with_config) {
+        if ($metric instanceof metric_config_provider) {
             $defaultconfigprop = new ReflectionProperty(registered_metric::class, 'defaultconfig');
             self::assertInstanceOf(test_simple_metric_config_minimal::class, $defaultconfigprop->getValue($instance));
         }

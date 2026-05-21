@@ -85,7 +85,8 @@ final class users_online_test extends advanced_testcase {
     }
 
     public function test_get_default_config(): void {
-        $defaultconfig = users_online::get_default_config();
+        $metric = new users_online();
+        $defaultconfig = $metric->get_default_config();
         self::assertSame([60, 300, 900, 3600], $defaultconfig->timewindows);
     }
 }

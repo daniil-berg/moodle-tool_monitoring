@@ -144,9 +144,10 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     /**
      * Constructs a new instance from the specified metric.
      *
-     * @param metric $metric Metric to wrap in the new instance; the {@see self::$component `component`}, {@see self::$name `name`},
-     *                       {@see self::$configclass `configclass`}, and {@see self::$config `config`} properties are derived from
-     *                       {@see metric::get_component}, {@see metric::get_name}, and {@see metric::get_default_config}.
+     * @param metric $metric Metric to wrap in the new instance; {@see self::$component `component`} and {@see self::$name `name`}
+     *                       are derived from {@see metric::get_component} and {@see metric::get_name};
+     *                       {@see self::$configclass `configclass`}, and {@see self::$config `config`} are derived from
+     *                       {@see metric_config_provider::get_default_config}.
      * @return self New instance from the provided metric.
      */
     public static function from_metric(metric $metric): self {
@@ -223,13 +224,13 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     /**
      * Assigns the provided metric to the instance.
      *
-     * If the metric is configurable, sets the instance's {@see self::$configclass `configclass`} and {@see self::config `config`}.
+     * If the metric is configurable, sets {@see self::$defaultconfig `defaultconfig`} and {@see self::$config `config`}.
      *
      * @param metric $metric Metric to assign to the instance.
      */
     private function set_metric(metric $metric): void {
         $this->metric = $metric;
-        $this->defaultconfig = $metric instanceof metric_with_config ? $metric::get_default_config() : null;
+        $this->defaultconfig = $metric instanceof metric_config_provider ? $metric->get_default_config() : null;
         $this->set_config($this->config);
     }
 

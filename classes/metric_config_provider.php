@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_config} interface.
+ * Definition of the {@see metric_config_provider} interface.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,15 +29,11 @@
 
 namespace tool_monitoring;
 
-use JsonSerializable;
-use tool_monitoring\exceptions\metric_config_invalid;
-
 /**
- * Defines the optional configuration interface used by a {@see metric} that implements {@see metric_config_provider}.
+ * Specifies the additional interface that a configurable {@see metric} must implement.
  *
- * If a metric has specific associated configuration options, those are represented as a JSON object.
- * Classes must therefore implement the {@see JsonSerializable} interface as well as the {@see self::from_json `from_json`} method.
- * The former method determines what is saved in the database via {@see json_encode}, while the latter does the inverse.
+ * @phpcs:disable moodle.Commenting.ValidTags.Invalid
+ * @template TConf of metric_config
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -48,15 +44,11 @@ use tool_monitoring\exceptions\metric_config_invalid;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-interface metric_config extends JsonSerializable {
+interface metric_config_provider {
     /**
-     * Constructs a new instance from a JSON config object.
+     * Returns the default config for the metric.
      *
-     * Should be the inverse of the {@see static::jsonSerialize `jsonSerialize`} method.
-     *
-     * @param string $json String of a valid JSON object (not an array or any other type).
-     * @return self New instance of the config class.
-     * @throws metric_config_invalid
+     * @return TConf Config object.
      */
-    public static function from_json(string $json): self;
+    public function get_default_config(): metric_config;
 }

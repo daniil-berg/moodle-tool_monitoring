@@ -29,11 +29,7 @@
 
 namespace tool_monitoring\local\testing;
 
-use core\lang_string;
-use tool_monitoring\metric_config;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric_value;
-use tool_monitoring\metric_with_config;
+use tool_monitoring\metric_config_provider;
 
 /**
  * Example metric with a custom config that allows setting arbitrary values to be returned by its methods.
@@ -51,64 +47,9 @@ use tool_monitoring\metric_with_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class test_metric_with_config extends metric_with_config {
-    /** @var iterable<metric_value>|metric_value Metric values produced by the {@see self::calculate `calculate`} method. */
-    private iterable|metric_value $values = [];
-
-    /** @var metric_type Type returned from the {@see self::get_type `get_type`} method. */
-    private metric_type $type = metric_type::COUNTER;
-
-    /** @var string String returned from the {@see self::get_name `get_name`} method. */
-    private string $name = 'test_metric_with_config';
-
-    /** @var lang_string|null Language string returned from the {@see self::get_description `get_description`} method. */
-    private lang_string|null $description = null;
-
-    /**
-     * Returns a new instance with the specified attributes.
-     *
-     * @param string $name String to return from the {@see metric::get_name `get_name`} method.
-     * @param lang_string $description Language string to return from the {@see self::get_description `get_description`} method.
-     * @param metric_type $type Type to return from the {@see metric::get_type `get_type`} method.
-     * @param iterable|metric_value $values Values to produce from the {@see metric::calculate `calculate`} method.
-     * @return static New configured instance.
-     */
-    public static function create(
-        string $name = 'test_metric_with_config',
-        lang_string $description = new test_lang_string(),
-        metric_type $type = metric_type::COUNTER,
-        iterable|metric_value $values = [],
-    ): static {
-        $metric = new static();
-        $metric->values = $values;
-        $metric->type = $type;
-        $metric->description = $description;
-        $metric->name = $name;
-        return $metric;
-    }
-
+class test_metric_with_config extends test_metric implements metric_config_provider {
     #[\Override]
-    public function calculate(metric_config|null $config = null): iterable|metric_value {
-        return $this->values;
-    }
-
-    #[\Override]
-    public function get_type(): metric_type {
-        return $this->type;
-    }
-
-    #[\Override]
-    public function get_description(): lang_string {
-        return $this->description ?? new test_lang_string();
-    }
-
-    #[\Override]
-    public function get_name(): string {
-        return $this->name;
-    }
-
-    #[\Override]
-    public static function get_default_config(): test_simple_metric_config_minimal {
+    public function get_default_config(): test_simple_metric_config_minimal {
         return new test_simple_metric_config_minimal();
     }
 }

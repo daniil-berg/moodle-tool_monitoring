@@ -35,6 +35,7 @@ namespace tool_monitoring;
  * @phpcs:disable moodle.Commenting.ValidTags.Invalid
  * @template TConf of metric_config
  * @extends metric<TConf>
+ * @implements metric_config_provider<TConf>
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -45,11 +46,7 @@ namespace tool_monitoring;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class metric_with_config extends metric {
-    /**
-     * Returns the default config for the metric.
-     *
-     * @return metric_config Config object.
-     */
-    abstract public static function get_default_config(): metric_config;
+abstract class metric_with_config extends metric implements metric_config_provider {
+    #[\Override]
+    abstract public function get_default_config(): metric_config;
 }

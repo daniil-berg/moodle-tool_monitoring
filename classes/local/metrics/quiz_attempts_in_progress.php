@@ -85,7 +85,7 @@ class quiz_attempts_in_progress extends metric_with_config {
     }
 
     #[\Override]
-    public static function get_default_config(): quiz_attempts_in_progress_config {
+    public function get_default_config(): quiz_attempts_in_progress_config {
         return new quiz_attempts_in_progress_config();
     }
 }

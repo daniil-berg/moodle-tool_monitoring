@@ -53,48 +53,56 @@ use tool_monitoring\metric_value;
  */
 class test_metric extends metric {
     /** @var iterable<metric_value>|metric_value Metric values produced by the {@see self::calculate `calculate`} method. */
-    private iterable|metric_value $values = [];
+    private iterable|metric_value $values;
 
     /** @var metric_type Type returned from the {@see self::get_type `get_type`} method. */
-    private metric_type $type = metric_type::COUNTER;
+    private metric_type $type;
 
     /** @var string String returned from the {@see self::get_name `get_name`} method. */
-    private string $name = 'test_metric';
+    private string $name;
 
-    /** @var lang_string|null Language string returned from the {@see self::get_description `get_description`} method. */
-    private lang_string|null $description = null;
+    /** @var lang_string Language string returned from the {@see self::get_description `get_description`} method. */
+    private lang_string $description;
 
     /**
      * Returns a new instance with the specified attributes.
      *
-     * @param string $name String to return from the {@see metric::get_name `get_name`} method.
-     * @param lang_string $description Language string to return from the {@see self::get_description `get_description`} method.
-     * @param metric_type $type Type to return from the {@see metric::get_type `get_type`} method.
-     * @param iterable|metric_value $values Values to produce from the {@see metric::calculate `calculate`} method.
+     * @param string|null $name String to return from {@see metric::get_name `get_name`}.
+     * @param lang_string|null $description Language string to return from {@see self::get_description `get_description`}.
+     * @param metric_type|null $type Type to return from {@see metric::get_type `get_type`}.
+     * @param iterable|metric_value|null $values Values to produce from {@see metric::calculate `calculate`}.
      * @return static New configured instance.
      */
     public static function create(
-        string $name = 'test_metric',
-        lang_string $description = new test_lang_string(),
-        metric_type $type = metric_type::COUNTER,
-        iterable|metric_value $values = [],
+        string|null $name = null,
+        lang_string|null $description = null,
+        metric_type|null $type = null,
+        iterable|metric_value|null $values = null,
     ): static {
         $metric = new static();
-        $metric->values = $values;
-        $metric->type = $type;
-        $metric->description = $description;
-        $metric->name = $name;
+        if (!is_null($values)) {
+            $metric->values = $values;
+        }
+        if (!is_null($type)) {
+            $metric->type = $type;
+        }
+        if (!is_null($description)) {
+            $metric->description = $description;
+        }
+        if (!is_null($name)) {
+            $metric->name = $name;
+        }
         return $metric;
     }
 
     #[\Override]
     public function calculate(metric_config|null $config = null): iterable|metric_value {
-        return $this->values;
+        return $this->values ?? [];
     }
 
     #[\Override]
     public function get_type(): metric_type {
-        return $this->type;
+        return $this->type ?? metric_type::COUNTER;
     }
 
     #[\Override]
@@ -104,6 +112,6 @@ class test_metric extends metric {
 
     #[\Override]
     public function get_name(): string {
-        return $this->name;
+        return $this->name ?? parent::get_name();
     }
 }

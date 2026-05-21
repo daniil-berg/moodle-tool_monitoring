@@ -114,7 +114,8 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
     }
 
     public function test_get_default_config(): void {
-        $defaultconfig = quiz_attempts_in_progress::get_default_config();
+        $metric = new quiz_attempts_in_progress();
+        $defaultconfig = $metric->get_default_config();
         self::assertSame(10800, $defaultconfig->maxdeadlineseconds);
         self::assertSame(1200, $defaultconfig->maxidleseconds);
     }

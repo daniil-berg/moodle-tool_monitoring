@@ -34,6 +34,7 @@ namespace tool_monitoring;
 use advanced_testcase;
 use core\di;
 use core\exception\coding_exception;
+use core_tag_area;
 use dml_exception;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -41,6 +42,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\exceptions\metric_name_invalid;
 use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
+use tool_monitoring\exceptions\tags_disabled;
+use tool_monitoring\exceptions\tool_monitoring_exception;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\test_metric;
@@ -101,6 +104,7 @@ final class metrics_manager_test extends advanced_testcase {
      * @throws coding_exception
      * @throws dml_exception
      * @throws tag_not_found
+     * @throws tags_disabled
      */
     #[DataProvider('provider_test_filter')]
     public function test_filter(
@@ -327,6 +331,7 @@ final class metrics_manager_test extends advanced_testcase {
      * @throws coding_exception
      * @throws dml_exception
      * @throws tag_not_found
+     * @throws tags_disabled
      */
     public function test_tag_instance_changes(): void {
         global $DB;
@@ -385,6 +390,38 @@ final class metrics_manager_test extends advanced_testcase {
     }
 
     /**
+     * Tests that the {@see metrics_manager::filter} method throws when the {@see metric_tag::ITEM_TYPE} tag area is disabled.
+     *
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws tag_not_found
+     * @throws tags_disabled
+     */
+    public function test_filter_throws_on_disabled_tag_area(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $area = $DB->get_record('tag_area', ['itemtype' => metric_tag::ITEM_TYPE, 'component' => 'tool_monitoring']);
+        core_tag_area::update($area, ['enabled' => false]);
+        $this->expectExceptionObject(new tags_disabled(metric_tag::ITEM_TYPE));
+        di::get(metrics_manager::class)->filter(tagnames: ['foo']);
+    }
+
+    /**
+     * Tests that the {@see metrics_manager::filter} method throws when the `usetags` setting is off.
+     *
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws tag_not_found
+     * @throws tags_disabled
+     */
+    public function test_filter_throws_on_disabled_tags(): void {
+        $this->resetAfterTest();
+        set_config('usetags', false);
+        $this->expectExceptionObject(new tags_disabled(metric_tag::ITEM_TYPE));
+        di::get(metrics_manager::class)->filter(tagnames: ['foo']);
+    }
+
+    /**
      * Test the {@see metrics_manager::sync} method with the `collect` parameter set to `false`.
      *
      * @param metric[] $collected Metric instances to add to the collection beforehand.
@@ -398,6 +435,7 @@ final class metrics_manager_test extends advanced_testcase {
      * @throws dml_exception
      * @throws metric_name_invalid
      * @throws tag_not_found
+     * @throws tags_disabled
      */
     #[DataProvider('provider_test_sync')]
     public function test_sync(
@@ -546,6 +584,7 @@ final class metrics_manager_test extends advanced_testcase {
      *
      * @throws coding_exception
      * @throws dml_exception
+     * @throws metric_name_invalid
      * @throws JsonException
      */
     public function test_sync_deletes_tag_instances_for_deleted_metrics(): void {
@@ -592,6 +631,56 @@ final class metrics_manager_test extends advanced_testcase {
             ]),
         );
         self::assertSame([$metricid => []], metric_tag::get_for_metric_ids($metricid));
+    }
+
+    /**
+     * Tests that the {@see metrics_manager::sync} method throws an exception when a collected metric does not pass validation.
+     *
+     * @throws coding_exception
+     * @throws dml_exception
+     * @throws metric_name_invalid
+     */
+    #[DataProvider('provider_test_sync_throws_on_invalid_collection')]
+    public function test_sync_throws_on_invalid_collection(string $name, tool_monitoring_exception $exception): void {
+        $this->resetAfterTest();
+        $collection = new metric_collection();
+        $collection->add(test_metric::create('foo'));
+        $collection->add(test_metric::create($name));
+        $collection->add(test_metric::create('bar'));
+        di::set(metric_collection::class, $collection);
+        $manager = di::get(metrics_manager::class);
+        $this->expectExceptionObject($exception);
+        $manager->sync();
+    }
+
+    /**
+     * Provides test data for the {@see test_sync_throws_on_invalid_collection} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_sync_throws_on_invalid_collection(): array {
+        return [
+            'Metric name empty' => [
+                'name' => '',
+                'exception' => new metric_name_invalid('tool_monitoring', ''),
+            ],
+            'Metric name too long' => [
+                'name' => str_repeat('a', 101),
+                'exception' => new metric_name_invalid('tool_monitoring', str_repeat('a', 101)),
+            ],
+            'Metric name contains space' => [
+                'name' => 'foo bar',
+                'exception' => new metric_name_invalid('tool_monitoring', 'foo bar'),
+            ],
+            'Metric name contains upper-case letter' => [
+                'name' => 'Foo',
+                'exception' => new metric_name_invalid('tool_monitoring', 'Foo'),
+            ],
+            'Metric name starts with digit' => [
+                'name' => '1foo',
+                'exception' => new metric_name_invalid('tool_monitoring', '1foo'),
+            ],
+        ];
     }
 
     /**

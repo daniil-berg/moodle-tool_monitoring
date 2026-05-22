@@ -29,13 +29,17 @@
 
 namespace tool_monitoring\local\testing;
 
+use core\exception\coding_exception;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_config_provider;
+use tool_monitoring\metric_value;
 
 /**
  * Example metric with a custom config that allows setting arbitrary values to be returned by its methods.
  *
  * **TESTING ONLY: This exists purely to run unit tests.**
  *
+ * @property-read metric_config|null $lastconfig Last config passed to {@see self::calculate}.
  * @codeCoverageIgnore
  *
  * @package    tool_monitoring
@@ -48,6 +52,44 @@ use tool_monitoring\metric_config_provider;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class test_metric_with_config extends test_metric implements metric_config_provider {
+    /** @var metric_config|null Last config passed to {@see self::calculate}. */
+    private metric_config|null $lastconfig = null;
+
+    /**
+     * Getter for the last config passed to {@see self::calculate}.
+     *
+     * TODO Replace with property hook.
+     *
+     * @param string $name Property name.
+     * @return metric_config|null
+     * @throws coding_exception
+     */
+    public function __get(string $name): metric_config|null {
+        return match ($name) {
+            'lastconfig' => $this->lastconfig,
+            default      => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
+        };
+    }
+
+    /**
+     * Checks whether a previous call to {@see self::calculate} passed a non-`null` config.
+     *
+     * @param string $name Property name.
+     * @return bool
+     */
+    public function __isset(string $name): bool {
+        return match ($name) {
+            'lastconfig' => isset($this->lastconfig),
+            default      => false,
+        };
+    }
+
+    #[\Override]
+    public function calculate(metric_config|null $config = null): iterable|metric_value {
+        $this->lastconfig = $config;
+        return parent::calculate($config);
+    }
+
     #[\Override]
     public function get_default_config(): test_simple_metric_config_minimal {
         return new test_simple_metric_config_minimal();

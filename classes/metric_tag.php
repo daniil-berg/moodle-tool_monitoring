@@ -280,7 +280,10 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
         }
         $extra = array_diff_key($data, self::CACHE_FIELDS);
         if (!empty($extra)) {
-            debugging("Unexpected cache fields for metric_tag {$data['id']}:" . implode(', ', $extra), DEBUG_DEVELOPER);
+            debugging(
+                "Unexpected cache fields for metric_tag {$data['id']}: " . implode(', ', array_keys($extra)),
+                DEBUG_DEVELOPER,
+            );
         }
         $data['tagcollid'] = static::get_collection_id();
         $tag = new static((object) $data);

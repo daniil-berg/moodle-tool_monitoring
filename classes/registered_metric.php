@@ -54,7 +54,7 @@ use Traversable;
  * @property-read string $qualifiedname Qualified name of the metric.
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
- * @property-read string|null $config Metric-specific config as a JSON object; `null` if no specific config is defined for the metric.
+ * @property-read string|null $config Metric-specific config JSON; `null` if default or not configurable.
  * @property-read class-string<metric_config>|null $configclass Name of the associated metric config class, if any.
  * @property-read array<string, metric_tag> $tags Tags on the metric, indexed by their normalized name.
  *
@@ -114,7 +114,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * @param string $component Component defining the metric.
      * @param string $name Name of the metric.
      * @param bool $enabled If `false` the metric is currently not supposed to be calculated/exported.
-     * @param string|null $config Metric-specific config as a JSON object; `null` if no specific config is defined for the metric.
+     * @param string|null $config Metric-specific config JSON; `null` if default or not configurable.
      * @param int|null $timecreated Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet).
      * @param int|null $timemodified Timestamp when the DB table entry was last modified; `null` if not (yet) saved.
      * @param int|null $usermodified ID of the user that last modified the DB table entry; `null` if not (yet) saved.
@@ -129,7 +129,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         public string $name,
         /** @var bool If `false` the metric is currently not supposed to be calculated/exported. */
         public bool $enabled = false,
-        /** @var string|null Metric-specific config as a JSON object; `null` if no specific config is defined for the metric. */
+        /** @var string|null Metric-specific config JSON; `null` if default or not configurable. */
         private string|null $config = null,
         /** @var int|null Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet). */
         public int|null $timecreated = null,

@@ -39,6 +39,7 @@ $string['error:metric_not_found'] = 'No metric with the qualified name "{$a->qua
 $string['error:quiz_attempts_in_progress_config:input_invalid'] = 'Invalid input';
 $string['error:simple_metric_config_constructor_missing'] = 'The "{$a->classname}" class does not have a constructor.';
 $string['error:tag_not_found'] = 'No tag named "{$a->tagname}" exists in the "{$a->collectionname}" collection.';
+$string['error:tags_disabled'] = 'Tags are turned off globally or the "{$a->itemtype}" tag area is disabled.';
 $string['error:users_online_config:timewindows_invalid'] = 'Invalid time window(s) provided: {$a}';
 
 $string['event:metric_config_updated'] = 'Metric configuration updated';

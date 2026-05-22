@@ -31,9 +31,8 @@
 
 namespace tool_monitoring\hook;
 
-use core\attribute\label;
-use core\attribute\tags;
 use core\di;
+use core\hook\described_hook;
 use core\hook\di_configuration;
 use core\hook\manager as hook_manager;
 use IteratorAggregate;
@@ -58,11 +57,19 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[label('Provides the ability to register custom metrics.')]
-#[tags('metric', 'monitoring', 'tool_monitoring')]
-final class metric_collection implements IteratorAggregate {
+final class metric_collection implements described_hook, IteratorAggregate {
     /** @var array<string, array<string, metric>> All added metrics indexed first by component, then by name. */
     private array $metrics = [];
+
+    #[\Override]
+    public static function get_hook_description(): string {
+        return 'Provides the ability to register custom metrics.';
+    }
+
+    #[\Override]
+    public static function get_hook_tags(): array {
+        return ['metric', 'monitoring', 'tool_monitoring'];
+    }
 
     /**
      * Adds the specified metric to the collection.

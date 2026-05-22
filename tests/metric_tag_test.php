@@ -244,10 +244,13 @@ final class metric_tag_test extends advanced_testcase {
     /**
      * Tests the {@see metric_tag::wake_from_cache} method.
      *
+     * @param mixed $data Data to pass to the method.
+     * @param array<string, mixed>|string $expected Expected properties on the new instance or exception class name.
+     * @param string|null $debugging Expected debugging message.
      * @throws coding_exception
      */
     #[DataProvider('provider_test_wake_from_cache')]
-    public function test_wake_from_cache(mixed $data, array|string $expected): void {
+    public function test_wake_from_cache(mixed $data, array|string $expected, string|null $debugging = null): void {
         if (is_string($expected)) {
             $this->expectException($expected);
             metric_tag::wake_from_cache($data);
@@ -256,6 +259,9 @@ final class metric_tag_test extends advanced_testcase {
         $instance = metric_tag::wake_from_cache($data);
         foreach ($expected as $name => $value) {
             self::assertEquals($value, $instance->$name, "Unexpected $name on tag instance");
+        }
+        if (!is_null($debugging)) {
+            $this->assertDebuggingCalled($debugging);
         }
     }
 
@@ -316,6 +322,37 @@ final class metric_tag_test extends advanced_testcase {
                     'taginstancecontextid' => 1,
                 ],
                 'expected' => coding_exception::class,
+            ],
+            'Unexpected fields' => [
+                'data' => (object) [
+                    'unexpected'           => 'stuff',
+                    'even_more'            => 'stuff',
+                    'id'                   => 1,
+                    'userid'               => 1,
+                    'name'                 => 'foo',
+                    'rawname'              => 'Foo',
+                    'isstandard'           => 0,
+                    'description'          => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                    'descriptionformat'    => 0,
+                    'flag'                 => 0,
+                    'timemodified'         => 1,
+                    'taginstanceid'        => 1,
+                    'taginstancecontextid' => 1,
+                ],
+                'expected' => [
+                    'id'                   => 1,
+                    'userid'               => 1,
+                    'name'                 => 'foo',
+                    'rawname'              => 'Foo',
+                    'isstandard'           => 0,
+                    'description'          => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                    'descriptionformat'    => 0,
+                    'flag'                 => 0,
+                    'timemodified'         => 1,
+                    'taginstanceid'        => 1,
+                    'taginstancecontextid' => 1,
+                ],
+                'debugging' => "Unexpected cache fields for metric_tag 1: unexpected, even_more",
             ],
         ];
     }

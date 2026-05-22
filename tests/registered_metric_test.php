@@ -43,6 +43,8 @@ use JsonException;
 use moodle_database;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionException;
+use ReflectionMethod;
 use ReflectionProperty;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\hook\metric_collection;
@@ -238,6 +240,23 @@ final class registered_metric_test extends advanced_testcase {
         ];
     }
 
+    /**
+     * Tests the faulty path in the {@see registered_metric::set_config} method.
+     *
+     * @throws ReflectionException
+     */
+    public function test_set_config(): void {
+        $instance = registered_metric::from_metric(new test_metric());
+        // Sanity check.
+        self::assertNull($instance->config);
+        // Call the setter with a non-null value.
+        $refmethod = new ReflectionMethod(registered_metric::class, 'set_config');
+        $refmethod->invoke($instance, '{"foo":"bar"}');
+        // Ensure nothing was set and debugging call was issued.
+        self::assertNull($instance->config);
+        self::assertDebuggingCalled("Cannot set config on non-configurable metric: $instance->qualifiedname", DEBUG_DEVELOPER);
+    }
+
     #[DataProvider('provider_test_to_db')]
     public function test_to_db(registered_metric $metric, array|null $fields, array $expected): void {
         $output = $metric->to_db($fields);
@@ -380,6 +399,36 @@ final class registered_metric_test extends advanced_testcase {
                 'testvalues' => new ArrayIterator([new metric_value(-1), new metric_value(-2), new metric_value(-3)]),
             ],
         ];
+    }
+
+    /**
+     * Tests the config passed by {@see registered_metric::getIterator} into {@see metric::calculate} and that it is cached.
+     *
+     * @throws ReflectionException
+     */
+    public function test_iterator_config_cache(): void {
+        $metric = test_metric_with_config::create(values: [new metric_value(0)]);
+        // Sanity check.
+        self::assertNull($metric->lastconfig);
+        $instance = registered_metric::from_metric($metric);
+        // This should pass the default config object into `test_metric_with_config::calculate`.
+        iterator_to_array($instance);
+        $lastconfig = $metric->lastconfig;
+        self::assertInstanceOf(test_simple_metric_config_minimal::class, $lastconfig);
+        // Calling that again should use the config cache and pass that same object.
+        iterator_to_array($instance);
+        self::assertSame($lastconfig, $metric->lastconfig);
+        // Set a different config; this should clear the config cache.
+        $refmethod = new ReflectionMethod(registered_metric::class, 'set_config');
+        $refmethod->invoke($instance, '{"foo":"baz","spam":-1}');
+        // This should deserialize the new config and passes that object into `test_metric_with_config::calculate`.
+        iterator_to_array($instance);
+        $lastconfig2 = $metric->lastconfig;
+        self::assertInstanceOf(test_simple_metric_config_minimal::class, $lastconfig2);
+        self::assertNotSame($lastconfig, $lastconfig2);
+        // Calling that again should use the config cache and pass that same object.
+        iterator_to_array($instance);
+        self::assertSame($lastconfig2, $metric->lastconfig);
     }
 
     /**
@@ -782,10 +831,11 @@ final class registered_metric_test extends advanced_testcase {
      *
      * @param mixed $data Data to pass to the method.
      * @param array<string, mixed>|string $expected Expected properties on the new instance or exception class name.
+     * @param string|null $debugging Expected debugging message.
      * @throws coding_exception
      */
     #[DataProvider('provider_test_wake_from_cache')]
-    public function test_wake_from_cache(mixed $data, array|string $expected): void {
+    public function test_wake_from_cache(mixed $data, array|string $expected, string|null $debugging = null): void {
         if (is_string($expected)) {
             $this->expectException($expected);
             registered_metric::wake_from_cache($data);
@@ -803,6 +853,9 @@ final class registered_metric_test extends advanced_testcase {
         $metric = $collection->get($instance->component, $instance->name);
         $metricprop = new ReflectionProperty(registered_metric::class, 'metric');
         self::assertSame($metric, $metricprop->getValue($instance));
+        if (!is_null($debugging)) {
+            $this->assertDebuggingCalled($debugging);
+        }
     }
 
     /**
@@ -870,6 +923,33 @@ final class registered_metric_test extends advanced_testcase {
                     'tags'         => [],
                 ],
                 'expected' => coding_exception::class,
+            ],
+            'Unexpected fields' => [
+                'data' => (object) [
+                    'unexpected'   => 'stuff',
+                    'even_more'    => 'stuff',
+                    'id'           => 1,
+                    'component'    => 'tool_monitoring',
+                    'name'         => 'users_online',
+                    'enabled'      => true,
+                    'config'       => '{"foo":"baz,"spam":42}',
+                    'timecreated'  => 123,
+                    'timemodified' => 456,
+                    'usermodified' => 1,
+                    'tags'         => [],
+                ],
+                'expected' => [
+                    'id'           => 1,
+                    'component'    => 'tool_monitoring',
+                    'name'         => 'users_online',
+                    'enabled'      => true,
+                    'config'       => '{"foo":"baz,"spam":42}',
+                    'timecreated'  => 123,
+                    'timemodified' => 456,
+                    'usermodified' => 1,
+                    'tags'         => [],
+                ],
+                'debugging' => "Unexpected cache fields for registered_metric 1: unexpected, even_more",
             ],
         ];
     }

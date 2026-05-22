@@ -39,6 +39,7 @@ use Exception;
 use tool_monitoring\exceptions\metric_name_invalid;
 use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
+use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics_cache;
 
@@ -125,10 +126,11 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @throws coding_exception
      * @throws dml_exception
      * @throws tag_not_found At least one of the provided `$tagnames` does not match any existing metric tag.
+     * @throws tags_disabled
      */
     public function filter(bool|null $enabled = null, array $tagnames = []): array {
         if ($tagnames && !metric_tag::is_enabled()) {
-            throw new tag_not_found(reset($tagnames), metric_tag::COLLECTION_NAME);
+            throw new tags_disabled(metric_tag::ITEM_TYPE);
         }
         $tags = metric_tag::get_all_with_names(...$tagnames);
         $qnames = [];

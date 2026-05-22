@@ -55,6 +55,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(metric_not_found::class)]
 #[CoversClass(simple_metric_config_constructor_missing::class)]
 #[CoversClass(tag_not_found::class)]
+#[CoversClass(tags_disabled::class)]
 #[CoversClass(tool_monitoring_exception::class)]
 final class tool_monitoring_exception_test extends advanced_testcase {
     /**
@@ -142,6 +143,13 @@ final class tool_monitoring_exception_test extends advanced_testcase {
                 'errorcode' => 'error:tag_not_found',
                 'module' => 'tool_monitoring',
                 'message' => 'No tag named "eggs" exists in the "beans" collection.',
+            ],
+            [
+                'exceptionclass' => tags_disabled::class,
+                'properties' => ['itemtype' => 'toast'],
+                'errorcode' => 'error:tags_disabled',
+                'module' => 'tool_monitoring',
+                'message' => 'Tags are turned off globally or the "toast" tag area is disabled.',
             ],
         ];
     }

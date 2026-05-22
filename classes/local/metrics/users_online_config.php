@@ -93,7 +93,7 @@ final readonly class users_online_config implements metric_config_form_aware {
      * @throws coding_exception JSON is not valid or not an object or missing config parameters.
      */
     #[\Override]
-    public static function from_json(string $json): self {
+    public static function from_json(string $json): static {
         $data = json_decode($json, associative: true);
         if (empty($data) || !is_array($data) || array_is_list($data)) {
             throw new coding_exception('Invalid JSON');
@@ -105,7 +105,7 @@ final readonly class users_online_config implements metric_config_form_aware {
         if (!is_array($timewindows) || !array_is_list($timewindows)) {
             throw new coding_exception("JSON value 'timewindows' is not an array");
         }
-        return new self(...$timewindows);
+        return new static(...$timewindows);
     }
 
     /**
@@ -116,7 +116,7 @@ final readonly class users_online_config implements metric_config_form_aware {
      * @throws coding_exception
      */
     #[\Override]
-    public static function with_form_data(stdClass $formdata): self {
+    public static function with_form_data(stdClass $formdata): static {
         $timewindowsstring = $formdata->timewindows ?? null;
         if (!is_string($timewindowsstring)) {
             throw new coding_exception("No 'timewindows' string in form data");
@@ -127,7 +127,7 @@ final readonly class users_online_config implements metric_config_form_aware {
                 throw new coding_exception("Form data 'timewindows' contains non-numeric value: $value");
             }
         }
-        return new self(...$timewindows);
+        return new static(...$timewindows);
     }
 
     #[\Override]

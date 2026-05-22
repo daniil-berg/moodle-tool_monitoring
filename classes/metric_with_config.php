@@ -48,5 +48,5 @@ namespace tool_monitoring;
  */
 abstract class metric_with_config extends metric implements metric_config_provider {
     #[\Override]
-    abstract public function get_default_config(): metric_config;
+    abstract public function get_default_config(): metric_config; // @codeCoverageIgnore
 }

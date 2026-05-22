@@ -116,11 +116,12 @@ abstract class metric {
     /**
      * Returns the name of the metric to be used as an identifier.
      *
-     * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the defining component as returned by the {@see self::get_component `get_component`} method; it _must_ be no longer than
-     * 100 characters.
-     *
-     * Defaults to the unqualified class name.
+     * Subclasses may override this. Defaults to the unqualified class name. The name
+     * - _should_ be descriptive,
+     * - _must_ only consist of lowercase letters, digits, and underscores,
+     * - _must not_ start with a digit,
+     * - _must_ be unique for the defining component as returned by the {@see self::get_component `get_component`} method,
+     * - _must_ be no longer than 100 characters.
      *
      * @return string Unique metric name/identifier.
      */

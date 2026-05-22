@@ -51,6 +51,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(form_data_value_missing::class)]
 #[CoversClass(json_invalid::class)]
 #[CoversClass(json_key_missing::class)]
+#[CoversClass(metric_name_invalid::class)]
 #[CoversClass(metric_not_found::class)]
 #[CoversClass(simple_metric_config_constructor_missing::class)]
 #[CoversClass(tag_not_found::class)]
@@ -113,6 +114,13 @@ final class tool_monitoring_exception_test extends advanced_testcase {
                 'errorcode' => 'error:json_key_missing',
                 'module' => 'tool_monitoring',
                 'message' => 'JSON object is missing the "bar" key.',
+            ],
+            [
+                'exceptionclass' => metric_name_invalid::class,
+                'properties' => ['component' => 'local_example', 'name' => 'my_metric'],
+                'errorcode' => 'error:metric_name_invalid',
+                'module' => 'tool_monitoring',
+                'message' => 'Metric from component "local_example" has an invalid name: "my_metric"',
             ],
             [
                 'exceptionclass' => metric_not_found::class,

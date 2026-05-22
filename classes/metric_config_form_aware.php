@@ -57,9 +57,9 @@ interface metric_config_form_aware extends metric_config {
      * Constructs a new instance from the (non-empty) output of {@see moodleform::get_data}.
      *
      * @param stdClass $formdata Form data to use for construction.
-     * @return self New instance of the config class.
+     * @return static New instance of the config class.
      */
-    public static function with_form_data(stdClass $formdata): self;
+    public static function with_form_data(stdClass $formdata): static;
 
     /**
      * Transforms an instance into an associative array of data that can be passed to {@see moodleform::set_data}.

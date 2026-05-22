@@ -55,8 +55,8 @@ interface metric_config extends JsonSerializable {
      * Should be the inverse of the {@see static::jsonSerialize `jsonSerialize`} method.
      *
      * @param string $json String of a valid JSON object (not an array or any other type).
-     * @return self New instance of the config class.
+     * @return static New instance of the config class.
      * @throws metric_config_invalid
      */
-    public static function from_json(string $json): self;
+    public static function from_json(string $json): static;
 }

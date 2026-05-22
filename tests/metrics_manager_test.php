@@ -38,6 +38,7 @@ use dml_exception;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\exceptions\metric_name_invalid;
 use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\hook\metric_collection;
@@ -395,7 +396,7 @@ final class metrics_manager_test extends advanced_testcase {
      * @param bool $delete Passed to the tested method; `false` by default.
      * @throws coding_exception
      * @throws dml_exception
-     * @throws JsonException
+     * @throws metric_name_invalid
      * @throws tag_not_found
      */
     #[DataProvider('provider_test_sync')]

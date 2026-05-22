@@ -36,6 +36,7 @@ use core_cache\data_source_interface as cache_data_source_interface;
 use core_cache\definition as cache_definition;
 use dml_exception;
 use Exception;
+use tool_monitoring\exceptions\metric_name_invalid;
 use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\hook\metric_collection;
@@ -156,14 +157,16 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @return $this Same instance.
      * @throws coding_exception
      * @throws dml_exception
+     * @throws metric_name_invalid
      */
     public function sync(bool $delete = false): self {
         global $DB, $USER;
+        $collection = $this->validate_collection();
         try {
             $transaction = $DB->start_delegated_transaction();
             // Get a `registered_metric` instance for every metric we collected.
             // Some may have no DB record and thus a `null` ID; those will need to be inserted.
-            $metrics = registered_metric::get_for_metrics(...iterator_to_array($this->collection));
+            $metrics = registered_metric::get_for_metrics(...$collection);
             // Prepare records for insertion and remember the existing IDs of collected-and-registered metrics.
             $existingids = [];
             $toinsert = [];
@@ -218,6 +221,24 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         metrics_cache::purge();
         metrics_cache::set(...$metrics);
         return $this;
+    }
+
+    /**
+     * Ensures that the managed metric collection is valid.
+     *
+     * @return metric[] Validated {@see metric} instances from the collection.
+     * @throws metric_name_invalid
+     */
+    private function validate_collection(): array {
+        $collected = [];
+        foreach ($this->collection as $collectedmetric) {
+            $name = $collectedmetric->get_name();
+            if (!preg_match('/^[a-z_][a-z0-9_]{0,99}$/', $name)) {
+                throw new metric_name_invalid($collectedmetric->get_component(), $name);
+            }
+            $collected[] = $collectedmetric;
+        }
+        return $collected;
     }
 
     /**

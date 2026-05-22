@@ -180,10 +180,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         foreach (array_values($metrics) as $i => $metric) {
             [$component, $name] = [$metric->get_component(), $metric->get_name()];
             $qname = self::get_qualified_name($component, $name);
-            if (array_key_exists($qname, $uniquemetrics)) {
-                trigger_error("More than one metric with the qualified name '$qname'", E_USER_WARNING);
-                continue;
-            }
             $uniquemetrics[$qname] = $metric;
             $inplaceholders[] = "(:component$i, :name$i)";
             $params["component$i"] = $component;

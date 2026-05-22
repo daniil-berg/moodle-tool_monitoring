@@ -51,6 +51,18 @@ use tool_monitoring\local\metrics\user_accounts;
  */
 #[CoversClass(metric_collection::class)]
 final class metric_collection_test extends advanced_testcase {
+    public function test_get_hook_description(): void {
+        $hook = new metric_collection();
+        $description = $hook->get_hook_description();
+        self::assertSame('Provides the ability to register custom metrics.', $description);
+    }
+
+    public function test_get_hook_tags(): void {
+        $hook = new metric_collection();
+        $tags = $hook->get_hook_tags();
+        self::assertSame(['metric', 'monitoring', 'tool_monitoring'], $tags);
+    }
+
     /**
      * Tests adding and retrieving metrics.
      *

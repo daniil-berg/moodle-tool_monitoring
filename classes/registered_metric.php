@@ -250,7 +250,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
             $this->config = $config;
         } else {
             if (!is_null($config)) {
-                debugging("Cannot set config on a non-configurable metric", DEBUG_DEVELOPER);
+                debugging("Cannot set config on non-configurable metric: $this->qualifiedname", DEBUG_DEVELOPER);
             }
             $this->config = null;
         }
@@ -511,7 +511,10 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         }
         $extra = array_diff_key($data, self::CACHE_FIELDS);
         if (!empty($extra)) {
-            debugging("Unexpected cache fields for registered_metric {$data['id']}:" . implode(', ', $extra), DEBUG_DEVELOPER);
+            debugging(
+                "Unexpected cache fields for registered_metric {$data['id']}: " . implode(', ', array_keys($extra)),
+                DEBUG_DEVELOPER,
+            );
         }
         // Construct the instance using only the DB fields first.
         $instance = new self(...array_intersect_key($data, array_flip(self::FIELDS)));

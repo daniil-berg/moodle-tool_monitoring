@@ -41,6 +41,7 @@ use tool_monitoring\metric_with_config;
  * Attempts in quizzes that have no deadline approaching are excluded. As are attempts that have been idle for too long.
  * Both time windows are configurable.
  *
+ * @phpcs:disable moodle.Commenting.ValidTags.Invalid
  * @extends metric_with_config<quiz_attempts_in_progress_config>
  *
  * @package    tool_monitoring

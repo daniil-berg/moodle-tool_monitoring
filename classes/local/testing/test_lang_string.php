@@ -54,10 +54,14 @@ class test_lang_string extends lang_string {
      * Foregoes the parent constructor and just saves the provided string to return.
      *
      * @param string $output String returned as is during resolution.
+     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      *
      * {@noinspection PhpMissingParentConstructorInspection}
      */
-    public function __construct(private readonly string $output = '') {}
+    public function __construct(
+        /** @var string String returned as is during resolution. */
+        private readonly string $output = ''
+    ) {}
 
     #[\Override]
     public function out($lang = null): string {

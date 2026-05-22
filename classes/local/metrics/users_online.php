@@ -39,6 +39,7 @@ use tool_monitoring\metric_with_config;
 /**
  * Gauges the number of users online within certain time windows.
  *
+ * @phpcs:disable moodle.Commenting.ValidTags.Invalid
  * @extends metric_with_config<users_online_config>
  *
  * @package    tool_monitoring

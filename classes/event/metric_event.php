@@ -61,6 +61,20 @@ abstract class metric_event extends base {
     }
 
     /**
+     * Constructs a new instance of the event for the given metric.
+     *
+     * @param registered_metric $metric Metric that the event relates to.
+     * @return static New event object.
+     * @throws coding_exception
+     */
+    public static function for_metric(registered_metric $metric): static {
+        return static::create([
+            'objectid' => $metric->id,
+            'other'    => ['metric' => $metric->qualifiedname],
+        ]);
+    }
+
+    /**
      * Initializes event properties.
      *
      * @throws dml_exception
@@ -94,19 +108,5 @@ abstract class metric_event extends base {
         if (!isset($this->other['metric'])) {
             throw new coding_exception('Metric name is required.');
         }
-    }
-
-    /**
-     * Constructs a new instance of the event for the given metric.
-     *
-     * @param registered_metric $metric Metric that the event relates to.
-     * @return static New event object.
-     * @throws coding_exception
-     */
-    public static function for_metric(registered_metric $metric): static {
-        return static::create([
-            'objectid' => $metric->id,
-            'other'    => ['metric' => $metric->qualifiedname],
-        ]);
     }
 }

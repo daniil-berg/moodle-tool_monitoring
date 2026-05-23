@@ -38,9 +38,8 @@ use Traversable;
 /**
  * Base class for all metrics.
  *
- * Concrete subclasses only **need** to implement the {@see calculate} and {@see get_type} methods.
- *
- * Inheriting classes _may_ also override the {@see get_name} and {@see get_description} methods.
+ * Concrete subclasses _must_ implement the {@see self::get_type `get_type`} and {@see self::calculate `calculate`} methods.
+ * They _may_ also override the {@see self::get_description `get_description`} and {@see self::get_name `get_name`} methods.
  *
  * @phpcs:disable moodle.Commenting.ValidTags.Invalid
  * @template TConf of metric_config
@@ -79,6 +78,13 @@ abstract class metric {
     }
 
     /**
+     * Returns the type of the metric.
+     *
+     * @return metric_type
+     */
+    abstract public function get_type(): metric_type;
+
+    /**
      * Produces the current metric value(s).
      *
      * If the implementing metric only ever has a single value, this method can return just a single {@see metric_value} instance.
@@ -91,13 +97,6 @@ abstract class metric {
      * @return iterable<metric_value>|metric_value Singular metric value or an array or traversable object of metric values.
      */
     abstract public function calculate(metric_config|null $config = null): iterable|metric_value;
-
-    /**
-     * Returns the type of the metric.
-     *
-     * @return metric_type
-     */
-    abstract public function get_type(): metric_type;
 
     /**
      * Returns the localized description of the metric.

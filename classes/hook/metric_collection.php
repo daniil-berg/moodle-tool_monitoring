@@ -61,16 +61,6 @@ final class metric_collection implements described_hook, IteratorAggregate {
     /** @var array<string, array<string, metric>> All added metrics indexed first by component, then by name. */
     private array $metrics = [];
 
-    #[\Override]
-    public static function get_hook_description(): string {
-        return 'Provides the ability to register custom metrics.';
-    }
-
-    #[\Override]
-    public static function get_hook_tags(): array {
-        return ['metric', 'monitoring', 'tool_monitoring'];
-    }
-
     /**
      * Adds the specified metric to the collection.
      *
@@ -98,20 +88,6 @@ final class metric_collection implements described_hook, IteratorAggregate {
     }
 
     /**
-     * Yields the metrics from the collection.
-     *
-     * @return Traversable<metric> Previously added metrics.
-     */
-    #[\Override]
-    public function getIterator(): Traversable {
-        foreach ($this->metrics as $inner) {
-            foreach ($inner as $metric) {
-                yield $metric;
-            }
-        }
-    }
-
-    /**
      * Supplies a definition for the class to Moodle's dependency injection container.
      *
      * This ensures that the hook is always emitted/dispatched by the DI container first before it is injected as a dependency.
@@ -127,5 +103,29 @@ final class metric_collection implements described_hook, IteratorAggregate {
             // Otherwise, Behat tests will fail without any visible traceback.
             definition: fn(): metric_collection => di::get(hook_manager::class)->dispatch(new metric_collection()),
         );
+    }
+
+    #[\Override]
+    public static function get_hook_description(): string {
+        return 'Provides the ability to register custom metrics.';
+    }
+
+    #[\Override]
+    public static function get_hook_tags(): array {
+        return ['metric', 'monitoring', 'tool_monitoring'];
+    }
+
+    /**
+     * Yields the metrics from the collection.
+     *
+     * @return Traversable<metric> Previously added metrics.
+     */
+    #[\Override]
+    public function getIterator(): Traversable {
+        foreach ($this->metrics as $inner) {
+            foreach ($inner as $metric) {
+                yield $metric;
+            }
+        }
     }
 }

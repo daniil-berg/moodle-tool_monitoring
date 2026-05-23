@@ -62,6 +62,20 @@ class config extends moodleform {
     /** @var registered_metric Metric for which this form is defined; set in the {@see definition} method. */
     private registered_metric $metric;
 
+    /**
+     * Returns a new instance for configuring the specified metric.
+     *
+     * @param registered_metric $metric Metric for which to return the form.
+     * @return self New config form instance.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
+     */
+    public static function for_metric(registered_metric $metric): self {
+        global $PAGE;
+        $form = new self(action: $PAGE->url, customdata: ['metric' => $metric]);
+        $form->set_data($metric->to_form_data());
+        return $form;
+    }
+
     #[\Override]
     protected function definition(): void {
         $this->metric = $this->_customdata['metric'];
@@ -143,20 +157,6 @@ class config extends moodleform {
             $errors = array_merge($errors, $this->metric->configclass::extend_form_validation($data, $this, $this->_form));
         }
         return $errors;
-    }
-
-    /**
-     * Returns a new instance for configuring the specified metric.
-     *
-     * @param registered_metric $metric Metric for which to return the form.
-     * @return self New config form instance.
-     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
-     */
-    public static function for_metric(registered_metric $metric): self {
-        global $PAGE;
-        $form = new self(action: $PAGE->url, customdata: ['metric' => $metric]);
-        $form->set_data($metric->to_form_data());
-        return $form;
     }
 
     /**

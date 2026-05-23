@@ -51,29 +51,6 @@ use tool_monitoring\registered_metric;
  */
 final class metrics_cache {
     /**
-     * Returns the underlying cache instance.
-     *
-     * @return application_cache
-     */
-    private static function make(): application_cache {
-        return cache::make('tool_monitoring', 'metrics');
-    }
-
-    /**
-     * Adds/updates the specified metrics in the cache.
-     *
-     * @param registered_metric ...$metrics Metrics to cache. If named arguments are passed, those keys **must** match the qualified
-     *                                      names of the metrics.
-     * @throws coding_exception
-     */
-    public static function set(registered_metric ...$metrics): void {
-        if (array_is_list($metrics)) {
-            $metrics = array_column($metrics, null, 'qualifiedname');
-        }
-        self::make()->set_many($metrics);
-    }
-
-    /**
      * Returns the metric with the specified qualified name from the cache.
      *
      * @param string $qualifiedname Qualified name of the metric to retrieve.
@@ -97,6 +74,20 @@ final class metrics_cache {
     }
 
     /**
+     * Adds/updates the specified metrics in the cache.
+     *
+     * @param registered_metric ...$metrics Metrics to cache. If named arguments are passed, those keys **must** match the qualified
+     *                                      names of the metrics.
+     * @throws coding_exception
+     */
+    public static function set(registered_metric ...$metrics): void {
+        if (array_is_list($metrics)) {
+            $metrics = array_column($metrics, null, 'qualifiedname');
+        }
+        self::make()->set_many($metrics);
+    }
+
+    /**
      * Deletes the metrics with the specified qualified names from the cache.
      *
      * @param string ...$qualifiednames Qualified names of the metrics.
@@ -114,5 +105,14 @@ final class metrics_cache {
      */
     public static function purge(): bool {
         return self::make()->purge();
+    }
+
+    /**
+     * Returns the underlying cache instance.
+     *
+     * @return application_cache
+     */
+    private static function make(): application_cache {
+        return cache::make('tool_monitoring', 'metrics');
     }
 }

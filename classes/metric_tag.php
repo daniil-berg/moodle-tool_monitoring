@@ -80,43 +80,6 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
     ];
 
     /**
-     * Returns the ID of the tag collection associated with our {@see self::ITEM_TYPE `ITEM_TYPE`}.
-     *
-     * @return int Tag collection ID.
-     * @throws coding_exception Tag area for our {@see self::ITEM_TYPE `ITEM_TYPE`} not found.
-     */
-    public static function get_collection_id(): int {
-        // This function caches the result, so we don't need to worry about it.
-        $tagarea = core_tag_area::get_areas()[self::ITEM_TYPE]['tool_monitoring'] ?? null;
-        if (is_null($tagarea)) {
-            throw new coding_exception("Could not find the '" . self::ITEM_TYPE . "' tag area"); // @codeCoverageIgnore
-        }
-        return $tagarea->tagcollid;
-    }
-
-    /**
-     * Fetches all tags from our collection from the database.
-     *
-     * @return Traversable<string, static> Instances indexed by tag name.
-     * @throws coding_exception Tag area for our {@see self::ITEM_TYPE `ITEM_TYPE`} not found.
-     * @throws dml_exception
-     */
-    private static function fetch_all(): Traversable {
-        global $DB;
-        $recordset = $DB->get_recordset(
-            table:      'tag',
-            conditions: ['tagcollid' => static::get_collection_id()],
-            fields:     self::DB_TABLE_FIELDS,
-        );
-        foreach ($recordset as $name => $record) {
-            $tag = new static($record);
-            // No idea why this exists as a separate property; it is uncorrelated with the record's `timemodified` field.
-            unset($tag->timemodified);
-            yield $name => $tag;
-        }
-    }
-
-    /**
      * Returns all tags with the given names.
      *
      * Attempts to get them from the cache first and only queries the DB if names were not found in the cache.
@@ -165,6 +128,28 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
             }
         }
         return $tags;
+    }
+
+    /**
+     * Fetches all tags from our collection from the database.
+     *
+     * @return Traversable<string, static> Instances indexed by tag name.
+     * @throws coding_exception Tag area for our {@see self::ITEM_TYPE `ITEM_TYPE`} not found.
+     * @throws dml_exception
+     */
+    private static function fetch_all(): Traversable {
+        global $DB;
+        $recordset = $DB->get_recordset(
+            table:      'tag',
+            conditions: ['tagcollid' => static::get_collection_id()],
+            fields:     self::DB_TABLE_FIELDS,
+        );
+        foreach ($recordset as $name => $record) {
+            $tag = new static($record);
+            // No idea why this exists as a separate property; it is uncorrelated with the record's `timemodified` field.
+            unset($tag->timemodified);
+            yield $name => $tag;
+        }
     }
 
     /**
@@ -253,6 +238,21 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
     #[\Override]
     public static function is_enabled($component = null, $itemtype = null): bool {
         return parent::is_enabled($component ?? 'tool_monitoring', $itemtype ?? self::ITEM_TYPE);
+    }
+
+    /**
+     * Returns the ID of the tag collection associated with our {@see self::ITEM_TYPE `ITEM_TYPE`}.
+     *
+     * @return int Tag collection ID.
+     * @throws coding_exception Tag area for our {@see self::ITEM_TYPE `ITEM_TYPE`} not found.
+     */
+    public static function get_collection_id(): int {
+        // This function caches the result, so we don't need to worry about it.
+        $tagarea = core_tag_area::get_areas()[self::ITEM_TYPE]['tool_monitoring'] ?? null;
+        if (is_null($tagarea)) {
+            throw new coding_exception("Could not find the '" . self::ITEM_TYPE . "' tag area"); // @codeCoverageIgnore
+        }
+        return $tagarea->tagcollid;
     }
 
     #[\Override]

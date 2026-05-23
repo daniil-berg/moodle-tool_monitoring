@@ -116,31 +116,6 @@ abstract class simple_metric_config implements metric_config_form_aware {
     private static array $constructorparameters = [];
 
     /**
-     * Reflects the calling class, analyzes its constructor, and returns all parameters indexed by name.
-     *
-     * Caches the result after the first call.
-     *
-     * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
-     * @throws simple_metric_config_constructor_missing
-     */
-    private static function get_constructor_parameters(): array {
-        if (isset(self::$constructorparameters[static::class])) {
-            return self::$constructorparameters[static::class];
-        }
-        $class = new ReflectionClass(static::class);
-        if (is_null($constructor = $class->getConstructor())) {
-            throw new simple_metric_config_constructor_missing($class->getName());
-        }
-        $parameters = array_column(
-            array:      $constructor->getParameters(),
-            column_key: null,
-            index_key:  'name',
-        );
-        self::$constructorparameters[static::class] = $parameters;
-        return $parameters;
-    }
-
-    /**
      * Returns the instance as is, in effect turning every public property into a key-value-pair in the resulting JSON object.
      *
      * @return $this Same instance.
@@ -357,5 +332,30 @@ abstract class simple_metric_config implements metric_config_form_aware {
     #[\Override]
     public static function extend_form_validation(array $data, config_form $configform, MoodleQuickForm $mform): array {
         return [];
+    }
+
+    /**
+     * Reflects the calling class, analyzes its constructor, and returns all parameters indexed by name.
+     *
+     * Caches the result after the first call.
+     *
+     * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
+     * @throws simple_metric_config_constructor_missing
+     */
+    private static function get_constructor_parameters(): array {
+        if (isset(self::$constructorparameters[static::class])) {
+            return self::$constructorparameters[static::class];
+        }
+        $class = new ReflectionClass(static::class);
+        if (is_null($constructor = $class->getConstructor())) {
+            throw new simple_metric_config_constructor_missing($class->getName());
+        }
+        $parameters = array_column(
+            array:      $constructor->getParameters(),
+            column_key: null,
+            index_key:  'name',
+        );
+        self::$constructorparameters[static::class] = $parameters;
+        return $parameters;
     }
 }

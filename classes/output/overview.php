@@ -66,38 +66,6 @@ final readonly class overview implements renderable, templatable {
     ) {}
 
     /**
-     * Generates a URL to the current overview with an additional tag in the filter.
-     *
-     * @param metric_tag $tag New tag.
-     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} and the new `$tag`.
-     * @throws moodle_exception
-     */
-    private function add_tag_url(metric_tag $tag): moodle_url {
-        $tags = $this->tags;
-        if (!array_key_exists($tag->name, $tags)) {
-            $tags[$tag->name] = $tag;
-        }
-        return new moodle_url('/admin/tool/monitoring/', ['tag' => implode(',', array_keys($tags))]);
-    }
-
-    /**
-     * Generates a URL to the current overview with one tag removed from the filter.
-     *
-     * @param metric_tag $tag Tag to remove.
-     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} minus the `$tag`.
-     * @throws moodle_exception
-     */
-    private function remove_tag_url(metric_tag $tag): moodle_url {
-        $tags = $this->tags;
-        unset($tags[$tag->name]);
-        $params = [];
-        if (!empty($tags)) {
-            $params['tag'] = implode(',', array_keys($tags));
-        }
-        return new moodle_url('/admin/tool/monitoring/', $params);
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @param renderer_base $output
@@ -151,5 +119,37 @@ final readonly class overview implements renderable, templatable {
             }
         }
         return $data;
+    }
+
+    /**
+     * Generates a URL to the current overview with an additional tag in the filter.
+     *
+     * @param metric_tag $tag New tag.
+     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} and the new `$tag`.
+     * @throws moodle_exception
+     */
+    private function add_tag_url(metric_tag $tag): moodle_url {
+        $tags = $this->tags;
+        if (!array_key_exists($tag->name, $tags)) {
+            $tags[$tag->name] = $tag;
+        }
+        return new moodle_url('/admin/tool/monitoring/', ['tag' => implode(',', array_keys($tags))]);
+    }
+
+    /**
+     * Generates a URL to the current overview with one tag removed from the filter.
+     *
+     * @param metric_tag $tag Tag to remove.
+     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} minus the `$tag`.
+     * @throws moodle_exception
+     */
+    private function remove_tag_url(metric_tag $tag): moodle_url {
+        $tags = $this->tags;
+        unset($tags[$tag->name]);
+        $params = [];
+        if (!empty($tags)) {
+            $params['tag'] = implode(',', array_keys($tags));
+        }
+        return new moodle_url('/admin/tool/monitoring/', $params);
     }
 }

@@ -142,6 +142,43 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     ) {}
 
     /**
+     * Special-case getter for some public-read-only properties of the metric.
+     *
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to return.
+     * @return mixed Property value.
+     * @throws coding_exception Invalid property name passed.
+     */
+    public function __get(string $name): mixed {
+        return match ($name) {
+            'qualifiedname' => self::get_qualified_name($this->component, $this->name),
+            'description'   => $this->metric->get_description(),
+            'type'          => $this->metric->get_type(),
+            'config'        => $this->config,
+            'configclass'   => $this->defaultconfig ? $this->defaultconfig::class : null,
+            'tags'          => $this->tags,
+            default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
+        };
+    }
+
+    /**
+     * Special-case {@see isset} check for some public-read-only properties of the metric.
+     *
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to check.
+     * @return bool `true` if the property is set, `false` otherwise.
+     */
+    public function __isset(string $name): bool {
+        return match ($name) {
+            'config', 'configclass', 'description', 'qualifiedname', 'type' => isset($this->metric),
+            'tags' => isset($this->tags),
+            default => false,
+        };
+    }
+
+    /**
      * Constructs a new instance from the specified metric.
      *
      * @param metric $metric Metric to wrap in the new instance; {@see self::$component `component`} and {@see self::$name `name`}
@@ -209,15 +246,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     }
 
     /**
-     * Returns whether the instance represents a configurable metric.
-     *
-     * @return bool `true` if the metric is configurable, `false` otherwise.
-     */
-    private function is_configurable(): bool {
-        return !is_null($this->defaultconfig);
-    }
-
-    /**
      * Assigns the provided metric to the instance.
      *
      * If the metric is configurable, sets {@see self::$defaultconfig `defaultconfig`} and {@see self::$config `config`}.
@@ -274,46 +302,12 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     }
 
     /**
-     * Transforms an instance of the mapped class into an associative array of data that can be used in DB queries.
+     * Returns whether the instance represents a configurable metric.
      *
-     * The data can then be passed as an argument to functions such as e.g. {@see \moodle_database::update_record}.
-     *
-     * @param string[]|null $fields The output array will only have entries that are properties of the object **and** that are
-     *                              specified in this argument. An exception is the {@see id} property; if its value is not `null`
-     *                              on the instance, it will always be included in the output. If this argument is `null`, all
-     *                              properties will be included in the output array.
-     * @return array<string, mixed> DB-friendly data taken from the instance.
+     * @return bool `true` if the metric is configurable, `false` otherwise.
      */
-    public function to_db(array|null $fields = null): array {
-        $data = [];
-        if (!is_null($this->id)) {
-            $data['id'] = $this->id;
-        }
-        $returnfields = self::FIELDS;
-        if (!is_null($fields)) {
-            $returnfields = array_intersect($returnfields, $fields);
-        }
-        foreach ($returnfields as $field) {
-            $data[$field] = $this->$field;
-        }
-        return $data;
-    }
-
-    /**
-     * Updates the corresponding row in the database table with data from the object.
-     *
-     * The {@see timemodified} and {@see usermodified} are set to the current time and user respectively before the update.
-     *
-     * @param string[]|null $fields If specified, only these fields will be updated.
-     * @throws coding_exception
-     * @throws dml_exception
-     */
-    private function update(array|null $fields = null): void {
-        global $DB, $USER;
-        $this->timemodified = time();
-        $this->usermodified = $USER->id;
-        $DB->update_record(self::TABLE, $this->to_db($fields));
-        metrics_cache::delete($this->qualifiedname);
+    private function is_configurable(): bool {
+        return !is_null($this->defaultconfig);
     }
 
     /**
@@ -325,7 +319,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function persist_enabled_state(bool $enabled): void {
+    public function persist_enabled_state(bool $enabled): void { // TODO: Rename/split into `enable()`/`disable()`
         global $DB;
         if ($this->enabled === $enabled) {
             return;
@@ -336,84 +330,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         $this->update(['enabled', 'timemodified', 'usermodified']);
         $event->trigger();
         $transaction->allow_commit();
-    }
-
-    /**
-     * Derives a qualified name from the provided component and name.
-     *
-     * @param string $component Moodle component.
-     * @param string $name Entity name.
-     * @return string Qualified name.
-     */
-    public static function get_qualified_name(string $component, string $name): string {
-        return "{$component}_$name";
-    }
-
-    /**
-     * Returns the proper SQL snippet to construct the qualified name.
-     *
-     * @return string Qualified name SQL.
-     */
-    public static function get_qualified_name_sql(moodle_database $db): string {
-        return $db->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
-    }
-
-    /**
-     * Special-case getter for some public-read-only properties of the metric.
-     *
-     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
-     *
-     * @param string $name Name of the property to return.
-     * @return mixed Property value.
-     * @throws coding_exception Invalid property name passed.
-     */
-    public function __get(string $name): mixed {
-        return match ($name) {
-            'qualifiedname' => self::get_qualified_name($this->component, $this->name),
-            'description'   => $this->metric->get_description(),
-            'type'          => $this->metric->get_type(),
-            'config'        => $this->config,
-            'configclass'   => $this->defaultconfig ? $this->defaultconfig::class : null,
-            'tags'          => $this->tags,
-            default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
-        };
-    }
-
-    /**
-     * Special-case {@see isset} check for some public-read-only properties of the metric.
-     *
-     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
-     *
-     * @param string $name Name of the property to check.
-     * @return bool `true` if the property is set, `false` otherwise.
-     */
-    public function __isset(string $name): bool {
-        return match ($name) {
-            'config', 'configclass', 'description', 'qualifiedname', 'type' => isset($this->metric),
-            'tags' => isset($this->tags),
-            default => false,
-        };
-    }
-
-    /**
-     * Returns config form data from the instance to set via {@see config_form::set_data}.
-     *
-     * @return array<string, mixed> Associative array of form data.
-     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
-     */
-    public function to_form_data(): array {
-        if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
-            $formdata = $this->get_config()->to_form_data();
-        } else {
-            $formdata = [];
-        }
-        $formdata['enabled'] = $this->enabled;
-        $tags = [];
-        foreach ($this->tags as $tag) {
-            $tags[$tag->id] = $tag->get_display_name();
-        }
-        $formdata['tags'] = $tags;
-        return $formdata;
     }
 
     /**
@@ -459,6 +375,90 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
             $event->trigger();
         }
         $transaction->allow_commit();
+    }
+
+    /**
+     * Updates the corresponding row in the database table with data from the object.
+     *
+     * The {@see timemodified} and {@see usermodified} are set to the current time and user respectively before the update.
+     *
+     * @param string[]|null $fields If specified, only these fields will be updated.
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    private function update(array|null $fields = null): void {
+        global $DB, $USER;
+        $this->timemodified = time();
+        $this->usermodified = $USER->id;
+        $DB->update_record(self::TABLE, $this->to_db($fields));
+        metrics_cache::delete($this->qualifiedname);
+    }
+
+    /**
+     * Transforms an instance of the mapped class into an associative array of data that can be used in DB queries.
+     *
+     * The data can then be passed as an argument to functions such as e.g. {@see \moodle_database::update_record}.
+     *
+     * @param string[]|null $fields The output array will only have entries that are properties of the object **and** that are
+     *                              specified in this argument. An exception is the {@see id} property; if its value is not `null`
+     *                              on the instance, it will always be included in the output. If this argument is `null`, all
+     *                              properties will be included in the output array.
+     * @return array<string, mixed> DB-friendly data taken from the instance.
+     */
+    public function to_db(array|null $fields = null): array {
+        $data = [];
+        if (!is_null($this->id)) {
+            $data['id'] = $this->id;
+        }
+        $returnfields = self::FIELDS;
+        if (!is_null($fields)) {
+            $returnfields = array_intersect($returnfields, $fields);
+        }
+        foreach ($returnfields as $field) {
+            $data[$field] = $this->$field;
+        }
+        return $data;
+    }
+
+    /**
+     * Returns config form data from the instance to set via {@see config_form::set_data}.
+     *
+     * @return array<string, mixed> Associative array of form data.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
+     */
+    public function to_form_data(): array {
+        if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
+            $formdata = $this->get_config()->to_form_data();
+        } else {
+            $formdata = [];
+        }
+        $formdata['enabled'] = $this->enabled;
+        $tags = [];
+        foreach ($this->tags as $tag) {
+            $tags[$tag->id] = $tag->get_display_name();
+        }
+        $formdata['tags'] = $tags;
+        return $formdata;
+    }
+
+    /**
+     * Derives a qualified name from the provided component and name.
+     *
+     * @param string $component Moodle component.
+     * @param string $name Entity name.
+     * @return string Qualified name.
+     */
+    public static function get_qualified_name(string $component, string $name): string {
+        return "{$component}_$name";
+    }
+
+    /**
+     * Returns the proper SQL snippet to construct the qualified name.
+     *
+     * @return string Qualified name SQL.
+     */
+    public static function get_qualified_name_sql(moodle_database $db): string {
+        return $db->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }
 
     /**

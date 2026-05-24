@@ -162,7 +162,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @throws metric_name_invalid
      */
     public function sync(bool $delete = false): self {
-        global $DB, $USER;
+        global $DB;
         $collection = $this->validate_collection();
         try {
             $transaction = $DB->start_delegated_transaction();
@@ -172,21 +172,14 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
             // Prepare records for insertion and remember the existing IDs of collected-and-registered metrics.
             $existingids = [];
             $toinsert = [];
-            $currenttime = time();
             foreach ($metrics as $qname => $metric) {
                 if (is_null($metric->id)) {
-                    $metric->timecreated = $currenttime;
-                    $metric->timemodified = $currenttime;
-                    $metric->usermodified = $USER->id;
-                    $toinsert[$qname] = $metric->to_db();
+                    $toinsert[$qname] = $metric;
                 } else {
                     $existingids[] = $metric->id;
                 }
             }
-            // Insert in bulk.
-            if ($toinsert) {
-                $DB->insert_records(registered_metric::TABLE, $toinsert);
-            }
+            registered_metric::insert_many(...$toinsert);
             // Fetch all records that we did not get before.
             // These should only be newly inserted ones (if any) and orphans (without a collected metric).
             [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);

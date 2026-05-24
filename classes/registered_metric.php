@@ -246,6 +246,32 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     }
 
     /**
+     * Inserts records in the DB table for the provided instances.
+     *
+     * Always sets the {@see self::$timecreated `timecreated`} and {@see self::$timemodified `timemodified`} fields to the current
+     * time and {@see self::$usermodified `usermodified`} to the current user on every instance before inserting.
+     *
+     * @param self ...$instances Instances to turn into database records; must have `null` IDs.
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    public static function insert_many(self ...$instances): void {
+        global $DB, $USER;
+        if (empty($instances)) {
+            return;
+        }
+        $now = time();
+        $rows = [];
+        foreach ($instances as $instance) {
+            $instance->timecreated = $now;
+            $instance->timemodified = $now;
+            $instance->usermodified = $USER->id;
+            $rows[] = $instance->to_db();
+        }
+        $DB->insert_records(self::TABLE, $rows);
+    }
+
+    /**
      * Assigns the provided metric to the instance.
      *
      * If the metric is configurable, sets {@see self::$defaultconfig `defaultconfig`} and {@see self::$config `config`}.
@@ -405,7 +431,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      *                              properties will be included in the output array.
      * @return array<string, mixed> DB-friendly data taken from the instance.
      */
-    public function to_db(array|null $fields = null): array {
+    private function to_db(array|null $fields = null): array {
         $data = [];
         if (!is_null($this->id)) {
             $data['id'] = $this->id;

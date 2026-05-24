@@ -241,6 +241,83 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
+     * Tests the {@see registered_metric::insert_many} method.
+     *
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    #[DataProvider('provider_test_insert_many')]
+    public function test_insert_many(array $metrics, array $expected): void {
+        global $DB, $USER;
+        $this->resetAfterTest();
+        registered_metric::insert_many(...$metrics);
+        $sqlqname = registered_metric::get_qualified_name_sql($DB);
+        $tablename = registered_metric::TABLE;
+        $sql = "SELECT $sqlqname, m.* FROM {{$tablename}} AS m";
+        $records = $DB->get_records_sql($sql);
+        self::assertSame(array_keys($expected), array_keys($records));
+        if (empty($expected)) {
+            return;
+        }
+        $time = reset($records)->timecreated;
+        foreach ($records as $qname => $record) {
+            $expectedrecord = $expected[$qname];
+            foreach ($expectedrecord as $field => $value) {
+                self::assertEquals($value, $record->$field, "Unexpected $field");
+            }
+            self::assertEquals($time, $record->timecreated);
+            self::assertEquals($time, $record->timemodified);
+            self::assertEquals($USER->id, $record->usermodified);
+        }
+    }
+
+    /**
+     * Provides test data for the {@see test_insert_many} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_insert_many(): array {
+        $refconfig = new ReflectionProperty(registered_metric::class, 'config');
+        $metricdefault = registered_metric::from_metric(new test_metric());
+        $metricenabledwithconfig = registered_metric::from_metric(new test_metric_with_config());
+        $metricenabledwithconfig->enabled = true;
+        $refconfig->setValue($metricenabledwithconfig, '{"foo":"baz","spam":-1}');
+        $metricwithtimeanduser = registered_metric::from_metric(test_metric::create(name: 'test_metric_2'));
+        $metricwithtimeanduser->timecreated = 123;
+        $metricwithtimeanduser->timemodified = 456;
+        $metricwithtimeanduser->usermodified = 1;
+        return [
+            'No arguments' => [
+                'metrics' => [],
+                'expected' => [],
+            ],
+            'Three metrics' => [
+                'metrics' => [$metricdefault, $metricenabledwithconfig, $metricwithtimeanduser],
+                'expected' => [
+                    'tool_monitoring_test_metric' => [
+                        'name'         => 'test_metric',
+                        'component'    => 'tool_monitoring',
+                        'enabled'      => false,
+                        'config'       => null,
+                    ],
+                    'tool_monitoring_test_metric_with_config' => [
+                        'name'         => 'test_metric_with_config',
+                        'component'    => 'tool_monitoring',
+                        'enabled'      => true,
+                        'config'       => '{"foo":"baz","spam":-1}',
+                    ],
+                    'tool_monitoring_test_metric_2' => [
+                        'name'         => 'test_metric_2',
+                        'component'    => 'tool_monitoring',
+                        'enabled'      => false,
+                        'config'       => null,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
      * Tests the faulty path in the {@see registered_metric::set_config} method.
      *
      * @throws ReflectionException
@@ -255,68 +332,6 @@ final class registered_metric_test extends advanced_testcase {
         // Ensure nothing was set and debugging call was issued.
         self::assertNull($instance->config);
         self::assertDebuggingCalled("Cannot set config on non-configurable metric: $instance->qualifiedname", DEBUG_DEVELOPER);
-    }
-
-    #[DataProvider('provider_test_to_db')]
-    public function test_to_db(registered_metric $metric, array|null $fields, array $expected): void {
-        $output = $metric->to_db($fields);
-        self::assertSame($expected, $output);
-    }
-
-    /**
-     * Provides test data for the {@see test_to_db} method.
-     *
-     * @return array[] Arguments for the test method.
-     */
-    public static function provider_test_to_db(): array {
-        $metric = registered_metric::from_metric(new test_metric());
-        $metric->timecreated = 123;
-        $metric->timemodified = 456;
-        $metric->usermodified = 1;
-        $metricwithid = registered_metric::from_metric(new test_metric());
-        $metricwithid->id = 42;
-        return [
-            'No fields specified' => [
-                'metric' => $metric,
-                'fields' => null,
-                'expected' => [
-                    'component'    => 'tool_monitoring',
-                    'name'         => 'test_metric',
-                    'enabled'      => false,
-                    'config'       => null,
-                    'timecreated'  => 123,
-                    'timemodified' => 456,
-                    'usermodified' => 1,
-                    'id'           => null,
-                ],
-            ],
-            'Subset of fields specified' => [
-                'metric' => $metric,
-                'fields' => ['name', 'enabled', 'usermodified'],
-                'expected' => [
-                    'name'         => 'test_metric',
-                    'enabled'      => false,
-                    'usermodified' => 1,
-                ],
-            ],
-            'Subset of fields specified, but metric has ID' => [
-                'metric' => $metricwithid,
-                'fields' => ['name', 'enabled'],
-                'expected' => [
-                    'id'           => 42,
-                    'name'         => 'test_metric',
-                    'enabled'      => false,
-                ],
-            ],
-            'Non-fields specified' => [
-                'metric' => $metric,
-                'fields' => ['name', 'enabled', 'quux'],
-                'expected' => [
-                    'name'    => 'test_metric',
-                    'enabled' => false,
-                ],
-            ],
-        ];
     }
 
     /**
@@ -508,6 +523,7 @@ final class registered_metric_test extends advanced_testcase {
      * @throws dml_exception
      * @throws coding_exception
      * @throws JsonException
+     * @throws ReflectionException
      */
     #[DataProvider('provider_test_persist_enabled_state')]
     public function test_persist_enabled_state(bool $from, bool $to, array $events): void {
@@ -523,7 +539,7 @@ final class registered_metric_test extends advanced_testcase {
         $metric->timemodified = $creationtime;
         $metric->usermodified = $creationuser;
         // Insert record manually.
-        $metric->id = $DB->insert_record(registered_metric::TABLE, $metric->to_db());
+        $metric->id = self::insert($metric);
         // Intercept the event here.
         $eventsink = $this->redirectEvents();
         $metric->persist_enabled_state($to);
@@ -591,6 +607,7 @@ final class registered_metric_test extends advanced_testcase {
      * @throws coding_exception
      * @throws dml_exception
      * @throws JsonException
+     * @throws ReflectionException
      */
     #[DataProvider('provider_test_update_with_form_data')]
     public function test_update_with_form_data(
@@ -609,8 +626,7 @@ final class registered_metric_test extends advanced_testcase {
         $metric->timemodified = $creationtime;
         $metric->usermodified = $newuserid;
         // Insert record manually.
-        $data = $metric->to_db();
-        $metric->id = $DB->insert_record(registered_metric::TABLE, $data);
+        $metric->id = self::insert($metric);
         $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
         // Do some sanity checks.
         $expectedbefore = [
@@ -952,5 +968,18 @@ final class registered_metric_test extends advanced_testcase {
                 'debugging' => "Unexpected cache fields for registered_metric 1: unexpected, even_more",
             ],
         ];
+    }
+
+    /**
+     * Inserts the metric into the DB for setup purposes.
+     *
+     * @return int New record ID.
+     * @throws dml_exception
+     * @throws ReflectionException
+     */
+    private static function insert(registered_metric $metric): int {
+        global $DB;
+        $todb = (new ReflectionMethod(registered_metric::class, 'to_db'))->invoke($metric);
+        return $DB->insert_record(registered_metric::TABLE, $todb);
     }
 }

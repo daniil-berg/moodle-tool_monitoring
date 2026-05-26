@@ -38,7 +38,8 @@ use tool_monitoring\registered_metric;
 /**
  * Represents entries in the {@see self::TABLE `TABLE`} database table.
  *
- * Provides DB insert/update operations.
+ * Provides DB insert/update operations that supply defaults for {@see self::$timecreated `timecreated`},
+ * {@see self::$timemodified `timemodified`} and {@see self::$usermodified `usermodified`} if not explicitly set.
  *
  * **This class is not part of the public API.**
  * Use {@see registered_metric} instead.
@@ -144,27 +145,46 @@ final class metric_record {
     /**
      * Inserts records in the DB table for the provided instances.
      *
+     * Unless explicitly set to any value other than `null`, assigns the current time to {@see self::$timecreated `timecreated`}
+     * and {@see self::$timemodified `timemodified`} and the current user to {@see self::$usermodified `usermodified`} on each
+     * instance before inserting.
+     *
      * @param self ...$instances Instances to turn into database records.
      * @throws coding_exception
      * @throws dml_exception
      */
     public static function insert_many(self ...$instances): void {
-        global $DB;
+        global $DB, $USER;
+        if (empty($instances)) {
+            return;
+        }
+        $now = time();
+        foreach ($instances as $instance) {
+            $instance->timecreated ??= $now;
+            $instance->timemodified ??= $now;
+            $instance->usermodified ??= $USER->id;
+        }
         $DB->insert_records(
             self::TABLE,
-            array_map(fn (self $record): array => $record->to_array(), $instances),
+            array_map(fn (self $instance): array => $instance->to_array(), $instances),
         );
     }
 
     /**
      * Updates the corresponding row in the database table with data from the object.
      *
+     * The {@see self::$timemodified `timemodified`} is set to the current time before updating.
+     *
      * @param string[] $fields If specified, only these fields will be updated.
+     * @param int|null $usermodified Assigned to {@see self::$usermodified `usermodified`} before updating; if `null` (default),
+     *                               the current user is used.
      * @throws dml_exception
      */
-    public function update(array $fields = self::FIELDS): void {
-        global $DB;
-        $data = ['id' => $this->id] + $this->to_array($fields);
+    public function update(array $fields = self::FIELDS, int|null $usermodified = null): void {
+        global $DB, $USER;
+        $this->timemodified = time();
+        $this->usermodified = $usermodified ?? $USER->id;
+        $data = ['id' => $this->id] + $this->to_array([...$fields, 'timemodified', 'usermodified']);
         $DB->update_record(self::TABLE, $data);
     }
 }

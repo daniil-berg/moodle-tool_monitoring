@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see registered_metric_test} class.
+ * Definition of the {@see managed_metric_test} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,7 +29,7 @@
  * {@noinspection PhpIllegalPsrClassPathInspection}
  */
 
-namespace tool_monitoring;
+namespace tool_monitoring\local;
 
 use advanced_testcase;
 use ArrayIterator;
@@ -41,22 +41,24 @@ use core\exception\coding_exception;
 use core\exception\moodle_exception;
 use dml_exception;
 use JsonException;
-use moodle_database;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionException;
 use ReflectionMethod;
 use ReflectionProperty;
+use tool_monitoring\event;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\metric_record;
-use tool_monitoring\local\metrics;
-use tool_monitoring\local\testing\test_simple_metric_config_minimal;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_metric_with_config;
+use tool_monitoring\local\testing\test_simple_metric_config_minimal;
+use tool_monitoring\metric;
+use tool_monitoring\metric_config_provider;
+use tool_monitoring\metric_tag;
+use tool_monitoring\metric_value;
 
 /**
- * Unit tests for the {@see registered_metric} class.
+ * Unit tests for the {@see managed_metric} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -67,10 +69,10 @@ use tool_monitoring\local\testing\test_metric_with_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[CoversClass(registered_metric::class)]
-final class registered_metric_test extends advanced_testcase {
+#[CoversClass(managed_metric::class)]
+final class managed_metric_test extends advanced_testcase {
     /**
-     * Tests the {@see registered_metric::__construct} method.
+     * Tests the {@see managed_metric::__construct} method.
      *
      * @param metric $metric Passed to the constructor.
      * @param metric_record $record Passed to the constructor.
@@ -87,11 +89,11 @@ final class registered_metric_test extends advanced_testcase {
     ): void {
         if (!is_null($exception)) {
             $this->expectExceptionObject($exception);
-            new registered_metric($metric, $record);
+            new managed_metric($metric, $record);
             return;
         }
-        $instance = new registered_metric($metric, $record);
-        $defaultconfigprop = new ReflectionProperty(registered_metric::class, 'defaultconfig');
+        $instance = new managed_metric($metric, $record);
+        $defaultconfigprop = new ReflectionProperty(managed_metric::class, 'defaultconfig');
         $defaultconfig = $defaultconfigprop->getValue($instance);
         if ($metric instanceof metric_config_provider) {
             self::assertEquals($metric->get_default_config(), $defaultconfig);
@@ -144,7 +146,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::__get} and {@see registered_metric::__isset} method.
+     * Tests the {@see managed_metric::__get} and {@see managed_metric::__isset} method.
      *
      * @throws coding_exception
      */
@@ -154,7 +156,7 @@ final class registered_metric_test extends advanced_testcase {
             'foo' => $this->createStub(metric_tag::class),
             'bar' => $this->createStub(metric_tag::class),
         ];
-        $instance = registered_metric::from_metric($metric, $mocktags);
+        $instance = managed_metric::from_metric($metric, $mocktags);
         self::assertTrue(isset($instance->description));
         self::assertEquals($metric->get_description(), $instance->description);
         self::assertTrue(isset($instance->qualifiedname));
@@ -166,13 +168,13 @@ final class registered_metric_test extends advanced_testcase {
         self::assertTrue(isset($instance->name));
         self::assertSame($metric->get_name(), $instance->name);
 
-        $instance = registered_metric::from_metric(new test_metric_with_config());
+        $instance = managed_metric::from_metric(new test_metric_with_config());
         self::assertTrue(isset($instance->configclass));
         self::assertSame(test_simple_metric_config_minimal::class, $instance->configclass);
     }
 
     /**
-     * Tests the {@see registered_metric::get_for_metrics} method.
+     * Tests the {@see managed_metric::get_for_metrics} method.
      *
      * @param array<array<string, string>> $indb DB records to insert before calling the method.
      * @param array $metrics Metric instances to pass to the method.
@@ -186,11 +188,11 @@ final class registered_metric_test extends advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $DB->insert_records(metric_record::TABLE, $indb);
-        $instances = registered_metric::get_for_metrics(...$metrics);
+        $instances = managed_metric::get_for_metrics(...$metrics);
         self::assertCount(count($expected), $instances);
         foreach ($expected as $qname => $properties) {
             $instance = $instances[$qname] ?? null;
-            self::assertInstanceOf(registered_metric::class, $instance);
+            self::assertInstanceOf(managed_metric::class, $instance);
             foreach ($properties as $name => $value) {
                 self::assertEquals($value, $instance->$name, "Unexpected $name on $qname instance");
             }
@@ -298,7 +300,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::get_or_register} method.
+     * Tests the {@see managed_metric::get_or_register} method.
      *
      * @param metric[] $metrics Metric instances to pass to the method.
      * @param array<array<string, string>> $indb DB records to insert before calling the method.
@@ -325,7 +327,7 @@ final class registered_metric_test extends advanced_testcase {
         }
         $now = time();
         // Do the thing.
-        $instances = registered_metric::get_or_register(...$metrics);
+        $instances = managed_metric::get_or_register(...$metrics);
         // The number of instances should be the same as the number of records in the DB table.
         $expectedcount = count($expected);
         $records = $DB->get_records(metric_record::TABLE);
@@ -345,7 +347,7 @@ final class registered_metric_test extends advanced_testcase {
         $checkedids = [];
         foreach ($expected as $qname => $properties) {
             $instance = $instances[$qname] ?? null;
-            self::assertInstanceOf(registered_metric::class, $instance);
+            self::assertInstanceOf(managed_metric::class, $instance);
             self::assertNotNull($instance->id);
             self::assertNotContains($instance->id, $checkedids);
             self::assertArrayHasKey($instance->id, $records);
@@ -428,7 +430,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::to_form_data} method.
+     * Tests the {@see managed_metric::to_form_data} method.
      *
      * @throws coding_exception
      * @throws metric_config_invalid
@@ -441,7 +443,7 @@ final class registered_metric_test extends advanced_testcase {
         $mocktag1->expects(self::exactly(2))->method('__get')->willReturnMap([['id', 1]]);
         $mocktag2->expects(self::exactly(2))->method('get_display_name')->willReturn('bar');
         $mocktag2->expects(self::exactly(2))->method('__get')->willReturnMap([['id', 2]]);
-        $tagsprop = new ReflectionProperty(registered_metric::class, 'tags');
+        $tagsprop = new ReflectionProperty(managed_metric::class, 'tags');
 
         // Test with regular metric.
         $record = new metric_record(
@@ -449,7 +451,7 @@ final class registered_metric_test extends advanced_testcase {
             name: 'test_metric',
             enabled: true,
         );
-        $instance = new registered_metric(new test_metric(), $record);
+        $instance = new managed_metric(new test_metric(), $record);
         $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
         $formdata = $instance->to_form_data();
         self::assertSame(
@@ -462,7 +464,7 @@ final class registered_metric_test extends advanced_testcase {
             component: 'tool_monitoring',
             name: 'test_metric_with_config',
         );
-        $instance = new registered_metric(new test_metric_with_config(), $record);
+        $instance = new managed_metric(new test_metric_with_config(), $record);
         $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
         $formdata = $instance->to_form_data();
         self::assertSame(
@@ -477,7 +479,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see IteratorAggregate} implementation of the {@see registered_metric} class.
+     * Tests the {@see IteratorAggregate} implementation of the {@see managed_metric} class.
      *
      * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
      * @throws coding_exception
@@ -486,7 +488,7 @@ final class registered_metric_test extends advanced_testcase {
     public function test_iterator(iterable|metric_value $testvalues): void {
         $this->resetAfterTest();
         $metric = test_metric::create(values: $testvalues);
-        $instance = registered_metric::from_metric($metric);
+        $instance = managed_metric::from_metric($metric);
         // Consume the metric iterator.
         $metricvalues = iterator_to_array($instance);
         if ($testvalues instanceof metric_value) {
@@ -520,7 +522,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the config passed by {@see registered_metric::getIterator} into {@see metric::calculate} and that it is cached.
+     * Tests the config passed by {@see managed_metric::getIterator} into {@see metric::calculate} and that it is cached.
      *
      * @throws coding_exception
      * @throws ReflectionException
@@ -529,7 +531,7 @@ final class registered_metric_test extends advanced_testcase {
         $metric = test_metric_with_config::create(values: [new metric_value(0)]);
         // Sanity check.
         self::assertNull($metric->lastconfig);
-        $instance = registered_metric::from_metric($metric);
+        $instance = managed_metric::from_metric($metric);
         // This should pass the default config object into `test_metric_with_config::calculate`.
         iterator_to_array($instance);
         $lastconfig = $metric->lastconfig;
@@ -538,7 +540,7 @@ final class registered_metric_test extends advanced_testcase {
         iterator_to_array($instance);
         self::assertSame($lastconfig, $metric->lastconfig);
         // Set a different config; this should clear the config cache.
-        $refmethod = new ReflectionMethod(registered_metric::class, 'set_config');
+        $refmethod = new ReflectionMethod(managed_metric::class, 'set_config');
         $refmethod->invoke($instance, '{"foo":"baz","spam":-1}');
         // This should deserialize the new config and passes that object into `test_metric_with_config::calculate`.
         iterator_to_array($instance);
@@ -551,10 +553,10 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::persist_enabled_state} method.
+     * Tests the {@see managed_metric::persist_enabled_state} method.
      *
      * @param bool $from Initial enabled state.
-     * @param bool $to State to set via {@see registered_metric::persist_enabled_state}.
+     * @param bool $to State to set via {@see managed_metric::persist_enabled_state}.
      * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
      * @throws dml_exception
      * @throws coding_exception
@@ -579,7 +581,7 @@ final class registered_metric_test extends advanced_testcase {
         );
         // Insert record manually.
         $record->id = $DB->insert_record(metric_record::TABLE, $record->to_array());
-        $instance = new registered_metric(new test_metric(), $record);
+        $instance = new managed_metric(new test_metric(), $record);
         // Intercept the event here.
         $eventsink = $this->redirectEvents();
         $instance->persist_enabled_state($to);
@@ -638,7 +640,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::update_with_form_data} method.
+     * Tests the {@see managed_metric::update_with_form_data} method.
      *
      * @param metric $metric Metric to construct the test instance from.
      * @param metric_record $metricrecord Record to construct the test instance from.
@@ -694,7 +696,7 @@ final class registered_metric_test extends advanced_testcase {
         // Intercept the event here.
         $eventsink = $this->redirectEvents();
         // Create an instance and do the thing.
-        $instance = new registered_metric($metric, $metricrecord);
+        $instance = new managed_metric($metric, $metricrecord);
         $instance->update_with_form_data((object) $formdata);
         $eventsink->close();
         $updatedrecord = $DB->get_record(metric_record::TABLE, ['id' => $metricrecord->id]);
@@ -901,7 +903,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::prepare_to_cache} method.
+     * Tests the {@see managed_metric::prepare_to_cache} method.
      *
      * @throws coding_exception
      */
@@ -915,7 +917,7 @@ final class registered_metric_test extends advanced_testcase {
             usermodified: 789,
             id: 42,
         );
-        $instance = new registered_metric(new metrics\user_accounts(), $record);
+        $instance = new managed_metric(new metrics\user_accounts(), $record);
         $output = $instance->prepare_to_cache();
         self::assertSame([
             'component'    => 'tool_monitoring',
@@ -931,7 +933,7 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::wake_from_cache} method.
+     * Tests the {@see managed_metric::wake_from_cache} method.
      *
      * @param mixed $data Data to pass to the method.
      * @param array<string, mixed>|string $expected Expected properties on the new instance or exception class name.
@@ -942,10 +944,10 @@ final class registered_metric_test extends advanced_testcase {
     public function test_wake_from_cache(mixed $data, array|string $expected, string|null $debugging = null): void {
         if (is_string($expected)) {
             $this->expectException($expected);
-            registered_metric::wake_from_cache($data);
+            managed_metric::wake_from_cache($data);
             return;
         }
-        $instance = registered_metric::wake_from_cache($data);
+        $instance = managed_metric::wake_from_cache($data);
         foreach ($expected as $name => $value) {
             if ($name === 'tags') {
                 continue;
@@ -955,7 +957,7 @@ final class registered_metric_test extends advanced_testcase {
         // Check that the metric assigned to the new instance is the same as the one collected by the hook.
         $collection = di::get(metric_collection::class);
         $metric = $collection->get($instance->component, $instance->name);
-        $metricprop = new ReflectionProperty(registered_metric::class, 'metric');
+        $metricprop = new ReflectionProperty(managed_metric::class, 'metric');
         self::assertSame($metric, $metricprop->getValue($instance));
         if (!is_null($debugging)) {
             $this->assertDebuggingCalled($debugging);
@@ -1053,7 +1055,7 @@ final class registered_metric_test extends advanced_testcase {
                     'usermodified' => 1,
                     'tags'         => [],
                 ],
-                'debugging' => "Unexpected cache fields for registered_metric 1: unexpected, even_more",
+                'debugging' => "Unexpected cache fields for metric 1: unexpected, even_more",
             ],
         ];
     }

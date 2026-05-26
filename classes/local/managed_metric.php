@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see registered_metric} class.
+ * Definition of the {@see managed_metric} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,7 +27,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring;
+namespace tool_monitoring\local;
 
 use core\di;
 use core\exception\coding_exception;
@@ -36,14 +36,19 @@ use core_cache\cacheable_object_interface;
 use dml_exception;
 use IteratorAggregate;
 use JsonException;
-use moodle_database;
 use moodleform;
 use stdClass;
+use tool_monitoring\event;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\form\config as config_form;
 use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\metric_record;
-use tool_monitoring\local\metrics_cache;
+use tool_monitoring\metric;
+use tool_monitoring\metric_config;
+use tool_monitoring\metric_config_form_aware;
+use tool_monitoring\metric_config_provider;
+use tool_monitoring\metric_tag;
+use tool_monitoring\metric_type;
+use tool_monitoring\metric_value;
 use Traversable;
 
 /**
@@ -74,7 +79,7 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class registered_metric implements cacheable_object_interface, IteratorAggregate {
+final class managed_metric implements cacheable_object_interface, IteratorAggregate {
     /** @var metric_config|null Default metric config; `null` if not configurable. */
     private metric_config|null $defaultconfig;
 
@@ -436,19 +441,16 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         if ($data instanceof stdClass) {
             $data = (array) $data;
         } else if (!is_array($data) || array_is_list($data)) {
-            throw new coding_exception('Received unexpected data type for registered_metric from cache: ' . gettype($data));
+            throw new coding_exception('Received unexpected data type for metric from cache: ' . gettype($data));
         }
         $fields = array_flip(array_merge(metric_record::FIELDS, ['tags']));
         $missing = array_diff_key($fields, $data);
         if (!empty($missing)) {
-            throw new coding_exception('Missing cache fields for registered_metric: ' . implode(', ', $missing));
+            throw new coding_exception('Missing cache fields for metric: ' . implode(', ', $missing));
         }
         $extra = array_diff_key($data, $fields);
         if (!empty($extra)) {
-            debugging(
-                "Unexpected cache fields for registered_metric {$data['id']}: " . implode(', ', array_keys($extra)),
-                DEBUG_DEVELOPER,
-            );
+            debugging("Unexpected cache fields for metric {$data['id']}: " . implode(', ', array_keys($extra)), DEBUG_DEVELOPER);
         }
         $record = metric_record::from_data($data);
         // Find the matching metric from the collection.

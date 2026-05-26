@@ -36,7 +36,6 @@ use core\exception\coding_exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use tool_monitoring\local\metrics\quiz_attempts_in_progress;
 use tool_monitoring\local\metrics\user_accounts;
-use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see metrics_cache} class.
@@ -59,10 +58,10 @@ final class metrics_cache_test extends advanced_testcase {
      */
     public function test_set_uses_qualified_name_for_positional_args(): void {
         $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new user_accounts());
+        $metric = managed_metric::from_metric(new user_accounts());
         metrics_cache::set($metric);
         $result = metrics_cache::get($metric->qualifiedname);
-        self::assertInstanceOf(registered_metric::class, $result);
+        self::assertInstanceOf(managed_metric::class, $result);
         self::assertSame($metric->qualifiedname, $result->qualifiedname);
     }
 
@@ -73,9 +72,9 @@ final class metrics_cache_test extends advanced_testcase {
      */
     public function test_set_uses_provided_key_for_named_args(): void {
         $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new user_accounts());
+        $metric = managed_metric::from_metric(new user_accounts());
         metrics_cache::set(custom_cache_key: $metric);
-        self::assertInstanceOf(registered_metric::class, metrics_cache::get('custom_cache_key'));
+        self::assertInstanceOf(managed_metric::class, metrics_cache::get('custom_cache_key'));
         // No metric cached under the actual qualified name.
         self::assertNull(metrics_cache::get($metric->qualifiedname));
     }
@@ -89,7 +88,7 @@ final class metrics_cache_test extends advanced_testcase {
      */
     public function test_get(): void {
         $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new user_accounts());
+        $metric = managed_metric::from_metric(new user_accounts());
         metrics_cache::set($metric);
         self::assertEquals($metric, metrics_cache::get($metric->qualifiedname));
         self::assertNull(metrics_cache::get('not_a_collected_metric'));
@@ -102,8 +101,8 @@ final class metrics_cache_test extends advanced_testcase {
      */
     public function test_get_many(): void {
         $this->resetAfterTest();
-        $metric1 = registered_metric::from_metric(new user_accounts());
-        $metric2 = registered_metric::from_metric(new quiz_attempts_in_progress());
+        $metric1 = managed_metric::from_metric(new user_accounts());
+        $metric2 = managed_metric::from_metric(new quiz_attempts_in_progress());
         metrics_cache::set($metric1, $metric2);
         $results = metrics_cache::get_many(
             $metric1->qualifiedname,
@@ -123,8 +122,8 @@ final class metrics_cache_test extends advanced_testcase {
      */
     public function test_delete(): void {
         $this->resetAfterTest();
-        $metric1 = registered_metric::from_metric(new user_accounts());
-        $metric2 = registered_metric::from_metric(new quiz_attempts_in_progress());
+        $metric1 = managed_metric::from_metric(new user_accounts());
+        $metric2 = managed_metric::from_metric(new quiz_attempts_in_progress());
         metrics_cache::set($metric1, $metric2);
         // Sanity check.
         self::assertEquals($metric1, metrics_cache::get($metric1->qualifiedname));
@@ -142,8 +141,8 @@ final class metrics_cache_test extends advanced_testcase {
      */
     public function test_purge(): void {
         $this->resetAfterTest();
-        $metric1 = registered_metric::from_metric(new user_accounts());
-        $metric2 = registered_metric::from_metric(new quiz_attempts_in_progress());
+        $metric1 = managed_metric::from_metric(new user_accounts());
+        $metric2 = managed_metric::from_metric(new quiz_attempts_in_progress());
         metrics_cache::set($metric1, $metric2);
         // Sanity check.
         self::assertEquals($metric1, metrics_cache::get($metric1->qualifiedname));

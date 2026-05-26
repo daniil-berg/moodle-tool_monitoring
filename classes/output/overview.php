@@ -34,8 +34,8 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\metric_tag;
-use tool_monitoring\registered_metric;
 
 /**
  * Provides information about all available metrics and links to their configuration pages.
@@ -53,13 +53,13 @@ final readonly class overview implements renderable, templatable {
     /**
      * Constructor without additional logic.
      *
-     * @param iterable<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     * @param iterable<string, managed_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
      * @param array<string, metric_tag> $tags Tags used to filter the metrics by, indexed by normalized tag name.
      *
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
-        /** @var iterable<string, registered_metric> Metrics for which to render the overview, indexed by qualified name. */
+        /** @var iterable<string, managed_metric> Metrics for which to render the overview, indexed by qualified name. */
         private iterable $metrics,
         /** @var array<string, metric_tag> Tags used to filter the metrics by, indexed by normalized tag name. */
         private array $tags

@@ -39,9 +39,9 @@ use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\exceptions\metric_config_invalid;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metrics\users_online;
 use tool_monitoring\local\testing\test_metric;
-use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see config} form class.
@@ -73,7 +73,7 @@ final class config_test extends advanced_testcase {
      */
     #[DataProvider('provider_test_all_methods')]
     public function test_all_methods(
-        registered_metric $metric,
+        managed_metric $metric,
         array $validationdata,
         array $validationerrors,
     ): void {
@@ -102,22 +102,22 @@ final class config_test extends advanced_testcase {
     public static function provider_test_all_methods(): array {
         return [
             'Empty data' => [
-                'metric' => registered_metric::from_metric(new test_metric()),
+                'metric' => managed_metric::from_metric(new test_metric()),
                 'validationdata' => [],
                 'validationerrors' => [],
             ],
             'Valid values and unrelated fields' => [
-                'metric' => registered_metric::from_metric(new test_metric()),
+                'metric' => managed_metric::from_metric(new test_metric()),
                 'validationdata' => ['enabled' => 1, 'tags' => ['foo', 'bar'], 'some' => 'data'],
                 'validationerrors' => [],
             ],
             'Valid config value in form data' => [
-                'metric' => registered_metric::from_metric(new users_online()),
+                'metric' => managed_metric::from_metric(new users_online()),
                 'validationdata' => ['timewindows' => '1,2,3'],
                 'validationerrors' => [],
             ],
             'Invalid config value in form data' => [
-                'metric' => registered_metric::from_metric(new users_online()),
+                'metric' => managed_metric::from_metric(new users_online()),
                 'validationdata' => ['timewindows' => 'a,b,c'],
                 'validationerrors' => [
                     'timewindows' => 'error:users_online_config:timewindows_invalid',

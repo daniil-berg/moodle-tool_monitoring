@@ -35,11 +35,11 @@ use advanced_testcase;
 use core\event\base as base_event;
 use core\exception\coding_exception;
 use core\exception\moodle_exception;
-use JsonException;
 use core\lang_string;
 use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\registered_metric;
 
@@ -82,7 +82,7 @@ final class metric_event_test extends advanced_testcase {
         // Custom magic getter should return the metric's qualified name.
         self::assertSame($metric->qualifiedname, $event->metric);
         // Check that our `init` method has been called and the magic getter delegates to the parent implementation.
-        self::assertSame(registered_metric::TABLE, $event->objecttable);
+        self::assertSame(metric_record::TABLE, $event->objecttable);
         self::assertSame(base_event::LEVEL_OTHER, $event->edulevel);
         self::assertSame($crud, $event->crud);
         // Verify URL is as expected.
@@ -101,7 +101,7 @@ final class metric_event_test extends advanced_testcase {
      * Provides test data for the {@see test_all_methods} method.
      *
      * @return array[] Arguments for the test method.
-     * @throws JsonException
+     * @throws coding_exception
      */
     public static function provider_test_all_methods(): array {
         global $USER;

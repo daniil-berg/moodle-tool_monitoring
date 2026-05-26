@@ -42,19 +42,26 @@ use stdClass;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\form\config as config_form;
 use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics_cache;
 use Traversable;
 
 /**
  * Represents a {@see metric} that is managed by the plugin and thus has a corresponding entry in the database.
  *
- * An instance of this class maps to a row in the {@see self::TABLE `TABLE`} database table.
  * Metric values can be retrieved by iterating over an instance of this class.
  *
+ * @property-read string $component Component defining the metric.
+ * @property-read string $name Name of the metric.
+ * @property-read bool $enabled If `false` the metric is currently not supposed to be calculated/exported.
+ * @property-read string|null $config Metric-specific config JSON; `null` if default or not configurable.
+ * @property-read int|null $timecreated Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet).
+ * @property-read int|null $timemodified Timestamp when the DB table entry was last modified; `null` if not (yet) saved.
+ * @property-read int|null $usermodified ID of the user that last modified the DB table entry; `null` if not (yet) saved.
+ * @property-read int|null $id Primary key of the corresponding DB table row; `null` if not (yet) saved.
  * @property-read string $qualifiedname Qualified name of the metric.
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
- * @property-read string|null $config Metric-specific config JSON; `null` if default or not configurable.
  * @property-read class-string<metric_config>|null $configclass Name of the associated metric config class, if any.
  * @property-read array<string, metric_tag> $tags Tags on the metric, indexed by their normalized name.
  *
@@ -68,78 +75,34 @@ use Traversable;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class registered_metric implements cacheable_object_interface, IteratorAggregate {
-    /** @var string Name of the mapped DB table. */
-    public const TABLE = 'tool_monitoring_metrics';
-
-    /** @var string[] Names of all fields in the DB table; matches all constructor parameters. */
-    private const FIELDS = [
-        'component',
-        'name',
-        'enabled',
-        'config',
-        'timecreated',
-        'timemodified',
-        'usermodified',
-        'id',
-    ];
-
-    /** @var array<string, string> Properties of interest that are cached; for convenience, keys and values are the same. */
-    private const CACHE_FIELDS = [
-        'id' => 'id',
-        'component' => 'component',
-        'name' => 'name',
-        'enabled' => 'enabled',
-        'config' => 'config',
-        'timecreated' => 'timecreated',
-        'timemodified' => 'timemodified',
-        'usermodified' => 'usermodified',
-        'tags' => 'tags',
-    ];
-
-    /** @var metric Underlying metric that the instance wraps. */
-    private metric $metric;
-
     /** @var metric_config|null Default metric config; `null` if not configurable. */
-    private metric_config|null $defaultconfig = null;
+    private metric_config|null $defaultconfig;
 
     /** @var metric_config|null Metric config cache; `null` if not yet cached or not configurable. */
     private metric_config|null $configcache = null;
 
-    /** @var array<string, metric_tag> Tags on the metric, indexed by their normalized name. */
-    private array $tags = [];
-
     /**
-     * Constructor without additional logic.
+     * Constructs a new instance ensuring consistency between metric and record.
      *
-     * @param string $component Component defining the metric.
-     * @param string $name Name of the metric.
-     * @param bool $enabled If `false` the metric is currently not supposed to be calculated/exported.
-     * @param string|null $config Metric-specific config JSON; `null` if default or not configurable.
-     * @param int|null $timecreated Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet).
-     * @param int|null $timemodified Timestamp when the DB table entry was last modified; `null` if not (yet) saved.
-     * @param int|null $usermodified ID of the user that last modified the DB table entry; `null` if not (yet) saved.
-     * @param int|null $id Primary key of the corresponding DB table row; `null` if not (yet) saved.
-     *
-     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
+     * @param metric $metric Metric to wrap.
+     * @param metric_record $record DB record to manage.
+     * @param array<string, metric_tag> $tags Tags to associate with the metric, indexed by their normalized name.
+     * @throws coding_exception Metric record has different component or name than the provided metric.
      */
-    private function __construct(
-        /** @var string Component defining the metric. */
-        public string $component,
-        /** @var string Name of the metric. */
-        public string $name,
-        /** @var bool If `false` the metric is currently not supposed to be calculated/exported. */
-        public bool $enabled = false,
-        /** @var string|null Metric-specific config JSON; `null` if default or not configurable. */
-        private string|null $config = null,
-        /** @var int|null Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet). */
-        public int|null $timecreated = null,
-        /** @var int|null Timestamp when the DB table entry was last modified; `null` if not (yet) saved. */
-        public int|null $timemodified = null,
-        /** @var int|null ID of the user that last modified the DB table entry; `null` if not (yet) saved. */
-        public int|null $usermodified = null,
-        /** @var int|null Primary key of the corresponding DB table row; `null` if not (yet) saved. */
-        public int|null $id = null,
-    ) {}
+    public function __construct(
+        /** @var metric Underlying metric that the instance wraps. */
+        private readonly metric $metric,
+        /** @var metric_record Managed DB record. */
+        private readonly metric_record $record,
+        /** @var array<string, metric_tag> Tags on the metric, indexed by their normalized name. */
+        private array $tags = [],
+    ) {
+        if ($record->component !== $metric->get_component() || $record->name !== $metric->get_name()) {
+            throw new coding_exception('Metric record does not match the provided metric.');
+        }
+        $this->defaultconfig = $metric instanceof metric_config_provider ? $metric->get_default_config() : null;
+        $this->set_config($this->record->config);
+    }
 
     /**
      * Special-case getter for some public-read-only properties of the metric.
@@ -152,13 +115,14 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     public function __get(string $name): mixed {
         return match ($name) {
-            'qualifiedname' => self::get_qualified_name($this->component, $this->name),
-            'description'   => $this->metric->get_description(),
-            'type'          => $this->metric->get_type(),
-            'config'        => $this->config,
             'configclass'   => $this->defaultconfig ? $this->defaultconfig::class : null,
+            'description'   => $this->metric->get_description(),
+            'qualifiedname' => self::get_qualified_name($this->record->component, $this->record->name),
             'tags'          => $this->tags,
-            default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
+            'type'          => $this->metric->get_type(),
+            default         => property_exists($this->record, $name)
+                               ? $this->record->$name
+                               : throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
         };
     }
 
@@ -172,37 +136,34 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     public function __isset(string $name): bool {
         return match ($name) {
-            'config', 'configclass', 'description', 'qualifiedname', 'type' => isset($this->metric),
-            'tags' => isset($this->tags),
-            default => false,
+            'configclass', 'description', 'qualifiedname', 'tags', 'type' => true,
+            default => property_exists($this->record, $name),
         };
     }
 
     /**
-     * Constructs a new instance from the specified metric.
+     * Convenience constructor for a new instance from the specified metric.
      *
-     * @param metric $metric Metric to wrap in the new instance; {@see self::$component `component`} and {@see self::$name `name`}
-     *                       are derived from {@see metric::get_component} and {@see metric::get_name};
-     *                       {@see self::$configclass `configclass`}, and {@see self::$config `config`} are derived from
-     *                       {@see metric_config_provider::get_default_config}.
+     * Calls {@see metric_record::from_metric} to create corresponding record instance.
+     *
+     * @param metric $metric Metric to wrap in the new instance.
+     * @param array<string, metric_tag> $tags Tags to associate with the metric, indexed by their normalized name.
      * @return self New instance from the provided metric.
+     * @throws coding_exception Should never happen.
      */
-    public static function from_metric(metric $metric): self {
-        $instance = new self(component: $metric->get_component(), name: $metric->get_name());
-        $instance->set_metric($metric);
-        return $instance;
+    public static function from_metric(metric $metric, array $tags = []): self {
+        return new self($metric, metric_record::from_metric($metric), $tags);
     }
 
     /**
      * Constructs new instances from the provided metrics, querying the DB for corresponding records.
      *
      * The returned array is indexed by the qualified names of the provided metrics. If a metric is not found in the database,
-     * the corresponding instance will only have its {@see self::$component `component`} and {@see self::$name `name`} set, as well
-     * as its {@see self::$config `config`} and {@see self::$configclass `configclass`}, if the metric is configurable.
+     * the corresponding instance will wrap a fresh {@see metric_record} with default values.
      *
      * @param metric ...$metrics Metrics to construct new instances from.
-     *                           Their qualified names **should** be unique, otherwise a warning will be emitted.
      * @return array<string, self> Associative array of instances, indexed by the qualified names of the provided metrics.
+     * @throws coding_exception Should never happen.
      * @throws dml_exception
      */
     public static function get_for_metrics(metric ...$metrics): array {
@@ -224,7 +185,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         }
         $inlist = implode(', ', $inplaceholders);
         $sqlqname = self::get_qualified_name_sql($DB);
-        $tablename = self::TABLE;
+        $tablename = metric_record::TABLE;
         $sql = "SELECT $sqlqname, m.*
                   FROM {{$tablename}} AS m
                  WHERE (m.component, m.name) IN ($inlist)";
@@ -233,55 +194,55 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         $instances = [];
         foreach ($uniquemetrics as $qname => $metric) {
             if (array_key_exists($qname, $records)) {
-                $record = (array) $records[$qname];
-                $instance = new self(...array_intersect_key($record, array_flip(self::FIELDS)));
-                $instance->set_metric($metric);
-                $instance->tags = $tags[$record['id']] ?? []; // Tags may be disabled.
+                $record = metric_record::from_data($records[$qname]);
+                $instances[$qname] = new self($metric, $record, $tags[$record->id] ?? []);
             } else {
-                $instance = self::from_metric($metric);
+                $instances[$qname] = self::from_metric($metric);
             }
-            $instances[$qname] = $instance;
         }
         return $instances;
     }
 
     /**
-     * Inserts records in the DB table for the provided instances.
+     * Constructs new instances from the provided metrics and registers those not yet in the DB.
      *
-     * Always sets the {@see self::$timecreated `timecreated`} and {@see self::$timemodified `timemodified`} fields to the current
-     * time and {@see self::$usermodified `usermodified`} to the current user on every instance before inserting.
+     * For the already registered metrics, the existing instances are fetched.
+     * For every metric that is not yet registered, a new record is inserted before a fresh ID is assigned to the new instance.
      *
-     * @param self ...$instances Instances to turn into database records; must have `null` IDs.
+     * @param metric ...$metrics Metrics to register.
+     * @return array<string, self> Registered instances for all provided `$metrics` indexed by qualified name.
      * @throws coding_exception
      * @throws dml_exception
      */
-    public static function insert_many(self ...$instances): void {
-        global $DB, $USER;
-        if (empty($instances)) {
-            return;
+    public static function get_or_register(metric ...$metrics): array {
+        global $DB;
+        $instances = self::get_for_metrics(...$metrics);
+        // Prepare records for insertion and remember the existing IDs of collected-and-registered metrics.
+        $existingids = [];
+        $toinsert = [];
+        foreach ($instances as $qname => $metric) {
+            if (is_null($metric->id)) {
+                $toinsert[$qname] = $metric;
+            } else {
+                $existingids[] = $metric->id;
+            }
         }
-        $now = time();
-        $rows = [];
-        foreach ($instances as $instance) {
-            $instance->timecreated = $now;
-            $instance->timemodified = $now;
-            $instance->usermodified = $USER->id;
-            $rows[] = $instance->to_db();
+        self::insert_records(...$toinsert);
+        // Fetch all records that we did not get before.
+        // These should only be newly inserted ones (if any) and orphans (without a collected metric).
+        [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
+        $sqlqname = self::get_qualified_name_sql($DB);
+        $otherids = $DB->get_records_select_menu(
+            table:  metric_record::TABLE,
+            select: "id $notexistingsql",
+            params: $notexistingparams,
+            fields: "$sqlqname AS qname, id",
+        );
+        // Assign the newly inserted IDs and remove them from the array.
+        foreach (array_keys($toinsert) as $qname) {
+            $instances[$qname]->record->id = $otherids[$qname];
         }
-        $DB->insert_records(self::TABLE, $rows);
-    }
-
-    /**
-     * Assigns the provided metric to the instance.
-     *
-     * If the metric is configurable, sets {@see self::$defaultconfig `defaultconfig`} and {@see self::$config `config`}.
-     *
-     * @param metric $metric Metric to assign to the instance.
-     */
-    private function set_metric(metric $metric): void {
-        $this->metric = $metric;
-        $this->defaultconfig = $metric instanceof metric_config_provider ? $metric->get_default_config() : null;
-        $this->set_config($this->config);
+        return $instances;
     }
 
     /**
@@ -293,7 +254,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      * The reverse is strictly _not_ true. A configurable metric with a {@see self::config `config`} of `null` just resolves the
      * default config, when {@see self::get_config `get_config`} is called.
      *
-     * This means that passing `null` here for a configurable metric is equivelnt to (re-)setting its config to the current default.
+     * This means passing `null` here for a configurable metric is equivalent to (re-)setting its config to the current default.
      * Passing a string here for a non-configurable metric discards that argument, triggers a {@see debugging `debugging`} call,
      * and assigns `null`.
      *
@@ -301,12 +262,12 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     private function set_config(string|null $config): void {
         if ($this->is_configurable()) {
-            $this->config = $config;
+            $this->record->config = $config;
         } else {
             if (!is_null($config)) {
                 debugging("Cannot set config on non-configurable metric: $this->qualifiedname", DEBUG_DEVELOPER);
             }
-            $this->config = null;
+            $this->record->config = null;
         }
         $this->configcache = null;
     }
@@ -321,10 +282,10 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         if (!$this->is_configurable()) {
             return null;
         }
-        if (is_null($this->config)) {
+        if (is_null($this->record->config)) {
             return $this->configcache ??= clone $this->defaultconfig;
         }
-        return $this->configcache ??= $this->configclass::from_json($this->config);
+        return $this->configcache ??= $this->configclass::from_json($this->record->config);
     }
 
     /**
@@ -337,23 +298,50 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     }
 
     /**
+     * Inserts the {@see metric_record}s of the provided instances into the database.
+     *
+     * Stamps `timecreated` and `timemodified` of the corresponding records to now and assigns the current user to `usermodified`.
+     *
+     * @param registered_metric ...$instances Instances to insert.
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    private static function insert_records(self ...$instances): void {
+        global $USER;
+        if (empty($instances)) {
+            return;
+        }
+        $records = [];
+        $now = time();
+        foreach ($instances as $instance) {
+            $instance->record->timecreated = $now;
+            $instance->record->timemodified = $now;
+            $instance->record->usermodified = $USER->id;
+            $records[] = $instance->record;
+        }
+        metric_record::insert_many(...$records);
+    }
+
+    /**
      * Enables or disables the metric and persists the change.
      *
      * Does nothing if the metric already has the desired state.
+     *
+     * TODO Rename/split into `enable()`/`disable()`
      *
      * @param bool $enabled Desired enabled state.
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function persist_enabled_state(bool $enabled): void { // TODO: Rename/split into `enable()`/`disable()`
+    public function persist_enabled_state(bool $enabled): void {
         global $DB;
         if ($this->enabled === $enabled) {
             return;
         }
-        $this->enabled = $enabled;
+        $this->record->enabled = $enabled;
         $event = $enabled ? event\metric_enabled::for_metric($this) : event\metric_disabled::for_metric($this);
         $transaction = $DB->start_delegated_transaction();
-        $this->update(['enabled', 'timemodified', 'usermodified']);
+        $this->update_record(['enabled']);
         $event->trigger();
         $transaction->allow_commit();
     }
@@ -373,30 +361,30 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         global $DB;
         $events = [];
         if (isset($formdata->enabled)) {
-            if ($formdata->enabled && !$this->enabled) {
-                $this->enabled = true;
+            if ($formdata->enabled && !$this->record->enabled) {
+                $this->record->enabled = true;
                 $events[] = event\metric_enabled::for_metric($this);
-            } else if (!$formdata->enabled && $this->enabled) {
-                $this->enabled = false;
+            } else if (!$formdata->enabled && $this->record->enabled) {
+                $this->record->enabled = false;
                 $events[] = event\metric_disabled::for_metric($this);
             }
         }
         if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
             $config = json_encode($this->configclass::with_form_data($formdata), JSON_THROW_ON_ERROR);
-            if ($config !== $this->config) {
+            if ($config !== $this->record->config) {
                 $this->set_config($config);
                 $events[] = event\metric_config_updated::for_metric($this);
             }
         }
         metric_tag::set_for_metric($this, ...$formdata->tags);
         if (metric_tag::normalize($formdata->tags) !== array_keys($this->tags)) {
-            $this->tags = metric_tag::get_for_metric_ids($this->id)[$this->id];
+            $this->tags = metric_tag::get_for_metric_ids($this->record->id)[$this->record->id];
         }
         if (empty($events)) {
             return;
         }
         $transaction = $DB->start_delegated_transaction();
-        $this->update(['enabled', 'config', 'timemodified', 'usermodified']);
+        $this->update_record(['enabled', 'config']);
         foreach ($events as $event) {
             $event->trigger();
         }
@@ -404,46 +392,21 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     }
 
     /**
-     * Updates the corresponding row in the database table with data from the object.
+     * Updates the corresponding row in the database table with data from the current record.
      *
-     * The {@see timemodified} and {@see usermodified} are set to the current time and user respectively before the update.
+     * The {@see self::$timemodified `timemodified`} and {@see self::$usermodified `usermodified`} are set to the current time and
+     * user respectively before the update.
      *
-     * @param string[]|null $fields If specified, only these fields will be updated.
+     * @param string[] $fields If specified, only these fields will be updated.
      * @throws coding_exception
      * @throws dml_exception
      */
-    private function update(array|null $fields = null): void {
-        global $DB, $USER;
-        $this->timemodified = time();
-        $this->usermodified = $USER->id;
-        $DB->update_record(self::TABLE, $this->to_db($fields));
+    private function update_record(array $fields = metric_record::FIELDS): void {
+        global $USER;
+        $this->record->timemodified = time();
+        $this->record->usermodified = $USER->id;
+        $this->record->update([...$fields, 'timemodified', 'usermodified']);
         metrics_cache::delete($this->qualifiedname);
-    }
-
-    /**
-     * Transforms an instance of the mapped class into an associative array of data that can be used in DB queries.
-     *
-     * The data can then be passed as an argument to functions such as e.g. {@see \moodle_database::update_record}.
-     *
-     * @param string[]|null $fields The output array will only have entries that are properties of the object **and** that are
-     *                              specified in this argument. An exception is the {@see id} property; if its value is not `null`
-     *                              on the instance, it will always be included in the output. If this argument is `null`, all
-     *                              properties will be included in the output array.
-     * @return array<string, mixed> DB-friendly data taken from the instance.
-     */
-    private function to_db(array|null $fields = null): array {
-        $data = [];
-        if (!is_null($this->id)) {
-            $data['id'] = $this->id;
-        }
-        $returnfields = self::FIELDS;
-        if (!is_null($fields)) {
-            $returnfields = array_intersect($returnfields, $fields);
-        }
-        foreach ($returnfields as $field) {
-            $data[$field] = $this->$field;
-        }
-        return $data;
     }
 
     /**
@@ -458,7 +421,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         } else {
             $formdata = [];
         }
-        $formdata['enabled'] = $this->enabled;
+        $formdata['enabled'] = $this->record->enabled;
         $tags = [];
         foreach ($this->tags as $tag) {
             $tags[$tag->id] = $tag->get_display_name();
@@ -507,13 +470,8 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
 
     #[\Override]
     public function prepare_to_cache(): array {
-        $data = [];
-        foreach (self::CACHE_FIELDS as $field) {
-            $data[$field] = match ($field) {
-                'tags' => array_map(fn (metric_tag $tag): array => $tag->prepare_to_cache(), $this->tags),
-                default => $this->$field,
-            };
-        }
+        $data = $this->record->to_array();
+        $data['tags'] = array_map(fn (metric_tag $tag): array => $tag->prepare_to_cache(), $this->tags);
         return $data;
     }
 
@@ -531,27 +489,26 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         } else if (!is_array($data) || array_is_list($data)) {
             throw new coding_exception('Received unexpected data type for registered_metric from cache: ' . gettype($data));
         }
-        $missing = array_diff_key(self::CACHE_FIELDS, $data);
+        $fields = array_flip(array_merge(metric_record::FIELDS, ['tags']));
+        $missing = array_diff_key($fields, $data);
         if (!empty($missing)) {
             throw new coding_exception('Missing cache fields for registered_metric: ' . implode(', ', $missing));
         }
-        $extra = array_diff_key($data, self::CACHE_FIELDS);
+        $extra = array_diff_key($data, $fields);
         if (!empty($extra)) {
             debugging(
                 "Unexpected cache fields for registered_metric {$data['id']}: " . implode(', ', array_keys($extra)),
                 DEBUG_DEVELOPER,
             );
         }
-        // Construct the instance using only the DB fields first.
-        $instance = new self(...array_intersect_key($data, array_flip(self::FIELDS)));
-        // Next, find the matching metric instance from the collection and set it on the new object.
+        $record = metric_record::from_data($data);
+        // Find the matching metric from the collection.
         $collection = di::get(metric_collection::class);
-        if (is_null($metric = $collection->get($instance->component, $instance->name))) {
-            throw new coding_exception("No metric collected for component '$instance->component' and name '$instance->name'");
+        if (is_null($metric = $collection->get($record->component, $record->name))) {
+            throw new coding_exception("No metric collected for component '$record->component' and name '$record->name'");
         }
-        $instance->set_metric($metric);
-        // Finally, wake the associated tag instances and assign those to the new object as well.
-        $instance->tags = array_map(fn (array $tag): metric_tag => metric_tag::wake_from_cache($tag), $data['tags']);
-        return $instance;
+        // Wake the associated tag instances.
+        $tags = array_map(fn (array $tag): metric_tag => metric_tag::wake_from_cache($tag), $data['tags']);
+        return new self($metric, $record, $tags);
     }
 }

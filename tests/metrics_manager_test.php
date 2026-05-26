@@ -45,6 +45,7 @@ use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\exceptions\tool_monitoring_exception;
 use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_metric_with_config;
@@ -95,7 +96,7 @@ final class metrics_manager_test extends advanced_testcase {
      * Indirectly also tests the cache data source mechanism because iteration first attempts to load metrics from the cache.
      *
      * @param metric[] $collected Metric instances to add to the collection beforehand.
-     * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see registered_metric::TABLE}
+     * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see metric_record::TABLE}
      *                                           before calling the tested function.
      * @param array<string, array<string, mixed>> $expected Associative arrays of property name-value-pairs expected to be present
      *                                                      on the metric instances. Indexed by qualified name.
@@ -122,7 +123,7 @@ final class metrics_manager_test extends advanced_testcase {
         di::set(metric_collection::class, $collection);
         $manager = di::get(metrics_manager::class);
         // Sanity check.
-        self::assertSame(0, $DB->count_records(registered_metric::TABLE));
+        self::assertSame(0, $DB->count_records(metric_record::TABLE));
         // Add pre-existing metrics records.
         $defaults = [
             'component'    => 'tool_monitoring',
@@ -131,16 +132,16 @@ final class metrics_manager_test extends advanced_testcase {
             'usermodified' => 1,
         ];
         foreach ($registered as $toinsert) {
-            $metricid = $DB->insert_record(registered_metric::TABLE, $toinsert + $defaults);
+            $metricid = $DB->insert_record(metric_record::TABLE, $toinsert + $defaults);
             if (isset($toinsert['tags'])) {
                 metric_tag::set_for_metric($metricid, ...$toinsert['tags']);
             }
         }
-        $records = $DB->get_records(registered_metric::TABLE);
+        $records = $DB->get_records(metric_record::TABLE);
         // Call the tested method.
         $metrics = $manager->filter(enabled: $enabled, tagnames: $tagnames);
         // The records in the DB table should be unchanged.
-        self::assertEquals($records, $DB->get_records(registered_metric::TABLE));
+        self::assertEquals($records, $DB->get_records(metric_record::TABLE));
         // The number of registered metrics should be as expected.
         self::assertCount(count($expected), $metrics);
         // Check that the registered metrics are exactly as we expect them, and there is a DB record for each of them.
@@ -348,8 +349,8 @@ final class metrics_manager_test extends advanced_testcase {
             'timemodified' => 1,
             'usermodified' => 1,
         ];
-        $metricidfoo = $DB->insert_record(registered_metric::TABLE, ['name' => 'foo', ...$defaults]);
-        $metricidbar = $DB->insert_record(registered_metric::TABLE, ['name' => 'bar', ...$defaults]);
+        $metricidfoo = $DB->insert_record(metric_record::TABLE, ['name' => 'foo', ...$defaults]);
+        $metricidbar = $DB->insert_record(metric_record::TABLE, ['name' => 'bar', ...$defaults]);
         metric_tag::set_for_metric($metricidfoo, 'spam', 'eggs');
         metric_tag::set_for_metric($metricidbar, 'spam', 'beans');
 
@@ -425,7 +426,7 @@ final class metrics_manager_test extends advanced_testcase {
      * Test the {@see metrics_manager::sync} method with the `collect` parameter set to `false`.
      *
      * @param metric[] $collected Metric instances to add to the collection beforehand.
-     * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see registered_metric::TABLE}
+     * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see metric_record::TABLE}
      *                                           before calling the tested function.
      * @param array<string, array<string, mixed>> $expected Associative arrays of property name-value-pairs expected to be present
      *                                                      on the {@see registered_metric} instances as well as on the
@@ -454,16 +455,16 @@ final class metrics_manager_test extends advanced_testcase {
         di::set(metric_collection::class, $collection);
         $manager = di::get(metrics_manager::class);
         // Sanity check.
-        self::assertSame(0, $DB->count_records(registered_metric::TABLE));
+        self::assertSame(0, $DB->count_records(metric_record::TABLE));
         // Add pre-existing metrics records.
         foreach ($registered as $toinsert) {
-            $DB->insert_record(registered_metric::TABLE, $toinsert);
+            $DB->insert_record(metric_record::TABLE, $toinsert);
         }
         // Do the thing.
         $metrics = $manager->sync(delete: $delete)->filter();
         // The number of registered metrics should be the same as the number of records in the DB table.
         $expectedcount = count($expected);
-        $records = $DB->get_records(registered_metric::TABLE);
+        $records = $DB->get_records(metric_record::TABLE);
         self::assertCount($expectedcount, $metrics);
         self::assertCount($expectedcount, $records);
         // Check that both the registered metrics and the raw DB records are exactly as we expect them.
@@ -601,7 +602,7 @@ final class metrics_manager_test extends advanced_testcase {
             'timemodified' => 40,
             'usermodified' => 0,
         ];
-        $metricid = $DB->insert_record(registered_metric::TABLE, $data);
+        $metricid = $DB->insert_record(metric_record::TABLE, $data);
         self::assertNotNull($metricid);
 
         // Add tags alpha and beta to metric foo.
@@ -619,14 +620,14 @@ final class metrics_manager_test extends advanced_testcase {
         $manager = di::get(metrics_manager::class);
         // This should delete the `foo` metric.
         $manager->sync(delete: true);
-        self::assertFalse($DB->record_exists(registered_metric::TABLE, ['id' => $metricid]));
+        self::assertFalse($DB->record_exists(metric_record::TABLE, ['id' => $metricid]));
 
         // Ensure that tags are gone, too.
         self::assertSame(
             0,
             $DB->count_records('tag_instance', [
                 'component' => 'tool_monitoring',
-                'itemtype' => registered_metric::TABLE,
+                'itemtype' => metric_record::TABLE,
                 'itemid' => $metricid,
             ]),
         );
@@ -705,7 +706,7 @@ final class metrics_manager_test extends advanced_testcase {
             'timemodified' => 20,
             'usermodified' => 1,
         ];
-        $DB->insert_record(registered_metric::TABLE, $toinsert);
+        $DB->insert_record(metric_record::TABLE, $toinsert);
         $qname = 'tool_monitoring_foo';
         self::assertTrue(isset($manager[$qname]));
         $metric = $manager[$qname];

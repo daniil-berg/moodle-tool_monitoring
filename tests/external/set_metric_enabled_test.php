@@ -46,7 +46,9 @@ use Exception;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\exceptions\metric_name_invalid;
 use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\metric;
 use tool_monitoring\registered_metric;
@@ -85,6 +87,7 @@ final class set_metric_enabled_test extends advanced_testcase {
      * @throws dml_exception
      * @throws invalid_parameter_exception
      * @throws JsonException
+     * @throws metric_name_invalid
      * @throws required_capability_exception
      * @throws restricted_context_exception
      */
@@ -105,9 +108,9 @@ final class set_metric_enabled_test extends advanced_testcase {
         }
         di::set(metric_collection::class, $collection);
         // Sanity check.
-        self::assertEquals(0, $DB->count_records(registered_metric::TABLE));
+        self::assertEquals(0, $DB->count_records(metric_record::TABLE));
         // Insert registered metrics into DB.
-        $DB->insert_records(registered_metric::TABLE, $metricsregistered);
+        $DB->insert_records(metric_record::TABLE, $metricsregistered);
         // Create manager user and set it for the test.
         $user = self::getDataGenerator()->create_user();
         self::getDataGenerator()->role_assign('manager', $user->id, context_system::instance());
@@ -115,7 +118,7 @@ final class set_metric_enabled_test extends advanced_testcase {
         // Get the record of the metric to try and enable/disable.
         $qnamesql = registered_metric::get_qualified_name_sql($DB);
         $record = $DB->get_record_select(
-            table: registered_metric::TABLE,
+            table: metric_record::TABLE,
             select: "$qnamesql = :qname",
             params: ['qname' => $qualifiedname],
         );
@@ -127,7 +130,7 @@ final class set_metric_enabled_test extends advanced_testcase {
             self::assertEquals(
                 $enabled,
                 $DB->get_field_select(
-                    table: registered_metric::TABLE,
+                    table: metric_record::TABLE,
                     return: 'enabled',
                     select: "$qnamesql = :qname",
                     params: ['qname' => $qualifiedname],
@@ -143,7 +146,7 @@ final class set_metric_enabled_test extends advanced_testcase {
                 self::assertEquals(
                     $record,
                     $DB->get_record_select(
-                        table: registered_metric::TABLE,
+                        table: metric_record::TABLE,
                         select: "$qnamesql = :qname",
                         params: ['qname' => $qualifiedname],
                     ),
@@ -207,6 +210,7 @@ final class set_metric_enabled_test extends advanced_testcase {
      * @throws dml_exception
      * @throws invalid_parameter_exception
      * @throws JsonException
+     * @throws metric_name_invalid
      * @throws restricted_context_exception
      */
     public function test_execute_as_guest(): void {
@@ -224,6 +228,7 @@ final class set_metric_enabled_test extends advanced_testcase {
      * @throws dml_exception
      * @throws invalid_parameter_exception
      * @throws JsonException
+     * @throws metric_name_invalid
      */
     public function test_execute_without_permission(): void {
         $this->resetAfterTest();

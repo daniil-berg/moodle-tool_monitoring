@@ -97,28 +97,27 @@ final class config_test extends advanced_testcase {
      * Provides test data for the {@see test_all_methods} method.
      *
      * @return array[] Arguments for the test method.
+     * @throws coding_exception
      */
     public static function provider_test_all_methods(): array {
-        $testmetric = registered_metric::from_metric(new test_metric());
-        $usersonline = registered_metric::from_metric(new users_online());
         return [
             'Empty data' => [
-                'metric' => $testmetric,
+                'metric' => registered_metric::from_metric(new test_metric()),
                 'validationdata' => [],
                 'validationerrors' => [],
             ],
             'Valid values and unrelated fields' => [
-                'metric' => $testmetric,
+                'metric' => registered_metric::from_metric(new test_metric()),
                 'validationdata' => ['enabled' => 1, 'tags' => ['foo', 'bar'], 'some' => 'data'],
                 'validationerrors' => [],
             ],
             'Valid config value in form data' => [
-                'metric' => $usersonline,
+                'metric' => registered_metric::from_metric(new users_online()),
                 'validationdata' => ['timewindows' => '1,2,3'],
                 'validationerrors' => [],
             ],
             'Invalid config value in form data' => [
-                'metric' => $usersonline,
+                'metric' => registered_metric::from_metric(new users_online()),
                 'validationdata' => ['timewindows' => 'a,b,c'],
                 'validationerrors' => [
                     'timewindows' => 'error:users_online_config:timewindows_invalid',

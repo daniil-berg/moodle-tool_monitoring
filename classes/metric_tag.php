@@ -40,6 +40,7 @@ use dml_exception;
 use moodle_url;
 use stdClass;
 use tool_monitoring\exceptions\tag_not_found;
+use tool_monitoring\local\metric_record;
 use Traversable;
 
 /**
@@ -56,7 +57,7 @@ use Traversable;
  */
 class metric_tag extends core_tag_tag implements cacheable_object_interface {
     /** @var string Name of the associated tag area. */
-    public const ITEM_TYPE = registered_metric::TABLE;
+    public const ITEM_TYPE = metric_record::TABLE;
 
     /** @var string Name of the associated tag collection. */
     public const COLLECTION_NAME = 'monitoring';

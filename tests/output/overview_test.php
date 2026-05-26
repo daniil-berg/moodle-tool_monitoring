@@ -38,8 +38,10 @@ use core\output\renderer_base;
 use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\local\managed_metric;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\mock_metric_tag;
-use tool_monitoring\local\testing\mock_registered_metric;
+use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\metric_tag;
 
 /**
@@ -61,7 +63,7 @@ final class overview_test extends advanced_testcase {
      *
      * Also implicitly tests the {@see overview::__construct} method.
      *
-     * @param array<string, mock_registered_metric> $metrics Mock-metrics to pass to the constructor, indexed by qualified name.
+     * @param array<string, managed_metric> $metrics Metrics to pass to the constructor, indexed by qualified name.
      * @param array<string, mock_metric_tag> $tags Mock-tags to pass to the constructor, indexed by normalized tag name.
      * @throws moodle_exception
      */
@@ -165,24 +167,18 @@ final class overview_test extends advanced_testcase {
      * @throws coding_exception
      */
     public static function provider_test_export_for_template(): array {
+        $metricfoo = test_metric::create('foo');
+        $metricbar = test_metric::create('bar');
+        $metricbaz = test_metric::create('baz');
         $tagspam = new mock_metric_tag(1, 'spam');
         $tageggs = new mock_metric_tag(2, 'eggs');
         $tagbeans = new mock_metric_tag(3, 'beans');
-        $metricfoo = new mock_registered_metric('foo');
-        $metricbar = new mock_registered_metric(
-            name: 'bar',
-            tags: ['spam' => $tagspam, 'eggs' => $tageggs],
-        );
-        $metricbaz = new mock_registered_metric(
-            name: 'baz',
-            tags: ['beans' => $tagbeans],
-        );
         return [
             'Tagging disabled, metrics with tags and tag filter set' => [
                 'metrics' => [
-                    'tool_monitoring_foo' => $metricfoo,
-                    'tool_monitoring_bar' => $metricbar,
-                    'tool_monitoring_baz' => $metricbaz,
+                    'tool_monitoring_foo' => managed_metric::from_metric($metricfoo),
+                    'tool_monitoring_bar' => managed_metric::from_metric($metricbar, ['spam' => $tagspam, 'eggs' => $tageggs]),
+                    'tool_monitoring_baz' => managed_metric::from_metric($metricbaz, ['beans' => $tagbeans]),
                 ],
                 'tags' => [
                     'spam' => $tagspam,
@@ -192,9 +188,9 @@ final class overview_test extends advanced_testcase {
             ],
             'Tagging enabled, metrics with tags and tag filter set' => [
                 'metrics' => [
-                    'tool_monitoring_foo' => $metricfoo,
-                    'tool_monitoring_bar' => $metricbar,
-                    'tool_monitoring_baz' => $metricbaz,
+                    'tool_monitoring_foo' => managed_metric::from_metric($metricfoo),
+                    'tool_monitoring_bar' => managed_metric::from_metric($metricbar, ['spam' => $tagspam, 'eggs' => $tageggs]),
+                    'tool_monitoring_baz' => managed_metric::from_metric($metricbaz, ['beans' => $tagbeans]),
                 ],
                 'tags' => [
                     'spam' => $tagspam,
@@ -204,9 +200,9 @@ final class overview_test extends advanced_testcase {
             ],
             'Tagging enabled, metrics with tags, but no tag filter set' => [
                 'metrics' => [
-                    'tool_monitoring_foo' => $metricfoo,
-                    'tool_monitoring_bar' => $metricbar,
-                    'tool_monitoring_baz' => $metricbaz,
+                    'tool_monitoring_foo' => managed_metric::from_metric($metricfoo),
+                    'tool_monitoring_bar' => managed_metric::from_metric($metricbar, ['spam' => $tagspam, 'eggs' => $tageggs]),
+                    'tool_monitoring_baz' => managed_metric::from_metric($metricbaz, ['beans' => $tagbeans]),
                 ],
                 'tags' => [],
                 'tagsenabled' => true,

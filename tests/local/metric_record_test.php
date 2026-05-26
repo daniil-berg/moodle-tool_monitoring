@@ -289,22 +289,44 @@ final class metric_record_test extends advanced_testcase {
      *
      * @param metric_record $record Test instance.
      * @param array<string, mixed> $changes Properties to mutate before calling the method.
-     * @param string[] $fields Passed to the method.
-     * @param array<string, mixed> $expected Expected properties on the updated instance and DB row.
+     * @param string[] $fields First argument to the method.
+     * @param int|null $usermodified Second argument to the method.
+     * @param array<string, mixed> $expected Expected DB row values (excluding auto-stamped `timemodified`/`usermodified`).
      * @throws dml_exception
      */
     #[DataProvider('provider_test_update')]
-    public function test_update(metric_record $record, array $changes, array $fields, array $expected): void {
-        global $DB;
+    public function test_update(
+        metric_record $record,
+        array $changes,
+        array $fields,
+        int|null $usermodified,
+        array $expected,
+    ): void {
+        global $DB, $USER;
         $this->resetAfterTest();
         $record->id = $DB->insert_record(metric_record::TABLE, $record->to_array());
         foreach ($changes as $field => $change) {
             $record->$field = $change;
         }
         $recordbefore = clone $record;
-        $record->update($fields);
-        self::assertEquals($recordbefore, $record, "Unexpected changes on record");
+        $before = time();
+        $record->update($fields, $usermodified);
+        $after = time();
+        // Check `timemodified` is set to current time and `usermodified` to the provided user or `$USER->id`.
+        self::assertGreaterThanOrEqual($before, $record->timemodified);
+        self::assertLessThanOrEqual($after, $record->timemodified);
+        self::assertSame($usermodified ?? $USER->id, $record->usermodified);
+        // No other properties should have been touched.
+        foreach (metric_record::FIELDS as $field) {
+            if (in_array($field, ['timemodified', 'usermodified'], strict: true)) {
+                continue;
+            }
+            self::assertSame($recordbefore->$field, $record->$field, "Unexpected change on record field $field");
+        }
+        // Check DB row is as expected.
         $row = $DB->get_record(metric_record::TABLE, ['id' => $record->id], strictness: MUST_EXIST);
+        self::assertEquals($record->timemodified, $row->timemodified);
+        self::assertEquals($record->usermodified, $row->usermodified);
         foreach ($expected as $field => $value) {
             self::assertEquals($value, $row->$field, "Unexpected $field value on row");
         }
@@ -322,28 +344,36 @@ final class metric_record_test extends advanced_testcase {
             'enabled'      => true,
             'config'       => '{"foo": "bar"}',
             'timecreated'  => 123,
-            'timemodified' => 456,
-            'usermodified' => 789,
         ];
-        $testrecord = metric_record::from_data($testdata);
+        $testrecord = metric_record::from_data($testdata + ['timemodified' => 456, 'usermodified' => 789]);
         return [
             'No changes' => [
                 'record' => clone $testrecord,
                 'changes' => [],
                 'fields' => metric_record::FIELDS,
+                'usermodified' => null,
                 'expected' => $testdata,
             ],
             'Fields changed, update full record' => [
                 'record' => clone $testrecord,
-                'changes' => ['enabled' => false, 'config' => '{"foo": "baz"}', 'timemodified' => 123456],
+                'changes' => ['enabled' => false, 'config' => '{"foo": "baz"}'],
                 'fields' => metric_record::FIELDS,
-                'expected' => array_merge($testdata, ['enabled' => false, 'config' => '{"foo": "baz"}', 'timemodified' => 123456]),
+                'usermodified' => null,
+                'expected' => [...$testdata, 'enabled' => false, 'config' => '{"foo": "baz"}'],
             ],
             'Fields changed, update only some of them' => [
                 'record' => clone $testrecord,
-                'changes' => ['enabled' => false, 'config' => '{"foo": "baz"}', 'timemodified' => 123456],
-                'fields' => ['enabled', 'timemodified'],
-                'expected' => array_merge($testdata, ['enabled' => false, 'timemodified' => 123456]),
+                'changes' => ['enabled' => false, 'config' => '{"foo": "baz"}'],
+                'fields' => ['enabled'],
+                'usermodified' => null,
+                'expected' => [...$testdata, 'enabled' => false],
+            ],
+            'Override usermodified' => [
+                'record' => clone $testrecord,
+                'changes' => [],
+                'fields' => metric_record::FIELDS,
+                'usermodified' => 42,
+                'expected' => $testdata,
             ],
         ];
     }

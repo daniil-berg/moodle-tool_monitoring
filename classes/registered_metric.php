@@ -227,7 +227,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
                 $existingids[] = $metric->id;
             }
         }
-        self::insert_records(...$toinsert);
+        metric_record::insert_many(...array_column($toinsert, 'record'));
         // Fetch all records that we did not get before.
         // These should only be newly inserted ones (if any) and orphans (without a collected metric).
         [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
@@ -295,31 +295,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
      */
     private function is_configurable(): bool {
         return !is_null($this->defaultconfig);
-    }
-
-    /**
-     * Inserts the {@see metric_record}s of the provided instances into the database.
-     *
-     * Stamps `timecreated` and `timemodified` of the corresponding records to now and assigns the current user to `usermodified`.
-     *
-     * @param registered_metric ...$instances Instances to insert.
-     * @throws coding_exception
-     * @throws dml_exception
-     */
-    private static function insert_records(self ...$instances): void {
-        global $USER;
-        if (empty($instances)) {
-            return;
-        }
-        $records = [];
-        $now = time();
-        foreach ($instances as $instance) {
-            $instance->record->timecreated = $now;
-            $instance->record->timemodified = $now;
-            $instance->record->usermodified = $USER->id;
-            $records[] = $instance->record;
-        }
-        metric_record::insert_many(...$records);
     }
 
     /**
@@ -392,20 +367,14 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
     }
 
     /**
-     * Updates the corresponding row in the database table with data from the current record.
+     * Wrapper around {@see metric_record::update} that also evicts the metric from the cache.
      *
-     * The {@see self::$timemodified `timemodified`} and {@see self::$usermodified `usermodified`} are set to the current time and
-     * user respectively before the update.
-     *
-     * @param string[] $fields If specified, only these fields will be updated.
+     * @param string[] $fields Passed through.
      * @throws coding_exception
      * @throws dml_exception
      */
     private function update_record(array $fields = metric_record::FIELDS): void {
-        global $USER;
-        $this->record->timemodified = time();
-        $this->record->usermodified = $USER->id;
-        $this->record->update([...$fields, 'timemodified', 'usermodified']);
+        $this->record->update($fields);
         metrics_cache::delete($this->qualifiedname);
     }
 

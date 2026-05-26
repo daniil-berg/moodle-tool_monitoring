@@ -34,11 +34,11 @@ namespace tool_monitoring\local;
 use advanced_testcase;
 use core\exception\coding_exception;
 use dml_exception;
+use moodle_database;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 use tool_monitoring\local\testing\test_metric;
-use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see metric_record} class.
@@ -210,7 +210,7 @@ final class metric_record_test extends advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         metric_record::insert_many(...$instances);
-        $qnamesql = registered_metric::get_qualified_name_sql($DB);
+        $qnamesql = metric_record::get_qualified_name_sql($DB);
         $fields = implode(',', metric_record::FIELDS);
         $rows = $DB->get_records(metric_record::TABLE, fields: "$qnamesql, $fields");
         self::assertCount(count($instances), $rows);
@@ -376,5 +376,52 @@ final class metric_record_test extends advanced_testcase {
                 'expected' => $testdata,
             ],
         ];
+    }
+
+    /**
+     * Tests the {@see metric_record::get_qualified_name} method.
+     *
+     * @param string $component Component input.
+     * @param string $name Name input.
+     * @param string $expected Expected return value name.
+     */
+    #[DataProvider('provider_test_get_qualified_name')]
+    public function test_get_qualified_name(string $component, string $name, string $expected): void {
+        self::assertSame($expected, metric_record::get_qualified_name($component, $name));
+    }
+
+    /**
+     * Provides test data for the {@see test_get_qualified_name} method.
+     *
+     * @return array[] Arguments for the test method.
+     */
+    public static function provider_test_get_qualified_name(): array {
+        return [
+            [
+                'component' => 'tool_monitoring',
+                'name'      => 'some_metric',
+                'expected'  => 'tool_monitoring_some_metric',
+            ],
+            [
+                'component' => 'tool_monitoring',
+                'name'      => 'num_overdue_tasks',
+                'expected'  => 'tool_monitoring_num_overdue_tasks',
+            ],
+            [
+                'component' => 'foo+-*/bar',
+                'name'      => ' this is fine ',
+                'expected'  => 'foo+-*/bar_ this is fine ',
+            ],
+        ];
+    }
+
+    public function test_get_qualified_name_sql(): void {
+        $mocksql = 'sql snippet';
+        $mockdb = $this->createMock(moodle_database::class);
+        $mockdb->expects(self::once())
+            ->method('sql_concat_join')
+            ->with(separator: "'_'", elements: ['component', 'name'])
+            ->willReturn($mocksql);
+        self::assertEquals($mocksql, metric_record::get_qualified_name_sql($mockdb));
     }
 }

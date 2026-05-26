@@ -117,7 +117,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         return match ($name) {
             'configclass'   => $this->defaultconfig ? $this->defaultconfig::class : null,
             'description'   => $this->metric->get_description(),
-            'qualifiedname' => self::get_qualified_name($this->record->component, $this->record->name),
+            'qualifiedname' => metric_record::get_qualified_name($this->record->component, $this->record->name),
             'tags'          => $this->tags,
             'type'          => $this->metric->get_type(),
             default         => property_exists($this->record, $name)
@@ -177,14 +177,14 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         $params = [];
         foreach (array_values($metrics) as $i => $metric) {
             [$component, $name] = [$metric->get_component(), $metric->get_name()];
-            $qname = self::get_qualified_name($component, $name);
+            $qname = metric_record::get_qualified_name($component, $name);
             $uniquemetrics[$qname] = $metric;
             $inplaceholders[] = "(:component$i, :name$i)";
             $params["component$i"] = $component;
             $params["name$i"] = $name;
         }
         $inlist = implode(', ', $inplaceholders);
-        $sqlqname = self::get_qualified_name_sql($DB);
+        $sqlqname = metric_record::get_qualified_name_sql($DB);
         $tablename = metric_record::TABLE;
         $sql = "SELECT $sqlqname, m.*
                   FROM {{$tablename}} AS m
@@ -231,7 +231,7 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         // Fetch all records that we did not get before.
         // These should only be newly inserted ones (if any) and orphans (without a collected metric).
         [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
-        $sqlqname = self::get_qualified_name_sql($DB);
+        $sqlqname = metric_record::get_qualified_name_sql($DB);
         $otherids = $DB->get_records_select_menu(
             table:  metric_record::TABLE,
             select: "id $notexistingsql",
@@ -397,26 +397,6 @@ final class registered_metric implements cacheable_object_interface, IteratorAgg
         }
         $formdata['tags'] = $tags;
         return $formdata;
-    }
-
-    /**
-     * Derives a qualified name from the provided component and name.
-     *
-     * @param string $component Moodle component.
-     * @param string $name Entity name.
-     * @return string Qualified name.
-     */
-    public static function get_qualified_name(string $component, string $name): string {
-        return "{$component}_$name";
-    }
-
-    /**
-     * Returns the proper SQL snippet to construct the qualified name.
-     *
-     * @return string Qualified name SQL.
-     */
-    public static function get_qualified_name_sql(moodle_database $db): string {
-        return $db->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }
 
     /**

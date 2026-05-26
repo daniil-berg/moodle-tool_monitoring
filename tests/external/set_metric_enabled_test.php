@@ -51,7 +51,6 @@ use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\metric;
-use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see set_metric_enabled} class.
@@ -116,7 +115,7 @@ final class set_metric_enabled_test extends advanced_testcase {
         self::getDataGenerator()->role_assign('manager', $user->id, context_system::instance());
         self::setUser($user);
         // Get the record of the metric to try and enable/disable.
-        $qnamesql = registered_metric::get_qualified_name_sql($DB);
+        $qnamesql = metric_record::get_qualified_name_sql($DB);
         $record = $DB->get_record_select(
             table: metric_record::TABLE,
             select: "$qnamesql = :qname",

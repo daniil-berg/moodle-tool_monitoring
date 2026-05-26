@@ -158,7 +158,7 @@ final class registered_metric_test extends advanced_testcase {
         self::assertTrue(isset($instance->description));
         self::assertEquals($metric->get_description(), $instance->description);
         self::assertTrue(isset($instance->qualifiedname));
-        self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
+        self::assertSame(metric_record::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
         self::assertTrue(isset($instance->tags));
         self::assertSame($mocktags, $instance->tags);
         self::assertTrue(isset($instance->type));
@@ -333,7 +333,7 @@ final class registered_metric_test extends advanced_testcase {
         self::assertCount($expectedcount, $records);
         // Check that there is an instance for every metric and each of them has an ID.
         foreach ($metrics as $metric) {
-            $qname = registered_metric::get_qualified_name($metric->get_component(), $metric->get_name());
+            $qname = metric_record::get_qualified_name($metric->get_component(), $metric->get_name());
             self::assertArrayHasKey($qname, $instances);
             self::assertNotNull($instances[$qname]->id);
         }
@@ -548,53 +548,6 @@ final class registered_metric_test extends advanced_testcase {
         // Calling that again should use the config cache and pass that same object.
         iterator_to_array($instance);
         self::assertSame($lastconfig2, $metric->lastconfig);
-    }
-
-    /**
-     * Tests the {@see registered_metric::get_qualified_name} method.
-     *
-     * @param string $component Component input.
-     * @param string $name Name input.
-     * @param string $expected Expected return value name.
-     */
-    #[DataProvider('provider_test_get_qualified_name')]
-    public function test_get_qualified_name(string $component, string $name, string $expected): void {
-        self::assertSame($expected, registered_metric::get_qualified_name($component, $name));
-    }
-
-    /**
-     * Provides test data for the {@see test_get_qualified_name} method.
-     *
-     * @return array[] Arguments for the test method.
-     */
-    public static function provider_test_get_qualified_name(): array {
-        return [
-            [
-                'component' => 'tool_monitoring',
-                'name'      => 'some_metric',
-                'expected'  => 'tool_monitoring_some_metric',
-            ],
-            [
-                'component' => 'tool_monitoring',
-                'name'      => 'num_overdue_tasks',
-                'expected'  => 'tool_monitoring_num_overdue_tasks',
-            ],
-            [
-                'component' => 'foo+-*/bar',
-                'name'      => ' this is fine ',
-                'expected'  => 'foo+-*/bar_ this is fine ',
-            ],
-        ];
-    }
-
-    public function test_get_qualified_name_sql(): void {
-        $mocksql = 'sql snippet';
-        $mockdb = $this->createMock(moodle_database::class);
-        $mockdb->expects(self::once())
-            ->method('sql_concat_join')
-            ->with(separator: "'_'", elements: ['component', 'name'])
-            ->willReturn($mocksql);
-        self::assertEquals($mocksql, registered_metric::get_qualified_name_sql($mockdb));
     }
 
     /**

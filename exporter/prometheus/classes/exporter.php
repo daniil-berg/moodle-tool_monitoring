@@ -30,8 +30,8 @@
 namespace monitoringexporter_prometheus;
 
 use tool_monitoring\exceptions\metric_config_invalid;
-use tool_monitoring\local\managed_metric;
 use tool_monitoring\metric_value;
+use tool_monitoring\registered_metric;
 
 /**
  * Exports metrics in Prometheus format.
@@ -55,10 +55,10 @@ class exporter {
      *
      * @link https://prometheus.io/docs/instrumenting/exposition_formats/#details Documentation
      *
-     * @param managed_metric ...$metrics Metrics to export.
+     * @param registered_metric ...$metrics Metrics to export.
      * @return string Prometheus text format.
      */
-    public static function export(managed_metric ...$metrics): string {
+    public static function export(registered_metric ...$metrics): string {
         $parts = array_filter(array_map([self::class, 'export_metric'], $metrics));
         if (!$parts) {
             return '';
@@ -72,10 +72,10 @@ class exporter {
      *
      * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
      *
-     * @param managed_metric $metric Instance of the metric to export.
+     * @param registered_metric $metric Instance of the metric to export.
      * @return string Prometheus text format for a single metric.
      */
-    private static function export_metric(managed_metric $metric): string {
+    private static function export_metric(registered_metric $metric): string {
         $name = $metric->qualifiedname;
         $output = '';
         $help = self::escape_help($metric->description->out());

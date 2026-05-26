@@ -35,6 +35,7 @@ use core\event\base;
 use core\exception\moodle_exception;
 use dml_exception;
 use moodle_url;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\registered_metric;
 
 /**
@@ -82,7 +83,7 @@ abstract class metric_event extends base {
     #[\Override]
     protected function init(): void {
         $this->context = system::instance();
-        $this->data['objecttable'] = registered_metric::TABLE;
+        $this->data['objecttable'] = metric_record::TABLE;
         $this->data['crud'] = 'u';
         $this->data['edulevel'] = self::LEVEL_OTHER;
     }

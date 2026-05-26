@@ -38,6 +38,7 @@ use core\event\base as base_event;
 use core\event\tag_added;
 use core\event\tag_created;
 use core\exception\coding_exception;
+use core\exception\moodle_exception;
 use dml_exception;
 use JsonException;
 use moodle_database;
@@ -48,6 +49,7 @@ use ReflectionMethod;
 use ReflectionProperty;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\test_simple_metric_config_minimal;
 use tool_monitoring\local\testing\test_metric;
@@ -68,50 +70,105 @@ use tool_monitoring\local\testing\test_metric_with_config;
 #[CoversClass(registered_metric::class)]
 final class registered_metric_test extends advanced_testcase {
     /**
-     * Tests the {@see registered_metric::from_metric} method.
+     * Tests the {@see registered_metric::__construct} method.
      *
-     * @param metric $metric Metric to pass to the method.
-     * @param array<string, string> $expected Array of expected instance properties of the returned object.
+     * @param metric $metric Passed to the constructor.
+     * @param metric_record $record Passed to the constructor.
+     * @param moodle_exception|null $exception Expected exception to be thrown.
+     * @param string|null $debugging Expected debugging message to be issued.
+     * @throws coding_exception
      */
-    #[DataProvider('provider_test_from_metric')]
-    public function test_from_metric(metric $metric, array $expected): void {
-        $instance = registered_metric::from_metric($metric);
-        $metricprop = new ReflectionProperty(registered_metric::class, 'metric');
-        self::assertSame($metric, $metricprop->getValue($instance));
-        if ($metric instanceof metric_config_provider) {
-            $defaultconfigprop = new ReflectionProperty(registered_metric::class, 'defaultconfig');
-            self::assertInstanceOf(test_simple_metric_config_minimal::class, $defaultconfigprop->getValue($instance));
+    #[DataProvider('provider_test___construct')]
+    public function test___construct(
+        metric $metric,
+        metric_record $record,
+        moodle_exception|null $exception = null,
+        string|null $debugging = null,
+    ): void {
+        if (!is_null($exception)) {
+            $this->expectExceptionObject($exception);
+            new registered_metric($metric, $record);
+            return;
         }
-        foreach ($expected as $name => $value) {
-            self::assertSame($value, $instance->$name, "Unexpected $name on the instance");
+        $instance = new registered_metric($metric, $record);
+        $defaultconfigprop = new ReflectionProperty(registered_metric::class, 'defaultconfig');
+        $defaultconfig = $defaultconfigprop->getValue($instance);
+        if ($metric instanceof metric_config_provider) {
+            self::assertEquals($metric->get_default_config(), $defaultconfig);
+            self::assertSame($instance->config, $record->config);
+        } else {
+            self::assertNull($defaultconfig);
+            self::assertNull($instance->config);
+        }
+        if (!is_null($debugging)) {
+            self::assertDebuggingCalled($debugging);
         }
     }
 
     /**
-     * Provides test data for the {@see test_from_metric} method.
+     * Provides test data for the {@see test___construct} method.
      *
      * @return array[] Arguments for the test method.
      */
-    public static function provider_test_from_metric(): array {
-        $defaults = [
-            'component'    => 'tool_monitoring',
-            'enabled'      => false,
-            'config'       => null,
-            'timecreated'  => null,
-            'timemodified' => null,
-            'usermodified' => null,
-            'id'           => null,
-        ];
+    public static function provider_test___construct(): array {
         return [
-            'Non-configurable metric' => [
+            'Metric and record inconsistent component' => [
                 'metric' => new test_metric(),
-                'expected' => ['name' => 'test_metric', ...$defaults],
+                'record' => new metric_record(component: 'bad', name: 'test_metric'),
+                'exception' => new coding_exception('Metric record does not match the provided metric.'),
             ],
-            'Configurable metric' => [
+            'Metric and record inconsistent name' => [
+                'metric' => new test_metric(),
+                'record' => new metric_record(component: 'tool_monitoring', name: 'bad'),
+                'exception' => new coding_exception('Metric record does not match the provided metric.'),
+            ],
+            'Metric and record consistent' => [
+                'metric' => new test_metric(),
+                'record' => metric_record::from_metric(new test_metric()),
+            ],
+            'Configurable metric and record consistent' => [
                 'metric' => new test_metric_with_config(),
-                'expected' => ['name' => 'test_metric_with_config', ...$defaults],
+                'record' => metric_record::from_metric(new test_metric_with_config()),
+            ],
+            'Non-configurable metric and non-null record config' => [
+                'metric' => new test_metric(),
+                'record' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric',
+                    config: '{"foo":"bar"}',
+                ),
+                'exception' => null,
+                'debugging' => 'Cannot set config on non-configurable metric: tool_monitoring_test_metric',
             ],
         ];
+    }
+
+    /**
+     * Tests the {@see registered_metric::__get} and {@see registered_metric::__isset} method.
+     *
+     * @throws coding_exception
+     */
+    public function test___get___isset(): void {
+        $metric = new test_metric();
+        $mocktags = [
+            'foo' => $this->createStub(metric_tag::class),
+            'bar' => $this->createStub(metric_tag::class),
+        ];
+        $instance = registered_metric::from_metric($metric, $mocktags);
+        self::assertTrue(isset($instance->description));
+        self::assertEquals($metric->get_description(), $instance->description);
+        self::assertTrue(isset($instance->qualifiedname));
+        self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
+        self::assertTrue(isset($instance->tags));
+        self::assertSame($mocktags, $instance->tags);
+        self::assertTrue(isset($instance->type));
+        self::assertSame($metric->get_type(), $instance->type);
+        self::assertTrue(isset($instance->name));
+        self::assertSame($metric->get_name(), $instance->name);
+
+        $instance = registered_metric::from_metric(new test_metric_with_config());
+        self::assertTrue(isset($instance->configclass));
+        self::assertSame(test_simple_metric_config_minimal::class, $instance->configclass);
     }
 
     /**
@@ -128,7 +185,7 @@ final class registered_metric_test extends advanced_testcase {
     public function test_get_for_metrics(array $indb, array $metrics, array $expected): void {
         global $DB;
         $this->resetAfterTest();
-        $DB->insert_records(registered_metric::TABLE, $indb);
+        $DB->insert_records(metric_record::TABLE, $indb);
         $instances = registered_metric::get_for_metrics(...$metrics);
         self::assertCount(count($expected), $instances);
         foreach ($expected as $qname => $properties) {
@@ -241,58 +298,88 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::insert_many} method.
+     * Tests the {@see registered_metric::get_or_register} method.
      *
+     * @param metric[] $metrics Metric instances to pass to the method.
+     * @param array<array<string, string>> $indb DB records to insert before calling the method.
+     * @param array<string, array<string, string>> $expected Arrays of expected instance properties of the returned objects indexed
+     *                                                       by qualified name.
      * @throws coding_exception
      * @throws dml_exception
      */
-    #[DataProvider('provider_test_insert_many')]
-    public function test_insert_many(array $metrics, array $expected): void {
+    #[DataProvider('provider_test_get_or_register')]
+    public function test_get_or_register(array $metrics, array $indb, array $expected): void {
         global $DB, $USER;
         $this->resetAfterTest();
-        registered_metric::insert_many(...$metrics);
-        $sqlqname = registered_metric::get_qualified_name_sql($DB);
-        $tablename = registered_metric::TABLE;
-        $sql = "SELECT $sqlqname, m.* FROM {{$tablename}} AS m";
-        $records = $DB->get_records_sql($sql);
-        self::assertSame(array_keys($expected), array_keys($records));
+        // Sanity check.
+        self::assertSame(0, $DB->count_records(metric_record::TABLE));
+        // Add pre-existing records.
+        $defaults = [
+            'timecreated'  => time() - 2000,
+            'timemodified' => time() - 1000,
+            'usermodified' => 1,
+        ];
+        $existing = [];
+        foreach ($indb as $toinsert) {
+            $existing[] = $DB->insert_record(metric_record::TABLE, $toinsert + $defaults);
+        }
+        $now = time();
+        // Do the thing.
+        $instances = registered_metric::get_or_register(...$metrics);
+        // The number of instances should be the same as the number of records in the DB table.
+        $expectedcount = count($expected);
+        $records = $DB->get_records(metric_record::TABLE);
+        self::assertCount($expectedcount, $instances);
+        self::assertCount($expectedcount, $records);
+        // Check that there is an instance for every metric and each of them has an ID.
+        foreach ($metrics as $metric) {
+            $qname = registered_metric::get_qualified_name($metric->get_component(), $metric->get_name());
+            self::assertArrayHasKey($qname, $instances);
+            self::assertNotNull($instances[$qname]->id);
+        }
         if (empty($expected)) {
             return;
         }
-        $time = reset($records)->timecreated;
-        foreach ($records as $qname => $record) {
-            $expectedrecord = $expected[$qname];
-            foreach ($expectedrecord as $field => $value) {
-                self::assertEquals($value, $record->$field, "Unexpected $field");
+        // Check that both the returned instances and the raw DB records are exactly as we expect them.
+        // To be extra sure, store already checked metric IDs.
+        $checkedids = [];
+        foreach ($expected as $qname => $properties) {
+            $instance = $instances[$qname] ?? null;
+            self::assertInstanceOf(registered_metric::class, $instance);
+            self::assertNotNull($instance->id);
+            self::assertNotContains($instance->id, $checkedids);
+            self::assertArrayHasKey($instance->id, $records);
+            $record = $records[$instance->id];
+            foreach ($properties as $name => $expectedvalue) {
+                self::assertEquals($expectedvalue, $record->$name, "Unexpected $name on $qname record");
+                self::assertEquals($expectedvalue, $instance->$name, "Unexpected $name on $qname instance");
             }
-            self::assertEquals($time, $record->timecreated);
-            self::assertEquals($time, $record->timemodified);
-            self::assertEquals($USER->id, $record->usermodified);
+            if (!in_array($instance->id, $existing)) {
+                self::assertGreaterThanOrEqual($now, $record->timecreated, "Unexpected timecreated on $qname record");
+                self::assertGreaterThanOrEqual($now, $record->timemodified, "Unexpected timemodified on $qname record");
+                self::assertEquals($USER->id, $record->usermodified, "Unexpected usermodified on $qname record");
+            }
+            $checkedids[] = $instance->id;
         }
     }
 
     /**
-     * Provides test data for the {@see test_insert_many} method.
+     * Provides test data for the {@see test_get_or_register} method.
      *
      * @return array[] Arguments for the test method.
      */
-    public static function provider_test_insert_many(): array {
-        $refconfig = new ReflectionProperty(registered_metric::class, 'config');
-        $metricdefault = registered_metric::from_metric(new test_metric());
-        $metricenabledwithconfig = registered_metric::from_metric(new test_metric_with_config());
-        $metricenabledwithconfig->enabled = true;
-        $refconfig->setValue($metricenabledwithconfig, '{"foo":"baz","spam":-1}');
-        $metricwithtimeanduser = registered_metric::from_metric(test_metric::create(name: 'test_metric_2'));
-        $metricwithtimeanduser->timecreated = 123;
-        $metricwithtimeanduser->timemodified = 456;
-        $metricwithtimeanduser->usermodified = 1;
+    public static function provider_test_get_or_register(): array {
         return [
             'No arguments' => [
                 'metrics' => [],
+                'indb' => [],
                 'expected' => [],
             ],
-            'Three metrics' => [
-                'metrics' => [$metricdefault, $metricenabledwithconfig, $metricwithtimeanduser],
+            'Empty DB before, one new metric' => [
+                'metrics' => [
+                    new test_metric(),
+                ],
+                'indb' => [],
                 'expected' => [
                     'tool_monitoring_test_metric' => [
                         'name'         => 'test_metric',
@@ -300,15 +387,38 @@ final class registered_metric_test extends advanced_testcase {
                         'enabled'      => false,
                         'config'       => null,
                     ],
-                    'tool_monitoring_test_metric_with_config' => [
-                        'name'         => 'test_metric_with_config',
+                ],
+            ],
+            '3 metrics; 1 already registered' => [
+                'metrics' => [
+                    test_metric::create('foo'),
+                    test_metric::create('bar'),
+                    test_metric::create('baz'),
+                ],
+                'indb' => [
+                    [
                         'component'    => 'tool_monitoring',
+                        'name'         => 'bar',
                         'enabled'      => true,
-                        'config'       => '{"foo":"baz","spam":-1}',
+                        'config'       => null,
                     ],
-                    'tool_monitoring_test_metric_2' => [
-                        'name'         => 'test_metric_2',
+                ],
+                'expected' => [
+                    'tool_monitoring_foo' => [
                         'component'    => 'tool_monitoring',
+                        'name'         => 'foo',
+                        'enabled'      => false,
+                        'config'       => null,
+                    ],
+                    'tool_monitoring_bar' => [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'bar',
+                        'enabled'      => true,
+                        'config'       => null,
+                    ],
+                    'tool_monitoring_baz' => [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'baz',
                         'enabled'      => false,
                         'config'       => null,
                     ],
@@ -318,25 +428,9 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the faulty path in the {@see registered_metric::set_config} method.
-     *
-     * @throws ReflectionException
-     */
-    public function test_set_config(): void {
-        $instance = registered_metric::from_metric(new test_metric());
-        // Sanity check.
-        self::assertNull($instance->config);
-        // Call the setter with a non-null value.
-        $refmethod = new ReflectionMethod(registered_metric::class, 'set_config');
-        $refmethod->invoke($instance, '{"foo":"bar"}');
-        // Ensure nothing was set and debugging call was issued.
-        self::assertNull($instance->config);
-        self::assertDebuggingCalled("Cannot set config on non-configurable metric: $instance->qualifiedname", DEBUG_DEVELOPER);
-    }
-
-    /**
      * Tests the {@see registered_metric::to_form_data} method.
      *
+     * @throws coding_exception
      * @throws metric_config_invalid
      */
     public function test_to_form_data(): void {
@@ -350,8 +444,12 @@ final class registered_metric_test extends advanced_testcase {
         $tagsprop = new ReflectionProperty(registered_metric::class, 'tags');
 
         // Test with regular metric.
-        $instance = registered_metric::from_metric(new test_metric());
-        $instance->enabled = true;
+        $record = new metric_record(
+            component: 'tool_monitoring',
+            name: 'test_metric',
+            enabled: true,
+        );
+        $instance = new registered_metric(new test_metric(), $record);
         $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
         $formdata = $instance->to_form_data();
         self::assertSame(
@@ -360,7 +458,11 @@ final class registered_metric_test extends advanced_testcase {
         );
 
         // Now with a configurable metric.
-        $instance = registered_metric::from_metric(new test_metric_with_config());
+        $record = new metric_record(
+            component: 'tool_monitoring',
+            name: 'test_metric_with_config',
+        );
+        $instance = new registered_metric(new test_metric_with_config(), $record);
         $tagsprop->setValue($instance, [$mocktag1, $mocktag2]);
         $formdata = $instance->to_form_data();
         self::assertSame(
@@ -378,6 +480,7 @@ final class registered_metric_test extends advanced_testcase {
      * Tests the {@see IteratorAggregate} implementation of the {@see registered_metric} class.
      *
      * @param iterable<metric_value>|metric_value $testvalues Metric values to be produced by the test metric.
+     * @throws coding_exception
      */
     #[DataProvider('provider_test_iterator')]
     public function test_iterator(iterable|metric_value $testvalues): void {
@@ -419,6 +522,7 @@ final class registered_metric_test extends advanced_testcase {
     /**
      * Tests the config passed by {@see registered_metric::getIterator} into {@see metric::calculate} and that it is cached.
      *
+     * @throws coding_exception
      * @throws ReflectionException
      */
     public function test_iterator_config_cache(): void {
@@ -494,27 +598,6 @@ final class registered_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see registered_metric::__get} and {@see registered_metric::__isset} method.
-     *
-     * @throws coding_exception
-     */
-    public function test___get___isset(): void {
-        $metric = new test_metric();
-        $instance = registered_metric::from_metric($metric);
-        self::assertTrue(isset($instance->qualifiedname));
-        self::assertSame(registered_metric::get_qualified_name($instance->component, $instance->name), $instance->qualifiedname);
-        self::assertTrue(isset($instance->description));
-        self::assertEquals($metric->get_description(), $instance->description);
-        self::assertTrue(isset($instance->type));
-        self::assertSame($metric->get_type(), $instance->type);
-        self::assertTrue(isset($instance->tags));
-        self::assertSame([], $instance->tags);
-        $instance = registered_metric::from_metric(new test_metric_with_config());
-        self::assertTrue(isset($instance->configclass));
-        self::assertSame(test_simple_metric_config_minimal::class, $instance->configclass);
-    }
-
-    /**
      * Tests the {@see registered_metric::persist_enabled_state} method.
      *
      * @param bool $from Initial enabled state.
@@ -529,34 +612,38 @@ final class registered_metric_test extends advanced_testcase {
     public function test_persist_enabled_state(bool $from, bool $to, array $events): void {
         global $DB, $USER;
         $this->resetAfterTest();
-        $metric = registered_metric::from_metric(new test_metric());
-        $metric->enabled = $from;
-        // Set modification time in the past and arbitrary user.
         $generator = $this->getDataGenerator();
+        // Set modification time in the past and arbitrary user.
         $creationtime = time() - 1000;
         $creationuser = (int) $generator->create_user()->id;
-        $metric->timecreated = $creationtime;
-        $metric->timemodified = $creationtime;
-        $metric->usermodified = $creationuser;
+        $record = new metric_record(
+            component: 'tool_monitoring',
+            name: 'test_metric',
+            enabled: $from,
+            timecreated: $creationtime,
+            timemodified: $creationtime,
+            usermodified: $creationuser,
+        );
         // Insert record manually.
-        $metric->id = self::insert($metric);
+        $record->id = $DB->insert_record(metric_record::TABLE, $record->to_array());
+        $instance = new registered_metric(new test_metric(), $record);
         // Intercept the event here.
         $eventsink = $this->redirectEvents();
-        $metric->persist_enabled_state($to);
+        $instance->persist_enabled_state($to);
         $eventsink->close();
         // Load updated record manually from the database.
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
-        self::assertSame($to, $metric->enabled);
-        self::assertEquals($to, (bool) $record->enabled);
+        $updatedrecord = $DB->get_record(metric_record::TABLE, ['id' => $record->id]);
+        self::assertSame($to, $instance->enabled);
+        self::assertEquals($to, (bool) $updatedrecord->enabled);
         // Check that metadata was updated.
-        self::assertEquals($record->timemodified, $metric->timemodified);
-        self::assertEquals($record->usermodified, $metric->usermodified);
+        self::assertEquals($updatedrecord->timemodified, $instance->timemodified);
+        self::assertEquals($updatedrecord->usermodified, $instance->usermodified);
         if ($from !== $to) {
-            self::assertGreaterThan($creationtime, $metric->timemodified);
-            self::assertSame($USER->id, $metric->usermodified);
+            self::assertGreaterThan($creationtime, $instance->timemodified);
+            self::assertSame($USER->id, $instance->usermodified);
         } else {
-            self::assertSame($creationtime, $metric->timemodified);
-            self::assertSame($creationuser, $metric->usermodified);
+            self::assertSame($creationtime, $instance->timemodified);
+            self::assertSame($creationuser, $instance->usermodified);
         }
         // Check that the events were triggered as expected.
         $actualevents = array_map(fn (base_event $event): string => $event::class, $eventsink->get_events());
@@ -600,7 +687,8 @@ final class registered_metric_test extends advanced_testcase {
     /**
      * Tests the {@see registered_metric::update_with_form_data} method.
      *
-     * @param registered_metric $metric Instance on which to call the method.
+     * @param metric $metric Metric to construct the test instance from.
+     * @param metric_record $metricrecord Record to construct the test instance from.
      * @param array<string, mixed> $formdata Passed as the argument to the method.
      * @param array<string, mixed> $expected Properties expected to be set after the call on both the instance and the DB record.
      * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
@@ -611,7 +699,8 @@ final class registered_metric_test extends advanced_testcase {
      */
     #[DataProvider('provider_test_update_with_form_data')]
     public function test_update_with_form_data(
-        registered_metric $metric,
+        metric $metric,
+        metric_record $metricrecord,
         array $formdata,
         array $expected,
         array $events = [],
@@ -621,26 +710,26 @@ final class registered_metric_test extends advanced_testcase {
         $generator = $this->getDataGenerator();
         // Set modification time in the past and arbitrary user.
         $creationtime = time() - 1000;
-        $newuserid = $generator->create_user()->id;
-        $metric->timecreated = $creationtime;
-        $metric->timemodified = $creationtime;
-        $metric->usermodified = $newuserid;
+        $newuserid = (int) $generator->create_user()->id;
+        $metricrecord->timecreated = $creationtime;
+        $metricrecord->timemodified = $creationtime;
+        $metricrecord->usermodified = $newuserid;
         // Insert record manually.
-        $metric->id = self::insert($metric);
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
+        $metricrecord->id = $DB->insert_record(metric_record::TABLE, $metricrecord->to_array());
+        $existingrecord = $DB->get_record(metric_record::TABLE, ['id' => $metricrecord->id]);
         // Do some sanity checks.
         $expectedbefore = [
-            'id'           => $metric->id,
-            'component'    => $metric->component,
-            'name'         => $metric->name,
-            'enabled'      => $metric->enabled,
-            'config'       => $metric->config,
+            'id'           => $metricrecord->id,
+            'component'    => $metricrecord->component,
+            'name'         => $metricrecord->name,
+            'enabled'      => $metricrecord->enabled,
+            'config'       => $metricrecord->config,
             'timecreated'  => $creationtime,
             'timemodified' => $creationtime,
             'usermodified' => $newuserid,
         ];
         foreach ($expectedbefore as $name => $value) {
-            self::assertEquals($value, $record->$name);
+            self::assertEquals($value, $existingrecord->$name);
         }
         // Unless otherwise specified, we expect the same properties.
         $expected += $expectedbefore;
@@ -651,26 +740,28 @@ final class registered_metric_test extends advanced_testcase {
         }
         // Intercept the event here.
         $eventsink = $this->redirectEvents();
-        $metric->update_with_form_data((object) $formdata);
+        // Create an instance and do the thing.
+        $instance = new registered_metric($metric, $metricrecord);
+        $instance->update_with_form_data((object) $formdata);
         $eventsink->close();
-        $record = $DB->get_record(registered_metric::TABLE, ['id' => $metric->id]);
+        $updatedrecord = $DB->get_record(metric_record::TABLE, ['id' => $metricrecord->id]);
         if (empty($events)) {
-            self::assertEquals($creationtime, $record->timemodified, "DB record timemodified unexpectedly changed");
+            self::assertEquals($creationtime, $updatedrecord->timemodified, "DB record timemodified unexpectedly changed");
         } else {
             // Time modified should have been updated.
-            self::assertGreaterThan($creationtime, $record->timemodified);
+            self::assertGreaterThan($creationtime, $updatedrecord->timemodified);
         }
         // Check that tags are consistent and as expected.
         if (isset($expected['tags'])) {
-            self::assertSame($expected['tags'], array_keys($metric->tags));
-            $tags = metric_tag::get_for_metric_ids($metric->id)[$metric->id];
+            self::assertSame($expected['tags'], array_keys($instance->tags));
+            $tags = metric_tag::get_for_metric_ids($metricrecord->id)[$metricrecord->id];
             self::assertSame($expected['tags'], array_keys($tags));
             unset($expected['tags']);
         }
         // Check the expected values.
         foreach ($expected as $name => $value) {
-            self::assertEquals($value, $record->$name, "Unexpected $name on DB record");
-            self::assertEquals($value, $metric->$name, "Unexpected $name on instance");
+            self::assertEquals($value, $updatedrecord->$name, "Unexpected $name on DB record");
+            self::assertEquals($value, $instance->$name, "Unexpected $name on instance");
         }
         // Check that the events were triggered as expected.
         $actualevents = array_map(fn (base_event $event): string => $event::class, $eventsink->get_events());
@@ -683,33 +774,34 @@ final class registered_metric_test extends advanced_testcase {
      * @return array[] Arguments for the test method.
      */
     public static function provider_test_update_with_form_data(): array {
-        $metricenabled = registered_metric::from_metric(new test_metric());
-        $metricenabled->enabled = true;
-        $configprop = new ReflectionProperty(registered_metric::class, 'config');
-        $getmetricwithconfig = function (bool $enabled = false, string|null $config = null) use ($configprop): registered_metric {
-            $metric = registered_metric::from_metric(new test_metric_with_config());
-            $metric->enabled = $enabled;
-            $configprop->setValue($metric, $config);
-            return $metric;
-        };
         return [
             'Enabled basic metric, nothing changed' => [
-                'metric'   => $metricenabled,
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric',
+                    enabled: true,
+                ),
+                'metric' => new test_metric(),
                 'formdata' => [
                     'enabled' => true,
-                    'tags' => [],
+                    'tags'    => [],
                 ],
                 'expected' => [
                     'config'  => null,
                     'enabled' => true,
                 ],
-                'events'   => [],
+                'events' => [],
             ],
             'Enabled basic metric, being disabled, arbitrary form data present' => [
-                'metric'   => $metricenabled,
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric',
+                    enabled: true,
+                ),
+                'metric' => new test_metric(),
                 'formdata' => [
                     'enabled' => false,
-                    'tags' => [],
+                    'tags'    => [],
                     'some'    => 'data',
                     'what'    => 'ever',
                 ],
@@ -717,15 +809,21 @@ final class registered_metric_test extends advanced_testcase {
                     'config'  => null,
                     'enabled' => false,
                 ],
-                'events'   => [
+                'events' => [
                     event\metric_disabled::class,
                 ],
             ],
             'Enabled configurable metric, nothing changed' => [
-                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric_with_config',
+                    enabled: true,
+                    config: '{"foo":"baz","spam":0}',
+                ),
+                'metric' => new test_metric_with_config(),
                 'formdata' => [
                     'enabled' => true,
-                    'tags' => [],
+                    'tags'    => [],
                     'foo'     => 'baz',
                     'spam'    => 0,
                 ],
@@ -733,15 +831,21 @@ final class registered_metric_test extends advanced_testcase {
                     'config'  => '{"foo":"baz","spam":0}',
                     'enabled' => true,
                 ],
-                'events'   => [],
+                'events' => [],
             ],
             'Enabled configurable metric, having config updated' => [
-                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric_with_config',
+                    enabled: true,
+                    config: '{"foo":"baz","spam":0}',
+                ),
+                'metric' => new test_metric_with_config(),
                 'formdata' => [
                     'enabled' => true,
-                    'tags' => [],
-                    'foo'  => 'quux',
-                    'spam' => -1,
+                    'tags'    => [],
+                    'foo'     => 'quux',
+                    'spam'    => -1,
                 ],
                 'expected' => [
                     'config' => '{"foo":"quux","spam":-1}',
@@ -751,10 +855,16 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Enabled configurable metric, being disabled' => [
-                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric_with_config',
+                    enabled: true,
+                    config: '{"foo":"baz","spam":0}',
+                ),
+                'metric' => new test_metric_with_config(),
                 'formdata' => [
                     'enabled' => false,
-                    'tags' => [],
+                    'tags'    => [],
                     'foo'     => 'baz',
                     'spam'    => 0,
                 ],
@@ -767,10 +877,15 @@ final class registered_metric_test extends advanced_testcase {
                 ],
             ],
             'Disabled configurable metric, being enabled' => [
-                'metric'   => $getmetricwithconfig(config: '{"foo":"baz","spam":0}'),
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric_with_config',
+                    config: '{"foo":"baz","spam":0}',
+                ),
+                'metric' => new test_metric_with_config(),
                 'formdata' => [
                     'enabled' => true,
-                    'tags' => [],
+                    'tags'    => [],
                     'foo'     => 'baz',
                     'spam'    => 0,
                 ],
@@ -778,15 +893,20 @@ final class registered_metric_test extends advanced_testcase {
                     'config'  => '{"foo":"baz","spam":0}',
                     'enabled' => true,
                 ],
-                'events'   => [
+                'events' => [
                     event\metric_enabled::class,
                 ],
             ],
             'Disabled configurable metric, being enabled and having config updated' => [
-                'metric'   => $getmetricwithconfig(config: '{"foo":"baz","spam":0}'),
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric_with_config',
+                    config: '{"foo":"baz","spam":0}',
+                ),
+                'metric' => new test_metric_with_config(),
                 'formdata' => [
                     'enabled' => true,
-                    'tags' => [],
+                    'tags'    => [],
                     'foo'     => 'bar',
                     'spam'    => 1,
                 ],
@@ -794,16 +914,22 @@ final class registered_metric_test extends advanced_testcase {
                     'config'  => '{"foo":"bar","spam":1}',
                     'enabled' => true,
                 ],
-                'events'   => [
+                'events' => [
                     event\metric_enabled::class,
                     event\metric_config_updated::class,
                 ],
             ],
             'Changing tags and updating config at the same time' => [
-                'metric'   => $getmetricwithconfig(enabled: true, config: '{"foo":"baz","spam":0}'),
+                'metricrecord' => new metric_record(
+                    component: 'tool_monitoring',
+                    name: 'test_metric_with_config',
+                    enabled: true,
+                    config: '{"foo":"baz","spam":0}',
+                ),
+                'metric' => new test_metric_with_config(),
                 'formdata' => [
                     'enabled' => true,
-                    'tags' => ['beans'],
+                    'tags'    => ['beans'],
                     'foo'     => 'bar',
                     'spam'    => 1,
                 ],
@@ -812,7 +938,7 @@ final class registered_metric_test extends advanced_testcase {
                     'enabled' => true,
                     'tags'    => ['beans'],
                 ],
-                'events'   => [
+                'events' => [
                     tag_created::class,
                     tag_added::class,
                     event\metric_config_updated::class,
@@ -821,16 +947,24 @@ final class registered_metric_test extends advanced_testcase {
         ];
     }
 
+    /**
+     * Tests the {@see registered_metric::prepare_to_cache} method.
+     *
+     * @throws coding_exception
+     */
     public function test_prepare_to_cache(): void {
-        $instance = registered_metric::from_metric(new metrics\user_accounts());
-        $instance->id = 42;
-        $instance->enabled = true;
-        $instance->timecreated = 123;
-        $instance->timemodified = 456;
-        $instance->usermodified = 789;
+        $record = new metric_record(
+            component: 'tool_monitoring',
+            name: 'user_accounts',
+            enabled: true,
+            timecreated: 123,
+            timemodified: 456,
+            usermodified: 789,
+            id: 42,
+        );
+        $instance = new registered_metric(new metrics\user_accounts(), $record);
         $output = $instance->prepare_to_cache();
         self::assertSame([
-            'id'           => 42,
             'component'    => 'tool_monitoring',
             'name'         => 'user_accounts',
             'enabled'      => true,
@@ -838,6 +972,7 @@ final class registered_metric_test extends advanced_testcase {
             'timecreated'  => 123,
             'timemodified' => 456,
             'usermodified' => 789,
+            'id'           => 42,
             'tags'         => [],
         ], $output);
     }
@@ -968,18 +1103,5 @@ final class registered_metric_test extends advanced_testcase {
                 'debugging' => "Unexpected cache fields for registered_metric 1: unexpected, even_more",
             ],
         ];
-    }
-
-    /**
-     * Inserts the metric into the DB for setup purposes.
-     *
-     * @return int New record ID.
-     * @throws dml_exception
-     * @throws ReflectionException
-     */
-    private static function insert(registered_metric $metric): int {
-        global $DB;
-        $todb = (new ReflectionMethod(registered_metric::class, 'to_db'))->invoke($metric);
-        return $DB->insert_record(registered_metric::TABLE, $todb);
     }
 }

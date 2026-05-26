@@ -33,7 +33,6 @@ namespace tool_monitoring\local;
 
 use advanced_testcase;
 use core\exception\coding_exception;
-use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use tool_monitoring\local\metrics\quiz_attempts_in_progress;
 use tool_monitoring\local\metrics\user_accounts;
@@ -57,7 +56,6 @@ final class metrics_cache_test extends advanced_testcase {
      * Tests that {@see metrics_cache::set} with positional args uses the metric's qualified name as the cache key.
      *
      * @throws coding_exception
-     * @throws JsonException
      */
     public function test_set_uses_qualified_name_for_positional_args(): void {
         $this->resetAfterTest();
@@ -72,7 +70,6 @@ final class metrics_cache_test extends advanced_testcase {
      * Tests that {@see metrics_cache::set} with named args uses the arg name rather than the metric's qualified name as cache key.
      *
      * @throws coding_exception
-     * @throws JsonException
      */
     public function test_set_uses_provided_key_for_named_args(): void {
         $this->resetAfterTest();
@@ -89,7 +86,6 @@ final class metrics_cache_test extends advanced_testcase {
      * A miss triggers the data source, which returns `null` for any key not matching a collected metric.
      *
      * @throws coding_exception
-     * @throws JsonException
      */
     public function test_get(): void {
         $this->resetAfterTest();
@@ -103,7 +99,6 @@ final class metrics_cache_test extends advanced_testcase {
      * Tests that {@see metrics_cache::get_many} returns cached instances for hits and `null` for misses.
      *
      * @throws coding_exception
-     * @throws JsonException
      */
     public function test_get_many(): void {
         $this->resetAfterTest();
@@ -125,7 +120,6 @@ final class metrics_cache_test extends advanced_testcase {
      * Tests the {@see metrics_cache::delete} method.
      *
      * @throws coding_exception
-     * @throws JsonException
      */
     public function test_delete(): void {
         $this->resetAfterTest();
@@ -145,7 +139,6 @@ final class metrics_cache_test extends advanced_testcase {
      * Tests that {@see metrics_cache::purge} clears all entries and returns true.
      *
      * @throws coding_exception
-     * @throws JsonException
      */
     public function test_purge(): void {
         $this->resetAfterTest();

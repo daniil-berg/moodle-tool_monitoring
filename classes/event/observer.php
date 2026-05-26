@@ -37,6 +37,7 @@ use core\event\tag_updated;
 use core\exception\coding_exception;
 use core_cache\cache;
 use dml_exception;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics_cache;
 use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metric;
@@ -71,7 +72,7 @@ final class observer {
             return;
         }
         $sqlqname = registered_metric::get_qualified_name_sql($DB);
-        $qname = $DB->get_field(registered_metric::TABLE, $sqlqname, ['id' => $event->other['itemid']]);
+        $qname = $DB->get_field(metric_record::TABLE, $sqlqname, ['id' => $event->other['itemid']]);
         metrics_cache::delete($qname);
     }
 

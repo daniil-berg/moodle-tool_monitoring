@@ -41,6 +41,7 @@ use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics_cache;
 
 /**
@@ -152,8 +153,6 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * Ensures that a corresponding entry in the database exists for every unique metric in the collection (per qualified name).
      * Optionally deletes every database entry that does not correspond to any metric in the collection.
      *
-     * This function issues exactly three `SELECT`, one `DELETE` (optional), and one `INSERT` queries.
-     *
      * @param bool $delete If `true`, deletes every database entry that does not correspond to any metric in the collection, and
      *                     triggers individual deletion events for all deleted database records.
      * @return $this Same instance.
@@ -166,42 +165,18 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         $collection = $this->validate_collection();
         try {
             $transaction = $DB->start_delegated_transaction();
-            // Get a `registered_metric` instance for every metric we collected.
-            // Some may have no DB record and thus a `null` ID; those will need to be inserted.
-            $metrics = registered_metric::get_for_metrics(...$collection);
-            // Prepare records for insertion and remember the existing IDs of collected-and-registered metrics.
-            $existingids = [];
-            $toinsert = [];
-            foreach ($metrics as $qname => $metric) {
-                if (is_null($metric->id)) {
-                    $toinsert[$qname] = $metric;
-                } else {
-                    $existingids[] = $metric->id;
-                }
-            }
-            registered_metric::insert_many(...$toinsert);
-            // Fetch all records that we did not get before.
-            // These should only be newly inserted ones (if any) and orphans (without a collected metric).
-            [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
-            $sqlqname = registered_metric::get_qualified_name_sql($DB);
-            $otherids = $DB->get_records_select_menu(
-                table:  registered_metric::TABLE,
-                select: "id $notexistingsql",
-                params: $notexistingparams,
-                fields: "$sqlqname AS qname, id",
-            );
-            // Assign the newly inserted IDs and remove them from the array.
-            foreach (array_keys($toinsert) as $qname) {
-                $metrics[$qname]->id = $otherids[$qname];
-                unset($otherids[$qname]);
-            }
-            // At this point `$otherids` should only contain orphan IDs.
+            $metrics = registered_metric::get_or_register(...$collection);
             if ($delete) {
-                foreach ($otherids as $id) {
+                [$orphansql, $orphanparams] = $DB->get_in_or_equal(
+                    items: array_column($metrics, 'id'),
+                    equal: false,
+                    onemptyitems: null,
+                );
+                $orphanids = $DB->get_fieldset_select(metric_record::TABLE, 'id', "id $orphansql", $orphanparams);
+                foreach ($orphanids as $id) {
                     metric_tag::remove_all_for_metric($id);
                 }
-                [$orphansql, $orphanparams] = $DB->get_in_or_equal($otherids, onemptyitems: null);
-                $DB->delete_records_select(registered_metric::TABLE, "id $orphansql", $orphanparams);
+                $DB->delete_records_select(metric_record::TABLE, "id $orphansql", $orphanparams);
                 // TODO: Trigger individual deletion events here.
             }
             $transaction->allow_commit();
@@ -322,6 +297,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      *
      * @param string $key Qualified name of the metric to fetch.
      * @return registered_metric|null Metric instance or `null` if no matching metric was not found in the DB.
+     * @throws coding_exception Should never happen.
      * @throws dml_exception
      */
     #[\Override]
@@ -339,6 +315,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * @param string[] $keys Qualified names of the metrics to fetch.
      * @return array<string, registered_metric|null> Associative array indexed with `$keys` mapped to {@see registered_metric}
      *                                               instances or `null` if no matching metric was not found in the DB.
+     * @throws coding_exception Should never happen.
      * @throws dml_exception
      */
     #[\Override]

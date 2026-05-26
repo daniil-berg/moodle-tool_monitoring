@@ -43,6 +43,7 @@ use core_cache\cache;
 use dml_exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\local\metric_record;
 use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metric;
 
@@ -70,7 +71,7 @@ final class observer_test extends advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         // Insert actual record so the early-return can actually prevent something.
-        $metricid = $DB->insert_record(registered_metric::TABLE, [
+        $metricid = $DB->insert_record(metric_record::TABLE, [
             'component'    => 'tool_monitoring',
             'name'         => 'test_metric',
             'enabled'      => false,
@@ -112,7 +113,7 @@ final class observer_test extends advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         // Insert an actual metric record.
-        $metricid = $DB->insert_record(registered_metric::TABLE, [
+        $metricid = $DB->insert_record(metric_record::TABLE, [
             'component'    => 'tool_monitoring',
             'name'         => 'test_metric',
             'enabled'      => false,

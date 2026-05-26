@@ -45,7 +45,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\metric_tag;
-use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see observer} class.
@@ -79,7 +78,7 @@ final class observer_test extends advanced_testcase {
             'timemodified' => 1,
             'usermodified' => 1,
         ]);
-        $qname = registered_metric::get_qualified_name('tool_monitoring', 'test_metric');
+        $qname = metric_record::get_qualified_name('tool_monitoring', 'test_metric');
         // Insert an arbitrary sentinel value into the cache in place of the actual metric for simplicity.
         $cache = cache::make('tool_monitoring', 'metrics');
         $cache->set($qname, 'sentinel');
@@ -121,7 +120,7 @@ final class observer_test extends advanced_testcase {
             'timemodified' => 1,
             'usermodified' => 1,
         ]);
-        $qname = registered_metric::get_qualified_name('tool_monitoring', 'test_metric');
+        $qname = metric_record::get_qualified_name('tool_monitoring', 'test_metric');
         // Insert an arbitrary sentinel value into the cache in place of the actual metric for simplicity.
         $cache = cache::make('tool_monitoring', 'metrics');
         $cache->set($qname, 'sentinel');

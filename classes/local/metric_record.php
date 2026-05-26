@@ -31,6 +31,7 @@ namespace tool_monitoring\local;
 
 use core\exception\coding_exception;
 use dml_exception;
+use moodle_database;
 use stdClass;
 use tool_monitoring\metric;
 use tool_monitoring\registered_metric;
@@ -186,5 +187,25 @@ final class metric_record {
         $this->usermodified = $usermodified ?? $USER->id;
         $data = ['id' => $this->id] + $this->to_array([...$fields, 'timemodified', 'usermodified']);
         $DB->update_record(self::TABLE, $data);
+    }
+
+    /**
+     * Derives a qualified name from the provided component and name.
+     *
+     * @param string $component Moodle component.
+     * @param string $name Entity name.
+     * @return string Qualified name.
+     */
+    public static function get_qualified_name(string $component, string $name): string {
+        return "{$component}_$name";
+    }
+
+    /**
+     * Returns the proper SQL snippet to construct the qualified name.
+     *
+     * @return string Qualified name SQL.
+     */
+    public static function get_qualified_name_sql(moodle_database $db): string {
+        return $db->sql_concat_join(separator: "'_'", elements: ['component', 'name']);
     }
 }

@@ -40,7 +40,6 @@ use dml_exception;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics_cache;
 use tool_monitoring\metric_tag;
-use tool_monitoring\registered_metric;
 
 /**
  * Provides callbacks for events observed by the plugin.
@@ -71,7 +70,7 @@ final class observer {
         if ($event->other['itemtype'] !== metric_tag::ITEM_TYPE) {
             return;
         }
-        $sqlqname = registered_metric::get_qualified_name_sql($DB);
+        $sqlqname = metric_record::get_qualified_name_sql($DB);
         $qname = $DB->get_field(metric_record::TABLE, $sqlqname, ['id' => $event->other['itemid']]);
         metrics_cache::delete($qname);
     }

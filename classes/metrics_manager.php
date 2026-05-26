@@ -136,7 +136,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         $tags = metric_tag::get_all_with_names(...$tagnames);
         $qnames = [];
         foreach ($this->collection as $metric) {
-            $qnames[] = registered_metric::get_qualified_name($metric->get_component(), $metric->get_name());
+            $qnames[] = metric_record::get_qualified_name($metric->get_component(), $metric->get_name());
         }
         return array_filter(
             metrics_cache::get_many(...$qnames),
@@ -323,7 +323,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         $output = array_fill_keys($keys, null);
         $metrics = [];
         foreach ($this->collection as $metric) {
-            $qname = registered_metric::get_qualified_name($metric->get_component(), $metric->get_name());
+            $qname = metric_record::get_qualified_name($metric->get_component(), $metric->get_name());
             if (array_key_exists($qname, $output)) {
                 $metrics[$qname] = $metric;
             }

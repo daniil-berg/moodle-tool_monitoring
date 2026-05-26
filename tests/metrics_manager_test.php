@@ -45,6 +45,7 @@ use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\exceptions\tool_monitoring_exception;
 use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\test_metric;
@@ -429,7 +430,7 @@ final class metrics_manager_test extends advanced_testcase {
      * @param array<string, mixed>[] $registered Associative arrays of data to insert into the {@see metric_record::TABLE}
      *                                           before calling the tested function.
      * @param array<string, array<string, mixed>> $expected Associative arrays of property name-value-pairs expected to be present
-     *                                                      on the {@see registered_metric} instances as well as on the
+     *                                                      on the {@see managed_metric} instances as well as on the
      *                                                      corresponding raw database records. Indexed by qualified name.
      * @param bool $delete Passed to the tested method; `false` by default.
      * @throws coding_exception
@@ -472,7 +473,7 @@ final class metrics_manager_test extends advanced_testcase {
         $checkedids = [];
         foreach ($expected as $qname => $properties) {
             $metric = $metrics[$qname] ?? null;
-            self::assertInstanceOf(registered_metric::class, $metric);
+            self::assertInstanceOf(managed_metric::class, $metric);
             self::assertNotNull($metric->id);
             self::assertNotContains($metric->id, $checkedids);
             self::assertArrayHasKey($metric->id, $records);
@@ -710,7 +711,7 @@ final class metrics_manager_test extends advanced_testcase {
         $qname = 'tool_monitoring_foo';
         self::assertTrue(isset($manager[$qname]));
         $metric = $manager[$qname];
-        self::assertInstanceOf(registered_metric::class, $metric);
+        self::assertInstanceOf(managed_metric::class, $metric);
         self::assertSame($qname, $metric->qualifiedname);
         // Ensure we cannot unset a metric.
         $this->expectException(coding_exception::class);

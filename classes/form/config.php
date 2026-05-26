@@ -35,9 +35,9 @@ use dml_exception;
 use JsonException;
 use moodleform;
 use tool_monitoring\exceptions\metric_config_invalid;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\metric_config_form_aware;
 use tool_monitoring\metric_tag;
-use tool_monitoring\registered_metric;
 
 // @codeCoverageIgnoreStart
 defined('MOODLE_INTERNAL') || die();
@@ -59,17 +59,17 @@ require_once("$CFG->libdir/formslib.php");
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class config extends moodleform {
-    /** @var registered_metric Metric for which this form is defined; set in the {@see definition} method. */
-    private registered_metric $metric;
+    /** @var managed_metric Metric for which this form is defined; set in the {@see definition} method. */
+    private managed_metric $metric;
 
     /**
      * Returns a new instance for configuring the specified metric.
      *
-     * @param registered_metric $metric Metric for which to return the form.
+     * @param managed_metric $metric Metric for which to return the form.
      * @return self New config form instance.
      * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
-    public static function for_metric(registered_metric $metric): self {
+    public static function for_metric(managed_metric $metric): self {
         global $PAGE;
         $form = new self(action: $PAGE->url, customdata: ['metric' => $metric]);
         $form->set_data($metric->to_form_data());

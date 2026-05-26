@@ -40,6 +40,7 @@ use dml_exception;
 use moodle_url;
 use stdClass;
 use tool_monitoring\exceptions\tag_not_found;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metric_record;
 use Traversable;
 
@@ -174,13 +175,13 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
      *
      * Only actually performs DB queries if tags were either added, removed, or their order changed.
      *
-     * @param int|registered_metric $metric Either the ID of the metric or the metric instance.
+     * @param int|managed_metric $metric Either the ID of the metric or the metric instance.
      * @param string ...$tagnames Names of tags to set.
      * @throws coding_exception
      * @throws dml_exception
      */
-    public static function set_for_metric(int|registered_metric $metric, string ...$tagnames): void {
-        if ($metric instanceof registered_metric) {
+    public static function set_for_metric(int|managed_metric $metric, string ...$tagnames): void {
+        if ($metric instanceof managed_metric) {
             $metric = $metric->id;
         }
         parent::set_item_tags(
@@ -195,11 +196,11 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
     /**
      * Removes all tags from the given metric.
      *
-     * @param int|registered_metric $metric Either the ID of the metric or the metric instance.
+     * @param int|managed_metric $metric Either the ID of the metric or the metric instance.
      * @throws dml_exception
      */
-    public static function remove_all_for_metric(int|registered_metric $metric): void {
-        if ($metric instanceof registered_metric) {
+    public static function remove_all_for_metric(int|managed_metric $metric): void {
+        if ($metric instanceof managed_metric) {
             $metric = $metric->id;
         }
         parent::remove_all_item_tags(

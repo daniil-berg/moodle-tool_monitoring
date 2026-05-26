@@ -37,8 +37,8 @@ use core\output\renderer_base;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use tool_monitoring\exceptions\metric_config_invalid;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\testing\test_metric;
-use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see configure} class.
@@ -67,7 +67,7 @@ final class configure_test extends advanced_testcase {
      */
     public function test_all_methods(): void {
         global $PAGE;
-        $metric = registered_metric::from_metric(new test_metric());
+        $metric = managed_metric::from_metric(new test_metric());
         $PAGE->set_url('/admin/tool/monitoring/configure.php', ['metric' => $metric->qualifiedname]);
         $configure = new configure($metric);
         $mockrenderer = $this->createMock(renderer_base::class);

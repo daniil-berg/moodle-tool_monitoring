@@ -39,9 +39,9 @@ use core\lang_string;
 use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
-use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see metric_event} class and its subclasses.
@@ -64,7 +64,7 @@ final class metric_event_test extends advanced_testcase {
      * Tests all methods of the {@see metric_event} class and its subclasses.
      *
      * @param class-string<metric_event> $eventclass Name of the event class to test.
-     * @param registered_metric $metric Metric to pass to the {@see metric_event::for_metric `for_metric`} constructor.
+     * @param managed_metric $metric Metric to pass to the {@see metric_event::for_metric `for_metric`} constructor.
      * @param string $crud Expected value of the {@see metric_event::$crud `crud`} property.
      * @param string $nameid String ID of the expected language string from the {@see metric_event::get_name `get_name`} method.
      * @param string $description Expected output of the {@see metric_event::get_description `get_description`} method.
@@ -73,7 +73,7 @@ final class metric_event_test extends advanced_testcase {
     #[DataProvider('provider_test_all_methods')]
     public function test_all_methods(
         string $eventclass,
-        registered_metric $metric,
+        managed_metric $metric,
         string $crud,
         string $nameid,
         string $description,
@@ -105,7 +105,7 @@ final class metric_event_test extends advanced_testcase {
      */
     public static function provider_test_all_methods(): array {
         global $USER;
-        $metric = registered_metric::from_metric(new test_metric());
+        $metric = managed_metric::from_metric(new test_metric());
         return [
             [
                 'eventclass'  => metric_config_updated::class,

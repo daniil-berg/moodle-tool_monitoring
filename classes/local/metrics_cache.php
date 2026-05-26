@@ -32,12 +32,11 @@ namespace tool_monitoring\local;
 use core\exception\coding_exception;
 use core_cache\application_cache;
 use core_cache\cache;
-use tool_monitoring\registered_metric;
 
 /**
  * Internal cache manager for registered metrics.
  *
- * This class is just a wrapper around methods of the {@see cache} class, specifically for {@see registered_metric} objects, for
+ * This class is just a wrapper around methods of the {@see cache} class, specifically for {@see managed_metric} objects, for
  * added convenience and type safety. **It is not part of the public API.**
  *
  * @package    tool_monitoring
@@ -54,10 +53,10 @@ final class metrics_cache {
      * Returns the metric with the specified qualified name from the cache.
      *
      * @param string $qualifiedname Qualified name of the metric to retrieve.
-     * @return registered_metric|null Metric with the specified qualified name, or `null` if no such metric is registered.
+     * @return managed_metric|null Metric with the specified qualified name, or `null` if no such metric is registered.
      * @throws coding_exception
      */
-    public static function get(string $qualifiedname): registered_metric|null {
+    public static function get(string $qualifiedname): managed_metric|null {
         return self::make()->get($qualifiedname);
     }
 
@@ -65,7 +64,7 @@ final class metrics_cache {
      * Returns the metrics with the specified qualified names from the cache.
      *
      * @param string ...$qualifiednames Qualified names of the metrics to retrieve.
-     * @return array<string, registered_metric|null> Associative array of `$qualifiednames` mapped to {@see registered_metric}
+     * @return array<string, managed_metric|null> Associative array of `$qualifiednames` mapped to {@see managed_metric}
      *                                               instances and `null` for where no such metrics are registered.
      * @throws coding_exception
      */
@@ -76,11 +75,11 @@ final class metrics_cache {
     /**
      * Adds/updates the specified metrics in the cache.
      *
-     * @param registered_metric ...$metrics Metrics to cache. If named arguments are passed, those keys **must** match the qualified
+     * @param managed_metric ...$metrics Metrics to cache. If named arguments are passed, those keys **must** match the qualified
      *                                      names of the metrics.
      * @throws coding_exception
      */
-    public static function set(registered_metric ...$metrics): void {
+    public static function set(managed_metric ...$metrics): void {
         if (array_is_list($metrics)) {
             $metrics = array_column($metrics, null, 'qualifiedname');
         }

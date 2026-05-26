@@ -41,6 +41,7 @@ use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\exceptions\tag_not_found;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_metric_with_config;
@@ -181,7 +182,7 @@ final class metric_tag_test extends advanced_testcase {
         [
             'tool_monitoring_test_metric' => $metric1,
             'tool_monitoring_test_metric_with_config' => $metric2,
-        ] = registered_metric::get_for_metrics(new test_metric(), new test_metric_with_config());
+        ] = managed_metric::get_for_metrics(new test_metric(), new test_metric_with_config());
         // Assign tag instances.
         metric_tag::set_for_metric($metric1->id, 'foo', 'bar');
         metric_tag::set_for_metric($metric2, 'bar', 'baz');

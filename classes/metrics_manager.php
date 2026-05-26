@@ -41,6 +41,7 @@ use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\hook\metric_collection;
+use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\metrics_cache;
 
@@ -49,7 +50,7 @@ use tool_monitoring\local\metrics_cache;
  *
  * Registers new {@see metric}s picked up by the {@see metric_collection} hook and provides access to registered ones.
  *
- * Provides array-like subscript access to {@see registered_metric} instances by their qualified name.
+ * Provides array-like subscript access to {@see managed_metric} instances by their qualified name.
  * (See the {@see self::offsetExists `offsetExists`} and {@see self::offsetGet `offsetGet`} methods.)
  * **NOTE**: Access is read-only. Metrics cannot be added to or removed from the manager directly.
  *
@@ -112,7 +113,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * Will _not_ produce metrics that are not (yet) registered in the database, even if they were picked up by the
      * {@see metric_collection} hook. To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
      *
-     * Implementation detail: Tries to load {@see registered_metric} instances for all metrics in the collection from the cache
+     * Implementation detail: Tries to load {@see managed_metric} instances for all metrics in the collection from the cache
      * first. Since the {@see metrics_manager} is defined as the cache data source, cache misses will trigger the
      * {@see self::load_many_for_cache `load_many_for_cache`} method, which will query the database for the missing metrics and also
      * automatically update the cache afterwards.
@@ -123,7 +124,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      *                           passing `null` (default) disables this filter.
      * @param string[] $tagnames Names of tags to filter by. Only metrics that carry all the specified tags will be returned.
      *                           Names will be normalized before looking up the tags. An empty array (default) disables this filter.
-     * @return array<string, registered_metric> Registered metrics indexed by their qualified name.
+     * @return array<string, managed_metric> Registered metrics indexed by their qualified name.
      * @throws coding_exception
      * @throws dml_exception
      * @throws tag_not_found At least one of the provided `$tagnames` does not match any existing metric tag.
@@ -140,7 +141,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         }
         return array_filter(
             metrics_cache::get_many(...$qnames),
-            fn (registered_metric|null $cachedmetric): bool
+            fn (managed_metric|null $cachedmetric): bool
             => !is_null($cachedmetric)
                && (is_null($enabled) || $cachedmetric->enabled === $enabled)
                && !array_diff_key($tags, $cachedmetric->tags),
@@ -165,7 +166,7 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         $collection = $this->validate_collection();
         try {
             $transaction = $DB->start_delegated_transaction();
-            $metrics = registered_metric::get_or_register(...$collection);
+            $metrics = managed_metric::get_or_register(...$collection);
             if ($delete) {
                 [$orphansql, $orphanparams] = $DB->get_in_or_equal(
                     items: array_column($metrics, 'id'),
@@ -237,18 +238,18 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * Will _not_ return a metric not (yet) registered in the database, even if it was picked up by the {@see metric_collection}
      * hook. To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
      *
-     * Implementation detail: Tries to load the requested {@see registered_metric} instance from the cache first.
+     * Implementation detail: Tries to load the requested {@see managed_metric} instance from the cache first.
      * Since the {@see metrics_manager} is defined as the cache data source, a cache miss will trigger the
      * {@see self::load_for_cache `load_for_cache`} method, which will query the database for the missing metric and also
      * automatically update the cache afterwards.
      *
      * @param string $offset Qualified name of the metric to return.
-     * @return registered_metric Metric with the given qualified name.
+     * @return managed_metric Metric with the given qualified name.
      * @throws coding_exception
      * @throws metric_not_found No metric with the given qualified name is registered.
      */
     #[\Override]
-    public function offsetGet(mixed $offset): registered_metric {
+    public function offsetGet(mixed $offset): managed_metric {
         if (is_null($metric = metrics_cache::get($offset))) {
             throw new metric_not_found($offset);
         }
@@ -290,30 +291,30 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
     }
 
     /**
-     * Fetches a {@see registered_metric} instance with the given qualified name from the DB.
+     * Fetches a {@see managed_metric} instance with the given qualified name from the DB.
      *
      * Implementation detail: This method facilitates null-caching if the key either does not match any collected metric or refers
      * to a metric that has not (yet) been registered in the database.
      *
      * @param string $key Qualified name of the metric to fetch.
-     * @return registered_metric|null Metric instance or `null` if no matching metric was not found in the DB.
+     * @return managed_metric|null Metric instance or `null` if no matching metric was not found in the DB.
      * @throws coding_exception Should never happen.
      * @throws dml_exception
      */
     #[\Override]
-    public function load_for_cache($key): registered_metric|null {
+    public function load_for_cache($key): managed_metric|null {
         $metrics = $this->load_many_for_cache([$key]);
         return $metrics[$key];
     }
 
     /**
-     * Fetches {@see registered_metric} instances with the given qualified names from the DB.
+     * Fetches {@see managed_metric} instances with the given qualified names from the DB.
      *
      * Implementation detail: This method facilitates null-caching for keys that either do not match any collected metric and those
      * that refer to metrics that have not (yet) been registered in the database.
      *
      * @param string[] $keys Qualified names of the metrics to fetch.
-     * @return array<string, registered_metric|null> Associative array indexed with `$keys` mapped to {@see registered_metric}
+     * @return array<string, managed_metric|null> Associative array indexed with `$keys` mapped to {@see managed_metric}
      *                                               instances or `null` if no matching metric was not found in the DB.
      * @throws coding_exception Should never happen.
      * @throws dml_exception
@@ -329,8 +330,8 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
             }
         }
         $registeredmetrics = array_filter(
-            array:    registered_metric::get_for_metrics(...$metrics), // The function discards variadic argument names.
-            callback: fn (registered_metric $registeredmetric): bool => !is_null($registeredmetric->id),
+            array:    managed_metric::get_for_metrics(...$metrics), // The function discards variadic argument names.
+            callback: fn (managed_metric $registeredmetric): bool => !is_null($registeredmetric->id),
         );
         return array_merge($output, $registeredmetrics);
     }

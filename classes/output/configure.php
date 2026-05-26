@@ -36,7 +36,7 @@ use core\output\templatable;
 use JsonException;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\form\config as config_form;
-use tool_monitoring\registered_metric;
+use tool_monitoring\local\managed_metric;
 
 /**
  * Provides a configuration form for a specified metric.
@@ -57,10 +57,10 @@ final readonly class configure implements renderable, templatable {
     /**
      * Instantiates the underlying {@see config_form} for the specified metric.
      *
-     * @param registered_metric $metric Metric for which to render the config form.
+     * @param managed_metric $metric Metric for which to render the config form.
      * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
-    public function __construct(registered_metric $metric) {
+    public function __construct(managed_metric $metric) {
         $this->form = config_form::for_metric($metric);
     }
 
@@ -72,7 +72,7 @@ final readonly class configure implements renderable, templatable {
      * @return bool `true` if the form was processed (either submitted or canceled); `false` otherwise.
      *
      * @throws moodle_exception
-     * @throws JsonException The {@see registered_metric::config} could not be serialized.
+     * @throws JsonException The {@see managed_metric::config} could not be serialized.
      */
     public function process_form(): bool {
         if ($this->form->is_cancelled()) {

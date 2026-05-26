@@ -28,7 +28,7 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
 - [Architecture](#architecture)
   - [Base `metric` class](#base-metric-class)
   - [Hook `metric_collection`](#hook-metric_collection)
-  - [DB table and `registered_metric` wrapper](#db-table-and-registered_metric-wrapper)
+  - [DB table and `registered_metric` interface](#db-table-and-registered_metric-interface)
   - [Central `metrics_manager`](#central-metrics_manager)
   - [Configurable metrics (advanced)](#configurable-metrics-advanced)
   - [Exporter sub-plugins](#exporter-sub-plugins)
@@ -621,11 +621,11 @@ For a `metric` subclass to find its way into the monitoring toolchain, it needs 
 It only allows `metric` instances to be _added_ and already collected ones to be _iterated_ over.
 For convenience, the static `metric::collect` method can be used as the [hook callback][moodle docs hook callback], but you can use the `metric_collection` just like any other [hook instance][moodle docs hook instance].
 
-### DB table and `registered_metric` wrapper
+### DB table and `registered_metric` interface
 
 To allow all metrics to be individually enabled/disabled and more [advanced metrics](#configurable-metrics-advanced) to have their own persistent configuration, each concrete metric is associated with a row in the `tool_monitoring_metrics` database table.
 
-The [`registered_metric`][. registered_metric] class is a wrapper for metrics managed by `tool_monitoring` and maps instances to rows in the database table.
+The [`registered_metric`][. registered_metric] interface represents metrics managed by `tool_monitoring` and maps instances to rows in the database table.
 It implements the `IteratorAggregate` interface and iterating over an instance will call the `calculate` method of the underlying `metric` and pass through the value(s).
 
 ### Central `metrics_manager`

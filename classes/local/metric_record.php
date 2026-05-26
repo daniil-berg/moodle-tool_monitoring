@@ -34,6 +34,7 @@ use dml_exception;
 use moodle_database;
 use stdClass;
 use tool_monitoring\metric;
+use tool_monitoring\registered_metric;
 
 /**
  * Represents entries in the {@see self::TABLE `TABLE`} database table.
@@ -42,7 +43,7 @@ use tool_monitoring\metric;
  * {@see self::$timemodified `timemodified`} and {@see self::$usermodified `usermodified`} if not explicitly set.
  *
  * **This class is not part of the public API.**
- * Use {@see managed_metric} instead.
+ * Use the {@see registered_metric} interface instead.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp

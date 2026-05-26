@@ -49,6 +49,7 @@ use tool_monitoring\metric_config_provider;
 use tool_monitoring\metric_tag;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
+use tool_monitoring\registered_metric;
 use Traversable;
 
 /**
@@ -79,7 +80,7 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class managed_metric implements cacheable_object_interface, IteratorAggregate {
+final class managed_metric implements cacheable_object_interface, registered_metric {
     /** @var metric_config|null Default metric config; `null` if not configurable. */
     private metric_config|null $defaultconfig;
 
@@ -251,58 +252,6 @@ final class managed_metric implements cacheable_object_interface, IteratorAggreg
     }
 
     /**
-     * Assigns the config JSON to the instance.
-     *
-     * Maintains the invariant: {@see self::config `config`} is not `null` => metric is configurable.
-     * (Equivalently, metric is _not_ configurable => {@see self::config `config`} is `null`.)
-     *
-     * The reverse is strictly _not_ true. A configurable metric with a {@see self::config `config`} of `null` just resolves the
-     * default config, when {@see self::get_config `get_config`} is called.
-     *
-     * This means passing `null` here for a configurable metric is equivalent to (re-)setting its config to the current default.
-     * Passing a string here for a non-configurable metric discards that argument, triggers a {@see debugging `debugging`} call,
-     * and assigns `null`.
-     *
-     * @param string|null $config JSON encoded string or `null` to assign to {@see self::config `config`}.
-     */
-    private function set_config(string|null $config): void {
-        if ($this->is_configurable()) {
-            $this->record->config = $config;
-        } else {
-            if (!is_null($config)) {
-                debugging("Cannot set config on non-configurable metric: $this->qualifiedname", DEBUG_DEVELOPER);
-            }
-            $this->record->config = null;
-        }
-        $this->configcache = null;
-    }
-
-    /**
-     * Returns the deserialized config object.
-     *
-     * @return metric_config|null Metric config object or `null` if the metric is not configurable.
-     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
-     */
-    private function get_config(): metric_config|null {
-        if (!$this->is_configurable()) {
-            return null;
-        }
-        if (is_null($this->record->config)) {
-            return $this->configcache ??= clone $this->defaultconfig;
-        }
-        return $this->configcache ??= $this->configclass::from_json($this->record->config);
-    }
-
-    /**
-     * Returns whether the instance represents a configurable metric.
-     *
-     * @return bool `true` if the metric is configurable, `false` otherwise.
-     */
-    private function is_configurable(): bool {
-        return !is_null($this->defaultconfig);
-    }
-
-    /**
      * Enables or disables the metric and persists the change.
      *
      * Does nothing if the metric already has the desired state.
@@ -404,14 +353,6 @@ final class managed_metric implements cacheable_object_interface, IteratorAggreg
         return $formdata;
     }
 
-    /**
-     * Produces the current {@see metric_value}s.
-     *
-     * This allows the instance to be iterated over in a `foreach` loop.
-     *
-     * @return Traversable<metric_value> Values of the metric.
-     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
-     */
     #[\Override]
     public function getIterator(): Traversable {
         $values = $this->metric->calculate($this->get_config());
@@ -420,6 +361,53 @@ final class managed_metric implements cacheable_object_interface, IteratorAggreg
         } else {
             yield from $values;
         }
+    }
+
+    #[\Override]
+    public function get_config(): metric_config|null {
+        if (!$this->is_configurable()) {
+            return null;
+        }
+        if (is_null($this->record->config)) {
+            return $this->configcache ??= clone $this->defaultconfig;
+        }
+        return $this->configcache ??= $this->configclass::from_json($this->record->config);
+    }
+
+    /**
+     * Assigns the config JSON to the instance.
+     *
+     * Maintains the invariant: {@see self::config `config`} is not `null` => metric is configurable.
+     * (Equivalently, metric is _not_ configurable => {@see self::config `config`} is `null`.)
+     *
+     * The reverse is strictly _not_ true. A configurable metric with a {@see self::config `config`} of `null` just resolves the
+     * default config, when {@see self::get_config `get_config`} is called.
+     *
+     * This means passing `null` here for a configurable metric is equivalent to (re-)setting its config to the current default.
+     * Passing a string here for a non-configurable metric discards that argument, triggers a {@see debugging `debugging`} call,
+     * and assigns `null`.
+     *
+     * @param string|null $config JSON encoded string or `null` to assign to {@see self::config `config`}.
+     */
+    private function set_config(string|null $config): void {
+        if ($this->is_configurable()) {
+            $this->record->config = $config;
+        } else {
+            if (!is_null($config)) {
+                debugging("Cannot set config on non-configurable metric: $this->qualifiedname", DEBUG_DEVELOPER);
+            }
+            $this->record->config = null;
+        }
+        $this->configcache = null;
+    }
+
+    /**
+     * Returns whether the instance represents a configurable metric.
+     *
+     * @return bool `true` if the metric is configurable, `false` otherwise.
+     */
+    private function is_configurable(): bool {
+        return !is_null($this->defaultconfig);
     }
 
     #[\Override]

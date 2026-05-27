@@ -42,7 +42,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
-use tool_monitoring\local\metrics_manager;
+use tool_monitoring\registered_metrics;
 
 /**
  * Provides the route for Prometheus to pull the current metrics.
@@ -125,7 +125,7 @@ class prometheus {
         }
         // Get the relevant metrics.
         try {
-            $metrics = di::get(metrics_manager::class)->filter(enabled: true, tagnames: $tagnames);
+            $metrics = di::get(registered_metrics::class)->filter(enabled: true, tagnames: $tagnames);
         } catch (tag_not_found | tags_disabled $e) {
             return $makeresponse($e->getMessage(), 422);
         } catch (coding_exception | dml_exception) {

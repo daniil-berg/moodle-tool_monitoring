@@ -29,9 +29,9 @@
 
 namespace tool_monitoring\local;
 
-use ArrayAccess;
 use core\di;
 use core\exception\coding_exception;
+use core\hook\di_configuration;
 use core_cache\data_source_interface as cache_data_source_interface;
 use core_cache\definition as cache_definition;
 use dml_exception;
@@ -43,35 +43,17 @@ use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\metric;
 use tool_monitoring\metric_tag;
+use tool_monitoring\registered_metrics;
 
 /**
- * Linchpin of the monitoring API and container for all registered metrics.
+ * Linchpin of the internal monitoring toolchain and container for all managed metrics.
  *
- * Registers new {@see metric}s picked up by the {@see metric_collection} hook and provides access to registered ones.
+ * Implements the {@see registered_metrics} consumer interface and narrows the type of the handled objects to {@see managed_metric}.
  *
- * Provides array-like subscript access to {@see managed_metric} instances by their qualified name.
- * (See the {@see self::offsetExists `offsetExists`} and {@see self::offsetGet `offsetGet`} methods.)
- * **NOTE**: Access is read-only. Metrics cannot be added to or removed from the manager directly.
+ * Registers new {@see metric}s picked up by the {@see metric_collection} hook via the {@see self::sync `sync`} method.
  *
- * ```
- * $manager = di::get(metrics_manager::class);
- * if (isset($manager['my_metric']) { // This works.
- *     $metric = $manager['my_metric']; // This also works.
- *     unset($manager['my_metric']); // Error!
- * }
- * $manager['my_metric'] = $something; // Error!
- * ```
- *
- * Collected and registered metrics can be retrieved via the {@see self::filter `filter`} method.
- * Omitting any arguments will return all of them.
- *
- * ```
- * $manager = di::get(metrics_manager::class);
- * // Only get enabled metrics that carry the 'foo' tag:
- * foreach ($manager->filter(enabled: true, tagnames: ['foo']) as $qname => $metric) {
- *     // Now `$qname` is a string and `$metric` is a `registered_metric` object.
- * }
- * ```
+ * Caches the managed metrics via the {@see metrics_cache} to speed up read access for consumers.
+ * Implements the {@see cache_data_source_interface `data_source_interface`} to conveniently populate the metrics cache on misses.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -82,7 +64,7 @@ use tool_monitoring\metric_tag;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final readonly class metrics_manager implements ArrayAccess, cache_data_source_interface {
+final readonly class metrics_manager implements cache_data_source_interface, registered_metrics {
     /**
      * Constructor without additional logic.
      *
@@ -90,6 +72,8 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      * instance from Moodle's dependency injection container like so:
      *
      * ```
+     * use tool_monitoring\local\metrics_manager;
+     *
      * $manager = di::get(metrics_manager::class);
      * ```
      *
@@ -105,12 +89,8 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
     ) {}
 
     /**
-     * Produces **registered** metrics for the managed metrics collection.
-     *
-     * If filters were set via the {@see self::filter `filter`} method, yields only those metrics that match the filter criteria.
-     *
-     * Will _not_ produce metrics that are not (yet) registered in the database, even if they were picked up by the
-     * {@see metric_collection} hook. To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
+     * {@inheritDoc}
+     * To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
      *
      * Implementation detail: Tries to load {@see managed_metric} instances for all metrics in the collection from the cache
      * first. Since the {@see metrics_manager} is defined as the cache data source, cache misses will trigger the
@@ -123,12 +103,13 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
      *                           passing `null` (default) disables this filter.
      * @param string[] $tagnames Names of tags to filter by. Only metrics that carry all the specified tags will be returned.
      *                           Names will be normalized before looking up the tags. An empty array (default) disables this filter.
-     * @return array<string, managed_metric> Registered metrics indexed by their qualified name.
+     * @return array<string, managed_metric> Managed metrics indexed by their qualified name.
      * @throws coding_exception
      * @throws dml_exception
      * @throws tag_not_found At least one of the provided `$tagnames` does not match any existing metric tag.
      * @throws tags_disabled
      */
+    #[\Override]
     public function filter(bool|null $enabled = null, array $tagnames = []): array {
         if ($tagnames && !metric_tag::is_enabled()) {
             throw new tags_disabled(metric_tag::ITEM_TYPE);
@@ -212,10 +193,8 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
     }
 
     /**
-     * Checks whether a metric with the given qualified name is registered.
-     *
-     * Will return `false` if no metric with the given qualified name is (yet) registered in the database, even one was picked up by
-     * the {@see metric_collection} hook. To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
+     * {@inheritDoc}
+     * To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
      *
      * @param string $offset Qualified name of the metric to check.
      * @return bool `true` if the metric is registered, `false` otherwise.
@@ -232,10 +211,8 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
     }
 
     /**
-     * Returns the registered metric with the given qualified name.
-     *
-     * Will _not_ return a metric not (yet) registered in the database, even if it was picked up by the {@see metric_collection}
-     * hook. To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
+     * {@inheritDoc}
+     * To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
      *
      * Implementation detail: Tries to load the requested {@see managed_metric} instance from the cache first.
      * Since the {@see metrics_manager} is defined as the cache data source, a cache miss will trigger the
@@ -255,27 +232,29 @@ final readonly class metrics_manager implements ArrayAccess, cache_data_source_i
         return $metric;
     }
 
-    /**
-     * Always throws an exception because the managed metrics are read-only.
-     *
-     * @param mixed $offset Ignored
-     * @param mixed $value Ignored
-     * @throws coding_exception
-     */
     #[\Override]
     public function offsetSet(mixed $offset, mixed $value): void {
         throw new coding_exception('Cannot manually set metrics.');
     }
 
-    /**
-     * Always throws an exception because the managed metrics are read-only.
-     *
-     * @param mixed $offset Ignored
-     * @throws coding_exception
-     */
     #[\Override]
     public function offsetUnset(mixed $offset): void {
         throw new coding_exception('Cannot manually unset metrics.');
+    }
+
+    /**
+     * Supplies a definition for the {@see registered_metrics} interface to Moodle's dependency injection container.
+     *
+     * The DI container is already able to return an instance of the {@see metrics_manager} directly.
+     * With this configuration it returns that same instance when consumers request a {@see registered_metrics} object.
+     *
+     * @link https://moodledev.io/docs/apis/core/di#configuring-dependencies Documentation: Dependency injection
+     */
+    public static function configure_dependency_injection(di_configuration $hook): void {
+        $hook->add_definition(
+            id: registered_metrics::class,
+            definition: fn(): metrics_manager => di::get(metrics_manager::class),
+        );
     }
 
     /**

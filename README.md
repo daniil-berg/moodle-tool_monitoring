@@ -513,16 +513,16 @@ There is no common exporter interface, so you have maximum flexibility in the re
 If you have admin settings to configure, a `settings.php` script placed in the plugin directory will have access to a dedicated `admin_settingpage` via the `$settings` variable.
 That page will be added under _Plugins_ > _Admin tools_ > _Monitoring_ > _Available Exporters_ and named the same as the sub-plugin.
 
-Since any exporter will need access to the actual metrics available in the system, at some point it should probably make use of the [`metrics_manager`][. metrics_manager].
-Instantiating it and calling its `filter` method will be enough in most cases.
-That returns [`registered_metric`][. registered_metric] instances as an array (indexed by their qualified names).
+Since any exporter will need access to the actual metrics available in the system, at some point it will probably query the [`registered_metrics`][. registered_metrics] interface.
+Getting an instance via `di::get(registered_metrics::class)` and calling its `filter` method will be enough in most cases.
+That returns an array of [`registered_metric`][. registered_metric] objects (indexed by their qualified names).
 
 To calculate and retrieve the current value(s) of a given metric, the associated `registered_metric` instance just needs to be iterated over.
 Iteration will yield the [`metric_value`][. metric_value] objects.
 
 > [!TIP]
 > You can look at how the Prometheus exporter does this in its [`route\controller\prometheus`][. route/controller/prometheus] and [`exporter`][. exporter] classes.
-> The `filter` method of the `metrics_manager` is called to get all **enabled** metrics that match the **tags** specified in the request.
+> The `registered_metrics::filter` is called to get all **enabled** metrics that match the **tags** specified in the request.
 
 ## Terminology
 
@@ -630,9 +630,9 @@ It implements the `IteratorAggregate` interface and iterating over an instance w
 
 ### Central `metrics_manager`
 
-The linchpin of the monitoring toolchain is the [`metrics_manager`][. metrics_manager].
+The linchpin of the monitoring toolchain is the internal [`metrics_manager`][. local/metrics_manager] that implements the [`registered_metrics`][. registered_metrics] interface.
 It [emits][moodle docs hook emitter] the `metric_collection` hook and synchronizes the internal metrics registry in the database.
-Outside code can use the `metrics_manager` to retrieve and filter all currently registered metrics.
+Outside code can use `registered_metrics` via DI to retrieve and filter all currently registered metrics.
 
 ### Configurable metrics (advanced)
 
@@ -679,8 +679,9 @@ You should have received a copy of the GNU General Public License along with `to
 [. metric_type]: classes/metric_type.php
 [. metric_value]: classes/metric_value.php
 [. metric_with_config]: classes/metric_with_config.php
-[. metrics_manager]: classes/metrics_manager.php
+[. local/metrics_manager]: classes/local/metrics_manager.php
 [. registered_metric]: classes/registered_metric.php
+[. registered_metrics]: classes/registered_metrics.php
 [. route/controller/prometheus]: exporter/prometheus/classes/route/controller/prometheus.php
 [. simple_metric_config]: classes/simple_metric_config.php
 [grafana oss home]: https://grafana.com/oss/grafana

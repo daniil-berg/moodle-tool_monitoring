@@ -251,8 +251,12 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
      * @link https://moodledev.io/docs/apis/core/di#configuring-dependencies Documentation: Dependency injection
      */
     public static function configure_dependency_injection(di_configuration $hook): void {
+        // CAUTION: Due to fascinating interplay between how PHP-DI compiles the container and poor error handling in Moodle,
+        // the closure **must** use the actual class name, both in the return type annotation and during construction!
+        // Otherwise, Behat tests will fail without any visible traceback.
         $hook->add_definition(
             id: registered_metrics::class,
+            // phpcs:ignore Squiz.Classes.SelfMemberReference.NotUsed
             definition: fn(): metrics_manager => di::get(metrics_manager::class),
         );
     }

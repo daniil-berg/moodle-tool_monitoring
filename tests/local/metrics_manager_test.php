@@ -29,7 +29,7 @@
  * {@noinspection PhpIllegalPsrClassPathInspection}
  */
 
-namespace tool_monitoring;
+namespace tool_monitoring\local;
 
 use advanced_testcase;
 use core\di;
@@ -45,11 +45,10 @@ use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\exceptions\tool_monitoring_exception;
 use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\managed_metric;
-use tool_monitoring\local\metric_record;
-use tool_monitoring\local\metrics;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_metric_with_config;
+use tool_monitoring\metric;
+use tool_monitoring\metric_tag;
 
 /**
  * Unit tests for the {@see metrics_manager} class.

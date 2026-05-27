@@ -42,7 +42,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
-use tool_monitoring\metrics_manager;
+use tool_monitoring\local\metrics_manager;
 
 /**
  * Provides the route for Prometheus to pull the current metrics.

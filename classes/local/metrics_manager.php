@@ -27,7 +27,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring;
+namespace tool_monitoring\local;
 
 use ArrayAccess;
 use core\di;
@@ -41,9 +41,8 @@ use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\hook\metric_collection;
-use tool_monitoring\local\managed_metric;
-use tool_monitoring\local\metric_record;
-use tool_monitoring\local\metrics_cache;
+use tool_monitoring\metric;
+use tool_monitoring\metric_tag;
 
 /**
  * Linchpin of the monitoring API and container for all registered metrics.

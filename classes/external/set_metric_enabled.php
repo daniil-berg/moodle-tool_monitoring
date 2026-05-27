@@ -42,7 +42,7 @@ use core_external\restricted_context_exception;
 use dml_exception;
 use JsonException;
 use tool_monitoring\exceptions\metric_name_invalid;
-use tool_monitoring\metrics_manager;
+use tool_monitoring\local\metrics_manager;
 
 /**
  * External service to enable or disable a monitoring metric.

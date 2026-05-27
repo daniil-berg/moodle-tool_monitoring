@@ -129,6 +129,56 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
     }
 
     /**
+     * {@inheritDoc}
+     * To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
+     *
+     * @param string $offset Qualified name of the metric to check.
+     * @return bool `true` if the metric is registered, `false` otherwise.
+     * @throws coding_exception
+     */
+    #[\Override]
+    public function offsetExists(mixed $offset): bool {
+        try {
+            $this->offsetGet($offset);
+            return true;
+        } catch (metric_not_found) {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
+     *
+     * Implementation detail: Tries to load the requested {@see managed_metric} instance from the cache first.
+     * Since the {@see metrics_manager} is defined as the cache data source, a cache miss will trigger the
+     * {@see self::load_for_cache `load_for_cache`} method, which will query the database for the missing metric and also
+     * automatically update the cache afterwards.
+     *
+     * @param string $offset Qualified name of the metric to return.
+     * @return managed_metric Metric with the given qualified name.
+     * @throws coding_exception
+     * @throws metric_not_found No metric with the given qualified name is registered.
+     */
+    #[\Override]
+    public function offsetGet(mixed $offset): managed_metric {
+        if (is_null($metric = metrics_cache::get($offset))) {
+            throw new metric_not_found($offset);
+        }
+        return $metric;
+    }
+
+    #[\Override]
+    public function offsetSet(mixed $offset, mixed $value): void {
+        throw new coding_exception('Cannot manually set metrics.');
+    }
+
+    #[\Override]
+    public function offsetUnset(mixed $offset): void {
+        throw new coding_exception('Cannot manually unset metrics.');
+    }
+
+    /**
      * Efficiently synchronizes the managed metric collection with the database.
      *
      * Ensures that a corresponding entry in the database exists for every unique metric in the collection (per qualified name).
@@ -190,56 +240,6 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
             $collected[] = $collectedmetric;
         }
         return $collected;
-    }
-
-    /**
-     * {@inheritDoc}
-     * To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
-     *
-     * @param string $offset Qualified name of the metric to check.
-     * @return bool `true` if the metric is registered, `false` otherwise.
-     * @throws coding_exception
-     */
-    #[\Override]
-    public function offsetExists(mixed $offset): bool {
-        try {
-            $this->offsetGet($offset);
-            return true;
-        } catch (metric_not_found) {
-            return false;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * To ensure all collected metrics are registered, call {@see self::sync `sync`} first.
-     *
-     * Implementation detail: Tries to load the requested {@see managed_metric} instance from the cache first.
-     * Since the {@see metrics_manager} is defined as the cache data source, a cache miss will trigger the
-     * {@see self::load_for_cache `load_for_cache`} method, which will query the database for the missing metric and also
-     * automatically update the cache afterwards.
-     *
-     * @param string $offset Qualified name of the metric to return.
-     * @return managed_metric Metric with the given qualified name.
-     * @throws coding_exception
-     * @throws metric_not_found No metric with the given qualified name is registered.
-     */
-    #[\Override]
-    public function offsetGet(mixed $offset): managed_metric {
-        if (is_null($metric = metrics_cache::get($offset))) {
-            throw new metric_not_found($offset);
-        }
-        return $metric;
-    }
-
-    #[\Override]
-    public function offsetSet(mixed $offset, mixed $value): void {
-        throw new coding_exception('Cannot manually set metrics.');
-    }
-
-    #[\Override]
-    public function offsetUnset(mixed $offset): void {
-        throw new coding_exception('Cannot manually unset metrics.');
     }
 
     /**

@@ -91,7 +91,7 @@ final class metrics_manager_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see metrics_manager::getIterator} and {@see metrics_manager::filter} methods.
+     * Tests the {@see metrics_manager::filter} method.
      *
      * Indirectly also tests the cache data source mechanism because iteration first attempts to load metrics from the cache.
      *

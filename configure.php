@@ -30,7 +30,7 @@
  */
 
 use core\di;
-use tool_monitoring\metrics_manager;
+use tool_monitoring\local\metrics_manager;
 use tool_monitoring\output\configure;
 
 require_once(__DIR__ . '/../../../config.php');

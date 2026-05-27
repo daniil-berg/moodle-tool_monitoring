@@ -29,7 +29,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use tool_monitoring\metrics_manager;
+use tool_monitoring\local\metrics_manager;
 
 defined('MOODLE_INTERNAL') || die();
 

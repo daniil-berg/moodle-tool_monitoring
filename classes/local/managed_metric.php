@@ -34,7 +34,6 @@ use core\exception\coding_exception;
 use core\lang_string;
 use core_cache\cacheable_object_interface;
 use dml_exception;
-use IteratorAggregate;
 use JsonException;
 use moodleform;
 use stdClass;
@@ -159,96 +158,6 @@ final class managed_metric implements cacheable_object_interface, registered_met
      */
     public static function from_metric(metric $metric, array $tags = []): self {
         return new self($metric, metric_record::from_metric($metric), $tags);
-    }
-
-    /**
-     * Constructs new instances from the provided metrics, querying the DB for corresponding records.
-     *
-     * The returned array is indexed by the qualified names of the provided metrics. If a metric is not found in the database,
-     * the corresponding instance will wrap a fresh {@see metric_record} with default values.
-     *
-     * @param metric ...$metrics Metrics to construct new instances from.
-     * @return array<string, self> Associative array of instances, indexed by the qualified names of the provided metrics.
-     * @throws coding_exception Should never happen.
-     * @throws dml_exception
-     */
-    public static function get_for_metrics(metric ...$metrics): array {
-        global $DB;
-        if (empty($metrics)) {
-            return [];
-        }
-        $uniquemetrics = [];
-        // Construct the `IN` expression and parameters from all unique component-name-combinations.
-        $inplaceholders = [];
-        $params = [];
-        foreach (array_values($metrics) as $i => $metric) {
-            [$component, $name] = [$metric->get_component(), $metric->get_name()];
-            $qname = metric_record::get_qualified_name($component, $name);
-            $uniquemetrics[$qname] = $metric;
-            $inplaceholders[] = "(:component$i, :name$i)";
-            $params["component$i"] = $component;
-            $params["name$i"] = $name;
-        }
-        $inlist = implode(', ', $inplaceholders);
-        $sqlqname = metric_record::get_qualified_name_sql($DB);
-        $tablename = metric_record::TABLE;
-        $sql = "SELECT $sqlqname, m.*
-                  FROM {{$tablename}} AS m
-                 WHERE (m.component, m.name) IN ($inlist)";
-        $records = $DB->get_records_sql($sql, $params);
-        $tags = metric_tag::get_for_metric_ids(...array_column($records, 'id'));
-        $instances = [];
-        foreach ($uniquemetrics as $qname => $metric) {
-            if (array_key_exists($qname, $records)) {
-                $record = metric_record::from_data($records[$qname]);
-                $instances[$qname] = new self($metric, $record, $tags[$record->id] ?? []);
-            } else {
-                $instances[$qname] = self::from_metric($metric);
-            }
-        }
-        return $instances;
-    }
-
-    /**
-     * Constructs new instances from the provided metrics and registers those not yet in the DB.
-     *
-     * For the already registered metrics, the existing instances are fetched.
-     * For every metric that is not yet registered, a new record is inserted before a fresh ID is assigned to the new instance.
-     *
-     * @param metric ...$metrics Metrics to register.
-     * @return array<string, self> Registered instances for all provided `$metrics` indexed by qualified name.
-     * @throws coding_exception
-     * @throws dml_exception
-     */
-    public static function get_or_register(metric ...$metrics): array {
-        global $DB;
-        $instances = self::get_for_metrics(...$metrics);
-        // Prepare records for insertion and remember the existing IDs of collected-and-registered metrics.
-        $existingids = [];
-        $toinsert = [];
-        foreach ($instances as $qname => $metric) {
-            if (is_null($metric->id)) {
-                $toinsert[$qname] = $metric;
-            } else {
-                $existingids[] = $metric->id;
-            }
-        }
-        metric_record::insert_many(...array_column($toinsert, 'record'));
-        // Fetch all records that we did not get before.
-        // These should only be newly inserted ones (if any) and orphans (without a collected metric).
-        [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
-        $sqlqname = metric_record::get_qualified_name_sql($DB);
-        $otherids = $DB->get_records_select_menu(
-            table:  metric_record::TABLE,
-            select: "id $notexistingsql",
-            params: $notexistingparams,
-            fields: "$sqlqname AS qname, id",
-        );
-        // Assign the newly inserted IDs and remove them from the array.
-        foreach (array_keys($toinsert) as $qname) {
-            $instances[$qname]->record->id = $otherids[$qname];
-        }
-        return $instances;
     }
 
     /**

@@ -193,10 +193,9 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
      */
     public function sync(bool $delete = false): self {
         global $DB;
-        $collection = $this->validate_collection();
         try {
             $transaction = $DB->start_delegated_transaction();
-            $metrics = managed_metric::get_or_register(...$collection);
+            $metrics = $this->get_or_register();
             if ($delete) {
                 [$orphansql, $orphanparams] = $DB->get_in_or_equal(
                     items: array_column($metrics, 'id'),
@@ -225,21 +224,107 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
     }
 
     /**
-     * Ensures that the managed metric collection is valid.
+     * Gets {@see managed_metric} instances for the current {@see self::$collection} and registers those not yet in the DB.
      *
-     * @return metric[] Validated {@see metric} instances from the collection.
+     * For every metric that is not yet registered, a new record is inserted.
+     * Validates the names of all collected metrics.
+     *
+     * @return array<string, managed_metric> Associative array of managed metrics, indexed by their qualified names.
+     * @throws coding_exception
+     * @throws dml_exception
      * @throws metric_name_invalid
      */
-    private function validate_collection(): array {
-        $collected = [];
+    private function get_or_register(): array {
+        global $DB;
+        $metrics = $this->fetch_existing();
+        // Prepare records for insertion and remember the existing IDs of collected-and-registered metrics.
+        $existingids = [];
+        $toinsert = [];
         foreach ($this->collection as $collectedmetric) {
-            $name = $collectedmetric->get_name();
+            [$component, $name] = [$collectedmetric->get_component(), $collectedmetric->get_name()];
             if (!preg_match('/^[a-z_][a-z0-9_]{0,99}$/', $name)) {
-                throw new metric_name_invalid($collectedmetric->get_component(), $name);
+                throw new metric_name_invalid($component, $name);
             }
-            $collected[] = $collectedmetric;
+            $qname = metric_record::get_qualified_name($component, $name);
+            if (is_null($metrics[$qname])) {
+                $toinsert[$qname] = $collectedmetric;
+            } else {
+                $existingids[] = $metrics[$qname]->id;
+            }
         }
-        return $collected;
+        if (empty($toinsert)) {
+            return $metrics;
+        }
+        metric_record::insert_many(...array_map(metric_record::from_metric(...), $toinsert));
+        // Fetch all records that we did not get before.
+        // These should only be newly inserted ones (if any) and orphans (without a collected metric).
+        $sqlqname = metric_record::get_qualified_name_sql($DB);
+        $tablename = metric_record::TABLE;
+        [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
+        $sql = "SELECT $sqlqname, m.*
+                  FROM {{$tablename}} AS m
+                 WHERE id $notexistingsql";
+        $others = $DB->get_records_sql($sql, $notexistingparams);
+        foreach ($toinsert as $qname => $collectedmetric) {
+            $record = metric_record::from_data($others[$qname]);
+            $metrics[$qname] = new managed_metric($collectedmetric, $record);
+        }
+        return $metrics;
+    }
+
+    /**
+     * Fetches existing managed metrics from the DB.
+     *
+     * Only metrics in the current {@see self::$collection} are considered.
+     * Does not return orphan metrics from the DB.
+     * Does **not** validate the names of the collected metrics.
+     *
+     * The returned array is indexed by the qualified names of the registered metrics.
+     *
+     * @param string ...$qnames Qualified names of the metrics to fetch. If empty, all metrics in the collection are fetched.
+     * @return array<string, managed_metric|null> Associative array of metrics, indexed by their qualified names; `null` if no such
+     *                                            metric is registered in the DB (yet).
+     * @throws coding_exception Should never happen.
+     * @throws dml_exception
+     */
+    private function fetch_existing(string ...$qnames): array {
+        global $DB;
+        $collected = [];
+        // Construct the `IN` expression and parameters from all component-name-combinations.
+        $inplaceholders = [];
+        $params = [];
+        foreach ($this->collection as $i => $collectedmetric) {
+            [$component, $name] = [$collectedmetric->get_component(), $collectedmetric->get_name()];
+            $qname = metric_record::get_qualified_name($component, $name);
+            if (!empty($qnames) && !in_array($qname, $qnames)) {
+                continue;
+            }
+            $collected[$qname] = $collectedmetric;
+            $inplaceholders[] = "(:component$i, :name$i)";
+            $params["component$i"] = $component;
+            $params["name$i"] = $name;
+        }
+        if (empty($collected)) {
+            return [];
+        }
+        $inlist = implode(', ', $inplaceholders);
+        $sqlqname = metric_record::get_qualified_name_sql($DB);
+        $tablename = metric_record::TABLE;
+        $sql = "SELECT $sqlqname, m.*
+                  FROM {{$tablename}} AS m
+                 WHERE (m.component, m.name) IN ($inlist)";
+        $records = $DB->get_records_sql($sql, $params);
+        $tags = metric_tag::get_for_metric_ids(...array_column($records, 'id'));
+        $metrics = [];
+        foreach ($collected as $qname => $collectedmetric) {
+            if (array_key_exists($qname, $records)) {
+                $record = metric_record::from_data($records[$qname]);
+                $metrics[$qname] = new managed_metric($collectedmetric, $record, $tags[$record->id] ?? []);
+            } else {
+                $metrics[$qname] = null;
+            }
+        }
+        return $metrics;
     }
 
     /**
@@ -296,25 +381,13 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
      * that refer to metrics that have not (yet) been registered in the database.
      *
      * @param string[] $keys Qualified names of the metrics to fetch.
-     * @return array<string, managed_metric|null> Associative array indexed with `$keys` mapped to {@see managed_metric}
-     *                                               instances or `null` if no matching metric was not found in the DB.
+     * @return array<string, managed_metric|null> Associative array indexed with `$keys` mapped to {@see managed_metric} instances
+     *                                            or `null` if no matching metric was not found in the DB.
      * @throws coding_exception Should never happen.
      * @throws dml_exception
      */
     #[\Override]
     public function load_many_for_cache(array $keys): array {
-        $output = array_fill_keys($keys, null);
-        $metrics = [];
-        foreach ($this->collection as $metric) {
-            $qname = metric_record::get_qualified_name($metric->get_component(), $metric->get_name());
-            if (array_key_exists($qname, $output)) {
-                $metrics[$qname] = $metric;
-            }
-        }
-        $registeredmetrics = array_filter(
-            array:    managed_metric::get_for_metrics(...$metrics), // The function discards variadic argument names.
-            callback: fn (managed_metric $registeredmetric): bool => !is_null($registeredmetric->id),
-        );
-        return array_merge($output, $registeredmetrics);
+        return array_merge(array_fill_keys($keys, null), $this->fetch_existing(...$keys));
     }
 }

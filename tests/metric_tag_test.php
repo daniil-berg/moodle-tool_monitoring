@@ -167,22 +167,14 @@ final class metric_tag_test extends advanced_testcase {
     public function test_get_set_remove_tag_instance(): void {
         global $DB;
         $this->resetAfterTest();
-        $metricdefaults = [
-            'component'    => 'tool_monitoring',
-            'enabled'      => false,
-            'timecreated'  => 1,
-            'timemodified' => 1,
-            'usermodified' => 1,
-        ];
-        $records = [
-            ['name' => 'test_metric', ...$metricdefaults],
-            ['name' => 'test_metric_with_config', ...$metricdefaults],
-        ];
-        $DB->insert_records(metric_record::TABLE, $records);
-        [
-            'tool_monitoring_test_metric' => $metric1,
-            'tool_monitoring_test_metric_with_config' => $metric2,
-        ] = managed_metric::get_for_metrics(new test_metric(), new test_metric_with_config());
+        // Create two metric records.
+        $rawmetric1 = new test_metric();
+        $rawmetric2 = new test_metric_with_config();
+        metric_record::insert_many(...array_map(metric_record::from_metric(...), [$rawmetric1, $rawmetric2]));
+        $metricrecord1 = metric_record::from_data($DB->get_record(metric_record::TABLE, ['name' => 'test_metric']));
+        $metricrecord2 = metric_record::from_data($DB->get_record(metric_record::TABLE, ['name' => 'test_metric_with_config']));
+        $metric1 = new managed_metric($rawmetric1, $metricrecord1);
+        $metric2 = new managed_metric($rawmetric2, $metricrecord2);
         // Assign tag instances.
         metric_tag::set_for_metric($metric1->id, 'foo', 'bar');
         metric_tag::set_for_metric($metric2, 'bar', 'baz');

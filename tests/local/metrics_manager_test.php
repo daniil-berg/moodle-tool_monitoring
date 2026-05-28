@@ -478,8 +478,8 @@ final class metrics_manager_test extends advanced_testcase {
             self::assertArrayHasKey($metric->id, $records);
             $record = $records[$metric->id];
             foreach ($properties as $name => $expectedvalue) {
-                self::assertEquals($expectedvalue, $record->$name);
-                self::assertEquals($expectedvalue, $metric->$name);
+                self::assertEquals($expectedvalue, $record->$name, "Unexpected $name on record $qname");
+                self::assertEquals($expectedvalue, $metric->$name, "Unexpected $name on metric $qname");
             }
             $checkedids[] = $metric->id;
         }
@@ -576,6 +576,71 @@ final class metrics_manager_test extends advanced_testcase {
                     ],
                 ],
                 'delete' => true,
+            ],
+            'Collection of 3 metrics, all already registered' => [
+                'collected' => [
+                    test_metric_with_config::create('foo'),
+                    test_metric::create('bar'),
+                    test_metric::create('baz'),
+                ],
+                'registered' => [
+                    [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'foo',
+                        'enabled'      => false,
+                        'config'       => '{"a":1}',
+                        'timecreated'  => 10,
+                        'timemodified' => 20,
+                        'usermodified' => 1,
+                    ],
+                    [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'bar',
+                        'enabled'      => true,
+                        'config'       => null,
+                        'timecreated'  => 30,
+                        'timemodified' => 40,
+                        'usermodified' => 0,
+                    ],
+                    [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'baz',
+                        'enabled'      => true,
+                        'config'       => null,
+                        'timecreated'  => 30,
+                        'timemodified' => 40,
+                        'usermodified' => 0,
+                    ],
+                ],
+                'expected' => [
+                    'tool_monitoring_foo' => [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'foo',
+                        'enabled'      => false,
+                        'config'       => '{"a":1}',
+                        'timecreated'  => 10,
+                        'timemodified' => 20,
+                        'usermodified' => 1,
+                    ],
+                    'tool_monitoring_bar' => [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'bar',
+                        'enabled'      => true,
+                        'config'       => null,
+                        'timecreated'  => 30,
+                        'timemodified' => 40,
+                        'usermodified' => 0,
+                    ],
+                    'tool_monitoring_baz' => [
+                        'component'    => 'tool_monitoring',
+                        'name'         => 'baz',
+                        'enabled'      => true,
+                        'config'       => null,
+                        'timecreated'  => 30,
+                        'timemodified' => 40,
+                        'usermodified' => 0,
+                    ],
+                ],
             ],
         ];
     }

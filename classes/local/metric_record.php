@@ -160,15 +160,14 @@ final class metric_record {
             return;
         }
         $now = time();
+        $toinsert = [];
         foreach ($instances as $instance) {
             $instance->timecreated ??= $now;
             $instance->timemodified ??= $now;
             $instance->usermodified ??= $USER->id;
+            $toinsert[] = $instance->to_array();
         }
-        $DB->insert_records(
-            self::TABLE,
-            array_map(fn (self $instance): array => $instance->to_array(), $instances),
-        );
+        $DB->insert_records(self::TABLE, $toinsert);
     }
 
     /**

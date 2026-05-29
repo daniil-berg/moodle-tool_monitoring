@@ -161,21 +161,44 @@ final class managed_metric implements cacheable_object_interface, registered_met
     }
 
     /**
-     * Enables or disables the metric and persists the change.
+     * Enables the metric.
      *
-     * Does nothing if the metric already has the desired state.
+     * Updates the corresponding DB record and triggers the {@see event\metric_enabled `metric_enabled`} event.
+     * No-op if already enabled.
      *
-     * TODO Rename/split into `enable()`/`disable()`
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    public function enable(): void {
+        if (!$this->record->enabled) {
+            $this->persist_enabled_state(true);
+        }
+    }
+
+    /**
+     * Disables the metric.
+     *
+     * Updates the corresponding DB record and triggers the {@see event\metric_disabled `metric_disabled`} event.
+     * No-op if already disabled.
+     *
+     * @throws coding_exception
+     * @throws dml_exception
+     */
+    public function disable(): void {
+        if ($this->record->enabled) {
+            $this->persist_enabled_state(false);
+        }
+    }
+
+    /**
+     * Persists `$enabled` to the DB record and triggers the corresponding event.
      *
      * @param bool $enabled Desired enabled state.
      * @throws coding_exception
      * @throws dml_exception
      */
-    public function persist_enabled_state(bool $enabled): void {
+    private function persist_enabled_state(bool $enabled): void {
         global $DB;
-        if ($this->enabled === $enabled) {
-            return;
-        }
         $this->record->enabled = $enabled;
         $event = $enabled ? event\metric_enabled::for_metric($this) : event\metric_disabled::for_metric($this);
         $transaction = $DB->start_delegated_transaction();

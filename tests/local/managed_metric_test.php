@@ -297,18 +297,18 @@ final class managed_metric_test extends advanced_testcase {
     }
 
     /**
-     * Tests the {@see managed_metric::persist_enabled_state} method.
+     * Tests the {@see managed_metric::enable} and {@see managed_metric::disable} methods.
      *
      * @param bool $from Initial enabled state.
-     * @param bool $to State to set via {@see managed_metric::persist_enabled_state}.
+     * @param bool $to State to set.
      * @param class-string<base_event>[] $events Names of event classes expected to be triggered in the given order.
      * @throws dml_exception
      * @throws coding_exception
      * @throws JsonException
      * @throws ReflectionException
      */
-    #[DataProvider('provider_test_persist_enabled_state')]
-    public function test_persist_enabled_state(bool $from, bool $to, array $events): void {
+    #[DataProvider('provider_test_enable_disable')]
+    public function test_enable_disable(bool $from, bool $to, array $events): void {
         global $DB, $USER;
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();
@@ -328,7 +328,7 @@ final class managed_metric_test extends advanced_testcase {
         $instance = new managed_metric(new test_metric(), $record);
         // Intercept the event here.
         $eventsink = $this->redirectEvents();
-        $instance->persist_enabled_state($to);
+        $to ? $instance->enable() : $instance->disable();
         $eventsink->close();
         // Load updated record manually from the database.
         $updatedrecord = $DB->get_record(metric_record::TABLE, ['id' => $record->id]);
@@ -350,11 +350,11 @@ final class managed_metric_test extends advanced_testcase {
     }
 
     /**
-     * Provides test data for the {@see test_persist_enabled_state} method.
+     * Provides test data for the {@see test_enable_disable} method.
      *
      * @return array[] Arguments for the test method.
      */
-    public static function provider_test_persist_enabled_state(): array {
+    public static function provider_test_enable_disable(): array {
         return [
             'No state change when already enabled' => [
                 'from' => true,

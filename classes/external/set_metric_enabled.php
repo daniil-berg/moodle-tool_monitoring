@@ -98,7 +98,7 @@ final class set_metric_enabled extends external_api {
         if (is_null($metric)) {
             throw new invalid_parameter_exception("Unknown metric '$qualifiedname'.");
         }
-        $metric->persist_enabled_state($enabled);
+        $enabled ? $metric->enable() : $metric->disable();
         return [];
     }
 

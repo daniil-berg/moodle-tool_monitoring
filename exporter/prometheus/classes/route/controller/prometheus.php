@@ -114,7 +114,7 @@ class prometheus {
             return $makeresponse('Error in Prometheus exporter', 500);
         }
         // Check auth.
-        if ($expectedtoken && $params['token'] !== $expectedtoken) {
+        if ($expectedtoken !== '' && !hash_equals($expectedtoken, $params['token'])) {
             return $makeresponse('Invalid auth token', 403);
         }
         // Parse tags.

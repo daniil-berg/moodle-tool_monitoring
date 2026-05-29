@@ -54,6 +54,13 @@ use tool_monitoring\local\testing\test_metric;
  */
 #[CoversClass(metric_record::class)]
 final class metric_record_test extends advanced_testcase {
+    public function test_magic_methods(): void {
+        $record = new metric_record(component: 'foo', name: 'bar');
+        self::assertTrue(isset($record->qualifiedname));
+        self::assertSame('foo_bar', $record->qualifiedname);
+        self::assertFalse(isset($record->spam));
+    }
+
     /**
      * Tests the {@see metric_record::from_data} method.
      *

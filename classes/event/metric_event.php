@@ -35,13 +35,12 @@ use core\event\base;
 use core\exception\moodle_exception;
 use dml_exception;
 use moodle_url;
-use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metric_record;
 
 /**
  * Metric-related event base class for convenience.
  *
- * @property-read string $metric Qualified name of the {@see managed_metric} that the even relates to.
+ * @property-read string $metric Qualified name of the {@see metric_record} that the even relates to.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -64,14 +63,14 @@ abstract class metric_event extends base {
     /**
      * Constructs a new instance of the event for the given metric.
      *
-     * @param managed_metric $metric Metric that the event relates to.
+     * @param metric_record $record Metric record that the event relates to.
      * @return static New event object.
      * @throws coding_exception
      */
-    public static function for_metric(managed_metric $metric): static {
+    public static function for_record(metric_record $record): static {
         return static::create([
-            'objectid' => $metric->id,
-            'other'    => ['metric' => $metric->qualifiedname],
+            'objectid' => $record->id,
+            'other'    => ['metric' => $record->qualifiedname],
         ]);
     }
 

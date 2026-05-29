@@ -62,12 +62,17 @@ class prometheus {
     /**
      * Responds with the current metrics in the Prometheus exposition format.
      *
-     * Resolves to `/monitoringexporter_prometheus/metrics`. Optional query parameters:
-     * - `token` for authorization; must match the `prometheus_token` config value, if one was set.
-     * - `tags` for filtering specific metrics.
+     * Resolves to `/monitoringexporter_prometheus/metrics`.
+     *
+     * Expected headers:
+     * - `Authorization: Bearer <token>` must match the `prometheus_token` config value, if one was set.
+     *
+     * Optional query parameters:
+     * - `token` as fallback for a missing/malformed auth header; must match the `prometheus_token` config value, if one was set.
+     * - `tag` for filtering specific metrics.
      *
      * Possible response codes for errors:
-     * - **403** if the `token` query parameter does not match the `prometheus_token` config value.
+     * - **403** if the authorization `token` does not match the `prometheus_token` config value.
      * - **422** if the `tags` query parameter is invalid.
      * - **500** for coding or DB errors.
      *
@@ -114,8 +119,15 @@ class prometheus {
             return $makeresponse('Error in Prometheus exporter', 500);
         }
         // Check auth.
-        if ($expectedtoken !== '' && !hash_equals($expectedtoken, $params['token'])) {
-            return $makeresponse('Invalid auth token', 403);
+        if ($expectedtoken !== '') {
+            if (preg_match('/^Bearer\s+(.+)$/i', $request->getHeaderLine('Authorization'), $matches)) {
+                $token = $matches[1];
+            } else {
+                $token = $params['token'];
+            }
+            if (!hash_equals($expectedtoken, $token)) {
+                return $makeresponse('Invalid auth token', 403);
+            }
         }
         // Parse tags.
         if ($params['tag']) {

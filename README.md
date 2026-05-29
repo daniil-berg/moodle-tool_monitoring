@@ -115,16 +115,23 @@ After modifying the form data, clicking the "Save changes" button redirects you 
 The pre-installed Prometheus exporter has its own settings under _Site administration_ > _Plugins_ > _Admin tools_ > _Monitoring_ > _Available Exporters_ > _Prometheus Exporter_.
 
 The actual Prometheus endpoint is immediately accessible and can be reached at the route `/monitoringexporter_prometheus/metrics`.
+So if your Moodle web root is `https://example.com`, the full URL will look like this:
 
-That endpoint can be secured by specifying an access token in the `monitoringexporter_prometheus | prometheus_token` setting, which then must be provided in the `token` query parameter.
-So if your Moodle web root is `https://example.com` and you set the `prometheus_token` to be `super-secure-secret`, the full URL will look like this:
-
-`https://example.com/monitoringexporter_prometheus/metrics?token=super-secure-secret`
+`https://example.com/monitoringexporter_prometheus/metrics`
 
 > [!IMPORTANT]
 > This relies on the router and your webserver being properly configured.
 > If not, the endpoint is reached at `/r.php/monitoringexporter_prometheus/metrics`.
 > See the relevant [Moodle documentation][moodle docs routing config] for details.
+
+That endpoint can be secured by specifying an access token (shared secret) in the `monitoringexporter_prometheus | prometheus_token` setting.
+The route handler expects the token to be present in the `Authorization` header of the request in the conventional `Authorization: Bearer <token>` format.
+If no matching header line is found, it falls back to the `token` query parameter.
+
+> [!CAUTION]
+> Secrets passed via query parameter can leak into server logs.
+> We strongly advise passing the access token via the `Authorization` header.
+> See the [Prometheus configuration](#prometheus-configuration) section for an example.
 
 ### Grouping metrics with tags (optional)
 
@@ -165,13 +172,13 @@ All you need to do is to add a job to the `scrape_configs` section in your `prom
 
 ```yaml
 scrape_configs:
-   # Choose whatever unique job name you like.
+  # Choose whatever unique job name you like.
   - job_name: moodle
     # The default scheme is HTTP.
     scheme: https
-    # If you have set an access token, provide it here as a query parameter.
-    params:
-      - token: ['super-secure-secret']
+    # If you have set an access token, provide it here.
+    authorization:
+      credentials: 'super-secure-secret'
     # Specify the full endpoint path. The default is just '/metrics'.
     # If Moodle routing is not fully configured, you have to prepend '/r.php' to the path.
     metrics_path: /monitoringexporter_prometheus/metrics
@@ -182,12 +189,14 @@ scrape_configs:
 
 If you are making use of tags to group specific metrics, you can filter for them by also specifying the `tag` query parameter.
 Multiple tags can be specified by separating them with a comma.
-For example, to only scrape metrics that have both the `hello` and the `world` tag, your `params` section would have look like this:
+For example, to only scrape metrics that have both the `hello` and the `world` tag, you would add a `params` section like this:
 
 ```yaml
+scrape_configs:
+  - job_name: moodle-hello-world
     params:
-      - token: ['super-secure-secret']
       - tag: ['hello,world']
+    # Same config as above...
 ```
 
 For exhaustive details about the various config options, see the official [Prometheus documentation][prometheus docs config].

@@ -36,6 +36,7 @@ use core_cache\data_source_interface as cache_data_source_interface;
 use core_cache\definition as cache_definition;
 use dml_exception;
 use Exception;
+use tool_monitoring\event;
 use tool_monitoring\exceptions\metric_name_invalid;
 use tool_monitoring\exceptions\metric_not_found;
 use tool_monitoring\exceptions\tag_not_found;
@@ -269,13 +270,18 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
         }
         // At this point `$others` should only contain orphans.
         if ($delete && $others) {
-            $orphanids = array_column($others, 'id');
-            [$orphansql, $orphanparams] = $DB->get_in_or_equal($orphanids);
-            foreach ($orphanids as $id) {
-                metric_tag::remove_all_for_metric($id);
+            $orphanids = [];
+            $events = [];
+            foreach ($others as $orphan) {
+                $orphanids[] = $orphan->id;
+                $events[] = event\metric_deleted::for_record(metric_record::from_data($orphan));
+                metric_tag::remove_all_for_metric($orphan->id);
             }
+            [$orphansql, $orphanparams] = $DB->get_in_or_equal($orphanids);
             $DB->delete_records_select($tablename, "id $orphansql", $orphanparams);
-            // TODO: Trigger individual deletion events here.
+            foreach ($events as $event) {
+                $event->trigger();
+            }
         }
         return $metrics;
     }

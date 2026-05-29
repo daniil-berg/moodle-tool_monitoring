@@ -43,6 +43,7 @@ $string['error:tags_disabled'] = 'Tags are turned off globally or the "{$a->item
 $string['error:users_online_config:timewindows_invalid'] = 'Invalid time window(s) provided: {$a}';
 
 $string['event:metric_config_updated'] = 'Metric configuration updated';
+$string['event:metric_deleted'] = 'Metric deleted';
 $string['event:metric_disabled'] = 'Metric disabled';
 $string['event:metric_enabled'] = 'Metric enabled';
 

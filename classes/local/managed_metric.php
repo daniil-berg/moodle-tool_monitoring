@@ -122,7 +122,7 @@ final class managed_metric implements cacheable_object_interface, registered_met
         return match ($name) {
             'configclass'   => $this->defaultconfig ? $this->defaultconfig::class : null,
             'description'   => $this->metric->get_description(),
-            'qualifiedname' => metric_record::get_qualified_name($this->record->component, $this->record->name),
+            'qualifiedname' => $this->record->qualifiedname,
             'tags'          => $this->tags,
             'type'          => $this->metric->get_type(),
             default         => property_exists($this->record, $name)
@@ -200,7 +200,7 @@ final class managed_metric implements cacheable_object_interface, registered_met
     private function persist_enabled_state(bool $enabled): void {
         global $DB;
         $this->record->enabled = $enabled;
-        $event = $enabled ? event\metric_enabled::for_metric($this) : event\metric_disabled::for_metric($this);
+        $event = $enabled ? event\metric_enabled::for_record($this->record) : event\metric_disabled::for_record($this->record);
         $transaction = $DB->start_delegated_transaction();
         $this->update_record(['enabled']);
         $event->trigger();
@@ -224,17 +224,17 @@ final class managed_metric implements cacheable_object_interface, registered_met
         if (isset($formdata->enabled)) {
             if ($formdata->enabled && !$this->record->enabled) {
                 $this->record->enabled = true;
-                $events[] = event\metric_enabled::for_metric($this);
+                $events[] = event\metric_enabled::for_record($this->record);
             } else if (!$formdata->enabled && $this->record->enabled) {
                 $this->record->enabled = false;
-                $events[] = event\metric_disabled::for_metric($this);
+                $events[] = event\metric_disabled::for_record($this->record);
             }
         }
         if (is_a($this->configclass, metric_config_form_aware::class, allow_string: true)) {
             $config = json_encode($this->configclass::with_form_data($formdata), JSON_THROW_ON_ERROR);
             if ($config !== $this->record->config) {
                 $this->set_config($config);
-                $events[] = event\metric_config_updated::for_metric($this);
+                $events[] = event\metric_config_updated::for_record($this->record);
             }
         }
         metric_tag::set_for_metric($this, ...$formdata->tags);

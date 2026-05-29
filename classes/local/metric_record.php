@@ -45,6 +45,8 @@ use tool_monitoring\registered_metric;
  * **This class is not part of the public API.**
  * Use the {@see registered_metric} interface instead.
  *
+ * @property-read string $qualifiedname Qualified name of the metric as per {@see self::get_qualified_name}.
+ *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
@@ -102,6 +104,37 @@ final class metric_record {
         /** @var int|null Primary key of the corresponding DB table row; `null` if not (yet) saved. */
         public int|null $id = null,
     ) {}
+
+    /**
+     * Special-case getter for public-read-only properties.
+     *
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to return.
+     * @return mixed Property value.
+     * @throws coding_exception Invalid property name passed.
+     */
+    public function __get(string $name): mixed {
+        return match ($name) {
+            'qualifiedname' => self::get_qualified_name($this->component, $this->name),
+            default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
+        };
+    }
+
+    /**
+     * Special-case {@see isset} check for public-read-only properties.
+     *
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to check.
+     * @return bool `true` if the property is set, `false` otherwise.
+     */
+    public function __isset(string $name): bool {
+        return match ($name) {
+            'qualifiedname' => true,
+            default         => false,
+        };
+    }
 
     /**
      * Constructs a new instance from a data object (presumably returned by a DB query).

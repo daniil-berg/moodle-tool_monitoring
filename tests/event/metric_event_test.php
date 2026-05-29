@@ -39,7 +39,6 @@ use core\lang_string;
 use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
 
@@ -56,6 +55,7 @@ use tool_monitoring\local\testing\test_metric;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[CoversClass(metric_config_updated::class)]
+#[CoversClass(metric_deleted::class)]
 #[CoversClass(metric_disabled::class)]
 #[CoversClass(metric_enabled::class)]
 #[CoversClass(metric_event::class)]
@@ -64,7 +64,7 @@ final class metric_event_test extends advanced_testcase {
      * Tests all methods of the {@see metric_event} class and its subclasses.
      *
      * @param class-string<metric_event> $eventclass Name of the event class to test.
-     * @param managed_metric $metric Metric to pass to the {@see metric_event::for_metric `for_metric`} constructor.
+     * @param metric_record $record Metric record to pass to the {@see metric_event::for_record `for_record`} constructor.
      * @param string $crud Expected value of the {@see metric_event::$crud `crud`} property.
      * @param string $nameid String ID of the expected language string from the {@see metric_event::get_name `get_name`} method.
      * @param string $description Expected output of the {@see metric_event::get_description `get_description`} method.
@@ -73,20 +73,20 @@ final class metric_event_test extends advanced_testcase {
     #[DataProvider('provider_test_all_methods')]
     public function test_all_methods(
         string $eventclass,
-        managed_metric $metric,
+        metric_record $record,
         string $crud,
         string $nameid,
         string $description,
     ): void {
-        $event = $eventclass::for_metric($metric);
+        $event = $eventclass::for_record($record);
         // Custom magic getter should return the metric's qualified name.
-        self::assertSame($metric->qualifiedname, $event->metric);
+        self::assertSame($record->qualifiedname, $event->metric);
         // Check that our `init` method has been called and the magic getter delegates to the parent implementation.
         self::assertSame(metric_record::TABLE, $event->objecttable);
         self::assertSame(base_event::LEVEL_OTHER, $event->edulevel);
         self::assertSame($crud, $event->crud);
         // Verify URL is as expected.
-        $expectedurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $metric->qualifiedname]);
+        $expectedurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $record->qualifiedname]);
         self::assertEquals($expectedurl, $event->get_url());
         // Check the name language string.
         $name = $event->get_name();
@@ -101,32 +101,38 @@ final class metric_event_test extends advanced_testcase {
      * Provides test data for the {@see test_all_methods} method.
      *
      * @return array[] Arguments for the test method.
-     * @throws coding_exception
      */
     public static function provider_test_all_methods(): array {
         global $USER;
-        $metric = managed_metric::from_metric(new test_metric());
+        $record = metric_record::from_metric(new test_metric());
         return [
             [
                 'eventclass'  => metric_config_updated::class,
-                'metric'      => $metric,
+                'record'      => $record,
                 'crud'        => 'u',
                 'nameid'      => 'event:metric_config_updated',
-                'description' => "User with ID '$USER->id' updated the metric config for '$metric->qualifiedname'.",
+                'description' => "User with ID '$USER->id' updated the metric config for '$record->qualifiedname'.",
+            ],
+            [
+                'eventclass'  => metric_deleted::class,
+                'record'      => $record,
+                'crud'        => 'd',
+                'nameid'      => 'event:metric_deleted',
+                'description' => "Deleted the DB record for the metric '$record->qualifiedname'.",
             ],
             [
                 'eventclass'  => metric_disabled::class,
-                'metric'      => $metric,
+                'record'      => $record,
                 'crud'        => 'u',
                 'nameid'      => 'event:metric_disabled',
-                'description' => "User with ID '$USER->id' disabled the metric '$metric->qualifiedname'.",
+                'description' => "User with ID '$USER->id' disabled the metric '$record->qualifiedname'.",
             ],
             [
                 'eventclass'  => metric_enabled::class,
-                'metric'      => $metric,
+                'record'      => $record,
                 'crud'        => 'u',
                 'nameid'      => 'event:metric_enabled',
-                'description' => "User with ID '$USER->id' enabled the metric '$metric->qualifiedname'.",
+                'description' => "User with ID '$USER->id' enabled the metric '$record->qualifiedname'.",
             ],
         ];
     }

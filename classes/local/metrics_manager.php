@@ -183,6 +183,8 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
      *
      * Ensures that a corresponding entry in the database exists for every unique metric in the collection (per qualified name).
      * Optionally deletes every database entry that does not correspond to any metric in the collection.
+     * Validates the names of all newly collected metrics.
+     * Purges and re-builds a clean metrics cache.
      *
      * @param bool $delete If `true`, deletes every database entry that does not correspond to any metric in the collection, and
      *                     triggers individual deletion events for all deleted database records.
@@ -195,20 +197,7 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
         global $DB;
         try {
             $transaction = $DB->start_delegated_transaction();
-            $metrics = $this->get_or_register();
-            if ($delete) {
-                [$orphansql, $orphanparams] = $DB->get_in_or_equal(
-                    items: array_column($metrics, 'id'),
-                    equal: false,
-                    onemptyitems: null,
-                );
-                $orphanids = $DB->get_fieldset_select(metric_record::TABLE, 'id', "id $orphansql", $orphanparams);
-                foreach ($orphanids as $id) {
-                    metric_tag::remove_all_for_metric($id);
-                }
-                $DB->delete_records_select(metric_record::TABLE, "id $orphansql", $orphanparams);
-                // TODO: Trigger individual deletion events here.
-            }
+            $metrics = $this->sync_inner($delete);
             $transaction->allow_commit();
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
@@ -224,50 +213,69 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
     }
 
     /**
-     * Gets {@see managed_metric} instances for the current {@see self::$collection} and registers those not yet in the DB.
+     * Helper for the {@see self::sync `sync`} method to be executed in a transaction.
      *
-     * For every metric that is not yet registered, a new record is inserted.
-     * Validates the names of all collected metrics.
+     * Goes through the following steps.
      *
-     * @return array<string, managed_metric> Associative array of managed metrics, indexed by their qualified names.
+     * 1. Fetch collected and registered i.e. fully managed metrics.
+     * 2. Figure out which collected metrics are new and thus _not yet registered_.
+     * 3. If unregistered metrics were collected, insert them and get managed metrics for those.
+     * 4. If deletion is requested and orphans (i.e. registered metrics that were _not collected_) exist, delete those.
+     *
+     * @param bool $delete If `true`, deletes every database entry that does not correspond to any metric in the collection, and
+     *                     triggers individual deletion events for all deleted database records.
+     * @return array<string, managed_metric> All collected and registered metrics indexed by qualified name.
      * @throws coding_exception
      * @throws dml_exception
      * @throws metric_name_invalid
      */
-    private function get_or_register(): array {
+    private function sync_inner(bool $delete): array {
         global $DB;
+        $tablename = metric_record::TABLE;
         $metrics = $this->fetch_existing();
-        // Prepare records for insertion and remember the existing IDs of collected-and-registered metrics.
-        $existingids = [];
-        $toinsert = [];
+        $managedids = [];
+        $unregistered = [];
         foreach ($this->collection as $collectedmetric) {
             [$component, $name] = [$collectedmetric->get_component(), $collectedmetric->get_name()];
-            if (!preg_match('/^[a-z_][a-z0-9_]{0,99}$/', $name)) {
-                throw new metric_name_invalid($component, $name);
-            }
             $qname = metric_record::get_qualified_name($component, $name);
             if (is_null($metrics[$qname])) {
-                $toinsert[$qname] = $collectedmetric;
+                // A new metric was collected that has no corresponding DB record; validate its name first.
+                if (!preg_match('/^[a-z_][a-z0-9_]{0,99}$/', $name)) {
+                    throw new metric_name_invalid($component, $name);
+                }
+                $unregistered[$qname] = $collectedmetric;
             } else {
-                $existingids[] = $metrics[$qname]->id;
+                $managedids[] = $metrics[$qname]->id;
             }
         }
-        if (empty($toinsert)) {
+        if (empty($unregistered) && !$delete) {
             return $metrics;
         }
-        metric_record::insert_many(...array_map(metric_record::from_metric(...), $toinsert));
+        // This is no-op if `$unregistered` is empty.
+        metric_record::insert_many(...array_map(metric_record::from_metric(...), $unregistered));
         // Fetch all records that we did not get before.
         // These should only be newly inserted ones (if any) and orphans (without a collected metric).
         $sqlqname = metric_record::get_qualified_name_sql($DB);
-        $tablename = metric_record::TABLE;
-        [$notexistingsql, $notexistingparams] = $DB->get_in_or_equal($existingids, equal: false, onemptyitems: null);
+        [$notmanagedsql, $notmanagedparams] = $DB->get_in_or_equal($managedids, equal: false, onemptyitems: null);
         $sql = "SELECT $sqlqname, m.*
                   FROM {{$tablename}} AS m
-                 WHERE id $notexistingsql";
-        $others = $DB->get_records_sql($sql, $notexistingparams);
-        foreach ($toinsert as $qname => $collectedmetric) {
+                 WHERE id $notmanagedsql";
+        $others = $DB->get_records_sql($sql, $notmanagedparams);
+        // Now we can construct a new instance for every collected metric that was not registered before.
+        foreach ($unregistered as $qname => $collectedmetric) {
             $record = metric_record::from_data($others[$qname]);
             $metrics[$qname] = new managed_metric($collectedmetric, $record);
+            unset($others[$qname]);
+        }
+        // At this point `$others` should only contain orphans.
+        if ($delete && $others) {
+            $orphanids = array_column($others, 'id');
+            [$orphansql, $orphanparams] = $DB->get_in_or_equal($orphanids);
+            foreach ($orphanids as $id) {
+                metric_tag::remove_all_for_metric($id);
+            }
+            $DB->delete_records_select($tablename, "id $orphansql", $orphanparams);
+            // TODO: Trigger individual deletion events here.
         }
         return $metrics;
     }

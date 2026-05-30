@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_tag_test} class.
+ * Definition of the {@see managed_metric_tag_test} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,7 +29,7 @@
  * {@noinspection PhpIllegalPsrClassPathInspection}
  */
 
-namespace tool_monitoring;
+namespace local;
 
 use advanced_testcase;
 use core\exception\coding_exception;
@@ -42,12 +42,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\local\managed_metric;
+use tool_monitoring\local\managed_metric_tag;
 use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_metric_with_config;
 
 /**
- * Unit tests for the {@see metric_tag} class.
+ * Unit tests for the {@see managed_metric_tag} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -58,10 +59,10 @@ use tool_monitoring\local\testing\test_metric_with_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[CoversClass(metric_tag::class)]
-final class metric_tag_test extends advanced_testcase {
+#[CoversClass(managed_metric_tag::class)]
+final class managed_metric_tag_test extends advanced_testcase {
     /**
-     * Tests the {@see metric_tag::get_collection_id} method.
+     * Tests the {@see managed_metric_tag::get_collection_id} method.
      *
      * @throws coding_exception
      * @throws dml_exception
@@ -71,13 +72,13 @@ final class metric_tag_test extends advanced_testcase {
         $expected = (int) $DB->get_field(
             table: 'tag_coll',
             return: 'id',
-            conditions: ['name' => metric_tag::COLLECTION_NAME, 'component' => 'tool_monitoring'],
+            conditions: ['name' => managed_metric_tag::COLLECTION_NAME, 'component' => 'tool_monitoring'],
         );
-        self::assertSame($expected, metric_tag::get_collection_id());
+        self::assertSame($expected, managed_metric_tag::get_collection_id());
     }
 
     /**
-     * Tests the {@see metric_tag::get_all_with_names} method.
+     * Tests the {@see managed_metric_tag::get_all_with_names} method.
      *
      * @throws coding_exception
      * @throws dml_exception
@@ -86,22 +87,22 @@ final class metric_tag_test extends advanced_testcase {
     #[DataProvider('provider_test_get_all_with_names')]
     public function test_get_all_with_names(array $indb, array $names, string|null $exception = null): void {
         $this->resetAfterTest();
-        $tagarea = core_tag_area::get_areas()[metric_tag::ITEM_TYPE]['tool_monitoring'];
-        $tags = metric_tag::create_if_missing($tagarea->tagcollid, $indb);
+        $tagarea = core_tag_area::get_areas()[managed_metric_tag::ITEM_TYPE]['tool_monitoring'];
+        $tags = managed_metric_tag::create_if_missing($tagarea->tagcollid, $indb);
         if (!is_null($exception)) {
             $this->expectException($exception);
-            metric_tag::get_all_with_names(...$names);
+            managed_metric_tag::get_all_with_names(...$names);
             return;
         }
-        $normalizednames = metric_tag::normalize($names);
-        $output = metric_tag::get_all_with_names(...$names);
+        $normalizednames = managed_metric_tag::normalize($names);
+        $output = managed_metric_tag::get_all_with_names(...$names);
         self::assertCount(count($names), $output);
         foreach ($names as $name) {
             $normalizedname = $normalizednames[$name];
             $expected = (array) $tags[$normalizedname]->to_object();
             self::assertArrayHasKey($normalizedname, $output);
             $tag = $output[$normalizedname];
-            self::assertInstanceOf(metric_tag::class, $tag);
+            self::assertInstanceOf(managed_metric_tag::class, $tag);
             foreach ($expected as $property => $value) {
                 self::assertEquals($value, $tag->$property, "Unexpected $property on '$normalizedname' tag");
             }
@@ -132,7 +133,7 @@ final class metric_tag_test extends advanced_testcase {
     }
 
     /**
-     * Tests cache use the {@see metric_tag::get_all_with_names} method.
+     * Tests cache use the {@see managed_metric_tag::get_all_with_names} method.
      *
      * @throws coding_exception
      * @throws dml_exception
@@ -140,25 +141,25 @@ final class metric_tag_test extends advanced_testcase {
      */
     public function test_get_all_with_names_cached(): void {
         $this->resetAfterTest();
-        $tagarea = core_tag_area::get_areas()[metric_tag::ITEM_TYPE]['tool_monitoring'];
-        metric_tag::create_if_missing($tagarea->tagcollid, ['foo', 'bar', 'baz']);
+        $tagarea = core_tag_area::get_areas()[managed_metric_tag::ITEM_TYPE]['tool_monitoring'];
+        managed_metric_tag::create_if_missing($tagarea->tagcollid, ['foo', 'bar', 'baz']);
         $exception = null;
         try {
             // Populate cache including a `null` for a non-existent tag.
-            metric_tag::get_all_with_names('quux');
+            managed_metric_tag::get_all_with_names('quux');
         } catch (tag_not_found $e) {
             $exception = $e;
         }
         self::assertNotNull($exception); // Sanity check.
         $this->resetAfterTest();
-        $tags = metric_tag::get_all_with_names('foo', 'bar', 'baz');
+        $tags = managed_metric_tag::get_all_with_names('foo', 'bar', 'baz');
         self::assertSame(['foo', 'bar', 'baz'], array_keys($tags));
-        $this->expectExceptionObject(new tag_not_found('quux', metric_tag::COLLECTION_NAME));
-        metric_tag::get_all_with_names('foo', 'quux');
+        $this->expectExceptionObject(new tag_not_found('quux', managed_metric_tag::COLLECTION_NAME));
+        managed_metric_tag::get_all_with_names('foo', 'quux');
     }
 
     /**
-     * Tests {@see metric_tag::get_for_metric_ids}, {@see metric_tag::set_for_metric}, and {@see metric_tag::remove_all_for_metric}.
+     * Tests {@see managed_metric_tag::get_for_metric_ids}, {@see managed_metric_tag::set_for_metric}, and {@see managed_metric_tag::remove_all_for_metric}.
      *
      * @throws coding_exception
      * @throws dml_exception
@@ -176,29 +177,29 @@ final class metric_tag_test extends advanced_testcase {
         $metric1 = new managed_metric($rawmetric1, $metricrecord1);
         $metric2 = new managed_metric($rawmetric2, $metricrecord2);
         // Assign tag instances.
-        metric_tag::set_for_metric($metric1->id, 'foo', 'bar');
-        metric_tag::set_for_metric($metric2, 'bar', 'baz');
+        managed_metric_tag::set_for_metric($metric1->id, 'foo', 'bar');
+        managed_metric_tag::set_for_metric($metric2, 'bar', 'baz');
         // Retrieve tags with item IDs set.
-        $metricstags = metric_tag::get_for_metric_ids($metric1->id, $metric2->id);
+        $metricstags = managed_metric_tag::get_for_metric_ids($metric1->id, $metric2->id);
         self::assertCount(2, $metricstags);
         [$metric1->id => $metrictags1, $metric2->id => $metrictags2] = $metricstags;
         self::assertCount(2, $metrictags1);
         foreach (['foo', 'bar'] as $tagname) {
             self::assertArrayHasKey($tagname, $metrictags1);
             $tag = $metrictags1[$tagname];
-            self::assertInstanceOf(metric_tag::class, $tag);
+            self::assertInstanceOf(managed_metric_tag::class, $tag);
             self::assertEquals($metric1->id, $tag->itemid);
         }
         self::assertCount(2, $metrictags2);
         foreach (['bar', 'baz'] as $tagname) {
             self::assertArrayHasKey($tagname, $metrictags2);
             $tag = $metrictags2[$tagname];
-            self::assertInstanceOf(metric_tag::class, $tag);
+            self::assertInstanceOf(managed_metric_tag::class, $tag);
             self::assertEquals($metric2->id, $tag->itemid);
         }
         // Remove all tags for one metric.
-        metric_tag::remove_all_for_metric($metric1);
-        $metricstags = metric_tag::get_for_metric_ids($metric1->id, $metric2->id);
+        managed_metric_tag::remove_all_for_metric($metric1);
+        $metricstags = managed_metric_tag::get_for_metric_ids($metric1->id, $metric2->id);
         self::assertCount(2, $metricstags);
         [$metric1->id => $metrictags1, $metric2->id => $metrictags2check] = $metricstags;
         // The first metric should now have no tags.
@@ -209,34 +210,34 @@ final class metric_tag_test extends advanced_testcase {
             self::assertEquals($metrictags2[$tagname], $tag);
         }
         // Remove all tags for the other metric.
-        metric_tag::remove_all_for_metric($metric2->id);
+        managed_metric_tag::remove_all_for_metric($metric2->id);
         // The returned arrays should now all be empty.
-        $metricstags = metric_tag::get_for_metric_ids($metric1->id, $metric2->id);
+        $metricstags = managed_metric_tag::get_for_metric_ids($metric1->id, $metric2->id);
         self::assertSame([$metric1->id => [], $metric2->id => []], $metricstags);
     }
 
     /**
-     * Tests {@see metric_tag::get_edit_url} and {@see metric_tag::get_manage_url}.
+     * Tests {@see managed_metric_tag::get_edit_url} and {@see managed_metric_tag::get_manage_url}.
      *
      * @throws moodle_exception
      */
     public function test_urls(): void {
         $this->resetAfterTest();
-        $tagarea = core_tag_area::get_areas()[metric_tag::ITEM_TYPE]['tool_monitoring'];
-        ['foo' => $tag] = metric_tag::create_if_missing($tagarea->tagcollid, ['foo']);
-        self::assertInstanceOf(metric_tag::class, $tag);
+        $tagarea = core_tag_area::get_areas()[managed_metric_tag::ITEM_TYPE]['tool_monitoring'];
+        ['foo' => $tag] = managed_metric_tag::create_if_missing($tagarea->tagcollid, ['foo']);
+        self::assertInstanceOf(managed_metric_tag::class, $tag);
         self::assertEquals(
             new moodle_url('/tag/edit.php', ['id' => $tag->id]),
             $tag->get_edit_url(),
         );
         self::assertEquals(
             new moodle_url('/tag/manage.php', ['tc' => $tagarea->tagcollid]),
-            metric_tag::get_manage_url(),
+            managed_metric_tag::get_manage_url(),
         );
     }
 
     /**
-     * Tests the {@see metric_tag::wake_from_cache} method.
+     * Tests the {@see managed_metric_tag::wake_from_cache} method.
      *
      * @param mixed $data Data to pass to the method.
      * @param array<string, mixed>|string $expected Expected properties on the new instance or exception class name.
@@ -247,10 +248,10 @@ final class metric_tag_test extends advanced_testcase {
     public function test_wake_from_cache(mixed $data, array|string $expected, string|null $debugging = null): void {
         if (is_string($expected)) {
             $this->expectException($expected);
-            metric_tag::wake_from_cache($data);
+            managed_metric_tag::wake_from_cache($data);
             return;
         }
-        $instance = metric_tag::wake_from_cache($data);
+        $instance = managed_metric_tag::wake_from_cache($data);
         foreach ($expected as $name => $value) {
             self::assertEquals($value, $instance->$name, "Unexpected $name on tag instance");
         }
@@ -346,7 +347,7 @@ final class metric_tag_test extends advanced_testcase {
                     'taginstanceid'        => 1,
                     'taginstancecontextid' => 1,
                 ],
-                'debugging' => "Unexpected cache fields for metric_tag 1: unexpected, even_more",
+                'debugging' => "Unexpected cache fields for metric tag 1: unexpected, even_more",
             ],
         ];
     }

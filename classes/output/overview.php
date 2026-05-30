@@ -35,7 +35,7 @@ use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
 use tool_monitoring\local\managed_metric;
-use tool_monitoring\metric_tag;
+use tool_monitoring\local\managed_metric_tag;
 
 /**
  * Provides information about all available metrics and links to their configuration pages.
@@ -54,14 +54,14 @@ final readonly class overview implements renderable, templatable {
      * Constructor without additional logic.
      *
      * @param iterable<string, managed_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
-     * @param array<string, metric_tag> $tags Tags used to filter the metrics by, indexed by normalized tag name.
+     * @param array<string, managed_metric_tag> $tags Tags used to filter the metrics by, indexed by normalized tag name.
      *
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
         /** @var iterable<string, managed_metric> Metrics for which to render the overview, indexed by qualified name. */
         private iterable $metrics,
-        /** @var array<string, metric_tag> Tags used to filter the metrics by, indexed by normalized tag name. */
+        /** @var array<string, managed_metric_tag> Tags used to filter the metrics by, indexed by normalized tag name. */
         private array $tags
     ) {}
 
@@ -74,7 +74,7 @@ final readonly class overview implements renderable, templatable {
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {
-        $tagsenabled = metric_tag::is_enabled();
+        $tagsenabled = managed_metric_tag::is_enabled();
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
@@ -89,7 +89,7 @@ final readonly class overview implements renderable, templatable {
             ];
             if ($tagsenabled) {
                 $line['tags'] = array_map(
-                    fn (metric_tag $tag): array => [
+                    fn (managed_metric_tag $tag): array => [
                         'id' => $tag->id,
                         'name' => $tag->rawname,
                         'view_url' => $this->add_tag_url($tag)->out(escaped: false),
@@ -103,7 +103,7 @@ final readonly class overview implements renderable, templatable {
         $data = [
             'metrics' => $lines,
             'is_tagging_enabled' => $tagsenabled,
-            'manage_tags_url' => metric_tag::get_manage_url(),
+            'manage_tags_url' => managed_metric_tag::get_manage_url(),
             'has_tags' => $hastags,
         ];
         if ($hastags) {
@@ -124,11 +124,11 @@ final readonly class overview implements renderable, templatable {
     /**
      * Generates a URL to the current overview with an additional tag in the filter.
      *
-     * @param metric_tag $tag New tag.
+     * @param managed_metric_tag $tag New tag.
      * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} and the new `$tag`.
      * @throws moodle_exception
      */
-    private function add_tag_url(metric_tag $tag): moodle_url {
+    private function add_tag_url(managed_metric_tag $tag): moodle_url {
         $tags = $this->tags;
         if (!array_key_exists($tag->name, $tags)) {
             $tags[$tag->name] = $tag;
@@ -139,11 +139,11 @@ final readonly class overview implements renderable, templatable {
     /**
      * Generates a URL to the current overview with one tag removed from the filter.
      *
-     * @param metric_tag $tag Tag to remove.
+     * @param managed_metric_tag $tag Tag to remove.
      * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} minus the `$tag`.
      * @throws moodle_exception
      */
-    private function remove_tag_url(metric_tag $tag): moodle_url {
+    private function remove_tag_url(managed_metric_tag $tag): moodle_url {
         $tags = $this->tags;
         unset($tags[$tag->name]);
         $params = [];

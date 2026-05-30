@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see mock_metric_tag} class.
+ * Definition of the {@see mock_managed_metric_tag} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -30,10 +30,10 @@
 namespace tool_monitoring\local\testing;
 
 use coding_exception;
-use tool_monitoring\metric_tag;
+use tool_monitoring\local\managed_metric_tag;
 
 /**
- * Subclass of {@see metric_tag} for testing purposes.
+ * Subclass of {@see managed_metric_tag} for testing purposes.
  *
  * **TESTING ONLY: This exists purely to run unit tests.**
  *
@@ -48,7 +48,7 @@ use tool_monitoring\metric_tag;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class mock_metric_tag extends metric_tag {
+final class mock_managed_metric_tag extends managed_metric_tag {
     /**
      * Constructor without additional logic.
      *

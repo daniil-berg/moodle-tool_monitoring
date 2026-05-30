@@ -48,7 +48,6 @@ use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_metric_with_config;
 use tool_monitoring\metric;
-use tool_monitoring\metric_tag;
 
 /**
  * Unit tests for the {@see metrics_manager} class.
@@ -134,7 +133,7 @@ final class metrics_manager_test extends advanced_testcase {
         foreach ($registered as $toinsert) {
             $metricid = $DB->insert_record(metric_record::TABLE, $toinsert + $defaults);
             if (isset($toinsert['tags'])) {
-                metric_tag::set_for_metric($metricid, ...$toinsert['tags']);
+                managed_metric_tag::set_for_metric($metricid, ...$toinsert['tags']);
             }
         }
         $records = $DB->get_records(metric_record::TABLE);
@@ -351,8 +350,8 @@ final class metrics_manager_test extends advanced_testcase {
         ];
         $metricidfoo = $DB->insert_record(metric_record::TABLE, ['name' => 'foo', ...$defaults]);
         $metricidbar = $DB->insert_record(metric_record::TABLE, ['name' => 'bar', ...$defaults]);
-        metric_tag::set_for_metric($metricidfoo, 'spam', 'eggs');
-        metric_tag::set_for_metric($metricidbar, 'spam', 'beans');
+        managed_metric_tag::set_for_metric($metricidfoo, 'spam', 'eggs');
+        managed_metric_tag::set_for_metric($metricidbar, 'spam', 'beans');
 
         // Sanity checks.
         $metrictagsfoo = array_column($manager['tool_monitoring_foo']->tags, 'name');
@@ -362,9 +361,9 @@ final class metrics_manager_test extends advanced_testcase {
         self::assertSame($metricidfoo, reset($metrics)->id);
 
         // Now we remove the tag instance; a new manager should no longer return the metric when filtering.
-        metric_tag::remove_item_tag(
+        managed_metric_tag::remove_item_tag(
             component: 'tool_monitoring',
-            itemtype: metric_tag::ITEM_TYPE,
+            itemtype: managed_metric_tag::ITEM_TYPE,
             itemid: $metricidfoo,
             tagname: 'spam',
         );
@@ -378,7 +377,7 @@ final class metrics_manager_test extends advanced_testcase {
         self::assertSame(['eggs'], $metrictagsfoo);
 
         // Now link the `eggs` tag to the `bar` metric as well; it should now be returned by a new manager.
-        metric_tag::set_for_metric($metricidbar, 'spam', 'eggs', 'beans');
+        managed_metric_tag::set_for_metric($metricidbar, 'spam', 'eggs', 'beans');
         di::reset_container();
         di::set(metric_collection::class, $collection);
         $manager = di::get(metrics_manager::class);
@@ -391,7 +390,7 @@ final class metrics_manager_test extends advanced_testcase {
     }
 
     /**
-     * Tests that the {@see metrics_manager::filter} method throws when the {@see metric_tag::ITEM_TYPE} tag area is disabled.
+     * Tests that the {@see metrics_manager::filter} method throws when the {@see managed_metric_tag::ITEM_TYPE} tag area is disabled.
      *
      * @throws coding_exception
      * @throws dml_exception
@@ -401,9 +400,9 @@ final class metrics_manager_test extends advanced_testcase {
     public function test_filter_throws_on_disabled_tag_area(): void {
         global $DB;
         $this->resetAfterTest();
-        $area = $DB->get_record('tag_area', ['itemtype' => metric_tag::ITEM_TYPE, 'component' => 'tool_monitoring']);
+        $area = $DB->get_record('tag_area', ['itemtype' => managed_metric_tag::ITEM_TYPE, 'component' => 'tool_monitoring']);
         core_tag_area::update($area, ['enabled' => false]);
-        $this->expectExceptionObject(new tags_disabled(metric_tag::ITEM_TYPE));
+        $this->expectExceptionObject(new tags_disabled(managed_metric_tag::ITEM_TYPE));
         di::get(metrics_manager::class)->filter(tagnames: ['foo']);
     }
 
@@ -418,7 +417,7 @@ final class metrics_manager_test extends advanced_testcase {
     public function test_filter_throws_on_disabled_tags(): void {
         $this->resetAfterTest();
         set_config('usetags', false);
-        $this->expectExceptionObject(new tags_disabled(metric_tag::ITEM_TYPE));
+        $this->expectExceptionObject(new tags_disabled(managed_metric_tag::ITEM_TYPE));
         di::get(metrics_manager::class)->filter(tagnames: ['foo']);
     }
 
@@ -671,12 +670,12 @@ final class metrics_manager_test extends advanced_testcase {
         self::assertNotNull($metricid);
 
         // Add tags alpha and beta to metric foo.
-        metric_tag::set_for_metric($metricid, 'alpha', 'beta');
+        managed_metric_tag::set_for_metric($metricid, 'alpha', 'beta');
         self::assertSame(
             2,
             $DB->count_records('tag_instance', [
                 'component' => 'tool_monitoring',
-                'itemtype' => metric_tag::ITEM_TYPE,
+                'itemtype' => managed_metric_tag::ITEM_TYPE,
                 'itemid' => $metricid,
             ]),
         );
@@ -696,7 +695,7 @@ final class metrics_manager_test extends advanced_testcase {
                 'itemid' => $metricid,
             ]),
         );
-        self::assertSame([$metricid => []], metric_tag::get_for_metric_ids($metricid));
+        self::assertSame([$metricid => []], managed_metric_tag::get_for_metric_ids($metricid));
     }
 
     /**

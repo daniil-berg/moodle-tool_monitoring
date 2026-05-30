@@ -30,7 +30,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 use core\exception\moodle_exception;
-use tool_monitoring\metric_tag;
+use tool_monitoring\local\managed_metric_tag;
 
 /**
  * Upgrade code for the monitoring tool.
@@ -52,13 +52,13 @@ function xmldb_tool_monitoring_upgrade(int $oldversion): bool {
         $DB->set_field(
             table: 'tag_area',
             newfield: 'itemtype',
-            newvalue: metric_tag::ITEM_TYPE,
+            newvalue: managed_metric_tag::ITEM_TYPE,
             conditions: ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
         );
         $DB->set_field(
             table: 'tag_instance',
             newfield: 'itemtype',
-            newvalue: metric_tag::ITEM_TYPE,
+            newvalue: managed_metric_tag::ITEM_TYPE,
             conditions: ['component' => 'tool_monitoring', 'itemtype' => 'metrics']
         );
 

@@ -43,7 +43,6 @@ use tool_monitoring\exceptions\tag_not_found;
 use tool_monitoring\exceptions\tags_disabled;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\metric;
-use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metrics;
 
 /**
@@ -112,10 +111,10 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
      */
     #[\Override]
     public function filter(bool|null $enabled = null, array $tagnames = []): array {
-        if ($tagnames && !metric_tag::is_enabled()) {
-            throw new tags_disabled(metric_tag::ITEM_TYPE);
+        if ($tagnames && !managed_metric_tag::is_enabled()) {
+            throw new tags_disabled(managed_metric_tag::ITEM_TYPE);
         }
-        $tags = metric_tag::get_all_with_names(...$tagnames);
+        $tags = managed_metric_tag::get_all_with_names(...$tagnames);
         $qnames = [];
         foreach ($this->collection as $metric) {
             $qnames[] = metric_record::get_qualified_name($metric->get_component(), $metric->get_name());
@@ -275,7 +274,7 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
             foreach ($others as $orphan) {
                 $orphanids[] = $orphan->id;
                 $events[] = event\metric_deleted::for_record(metric_record::from_data($orphan));
-                metric_tag::remove_all_for_metric($orphan->id);
+                managed_metric_tag::remove_all_for_metric($orphan->id);
             }
             [$orphansql, $orphanparams] = $DB->get_in_or_equal($orphanids);
             $DB->delete_records_select($tablename, "id $orphansql", $orphanparams);
@@ -328,7 +327,7 @@ final readonly class metrics_manager implements cache_data_source_interface, reg
                   FROM {{$tablename}} AS m
                  WHERE (m.component, m.name) IN ($inlist)";
         $records = $DB->get_records_sql($sql, $params);
-        $tags = metric_tag::get_for_metric_ids(...array_column($records, 'id'));
+        $tags = managed_metric_tag::get_for_metric_ids(...array_column($records, 'id'));
         $metrics = [];
         foreach ($collected as $qname => $collectedmetric) {
             if (array_key_exists($qname, $records)) {

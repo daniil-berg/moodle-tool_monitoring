@@ -54,7 +54,6 @@ use tool_monitoring\local\testing\test_metric_with_config;
 use tool_monitoring\local\testing\test_simple_metric_config_minimal;
 use tool_monitoring\metric;
 use tool_monitoring\metric_config_provider;
-use tool_monitoring\metric_tag;
 use tool_monitoring\metric_value;
 
 /**
@@ -153,8 +152,8 @@ final class managed_metric_test extends advanced_testcase {
     public function test___get___isset(): void {
         $metric = new test_metric();
         $mocktags = [
-            'foo' => $this->createStub(metric_tag::class),
-            'bar' => $this->createStub(metric_tag::class),
+            'foo' => $this->createStub(managed_metric_tag::class),
+            'bar' => $this->createStub(managed_metric_tag::class),
         ];
         $instance = managed_metric::from_metric($metric, $mocktags);
         self::assertTrue(isset($instance->description));
@@ -181,8 +180,8 @@ final class managed_metric_test extends advanced_testcase {
      */
     public function test_to_form_data(): void {
         // Set up mock tag objects.
-        $mocktag1 = $this->createMock(metric_tag::class);
-        $mocktag2 = $this->createMock(metric_tag::class);
+        $mocktag1 = $this->createMock(managed_metric_tag::class);
+        $mocktag2 = $this->createMock(managed_metric_tag::class);
         $mocktag1->expects(self::exactly(2))->method('get_display_name')->willReturn('foo');
         $mocktag1->expects(self::exactly(2))->method('__get')->willReturnMap([['id', 1]]);
         $mocktag2->expects(self::exactly(2))->method('get_display_name')->willReturn('bar');
@@ -453,7 +452,7 @@ final class managed_metric_test extends advanced_testcase {
         // Check that tags are consistent and as expected.
         if (isset($expected['tags'])) {
             self::assertSame($expected['tags'], array_keys($instance->tags));
-            $tags = metric_tag::get_for_metric_ids($metricrecord->id)[$metricrecord->id];
+            $tags = managed_metric_tag::get_for_metric_ids($metricrecord->id)[$metricrecord->id];
             self::assertSame($expected['tags'], array_keys($tags));
             unset($expected['tags']);
         }

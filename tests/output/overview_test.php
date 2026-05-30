@@ -39,10 +39,9 @@ use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\managed_metric;
-use tool_monitoring\local\metric_record;
-use tool_monitoring\local\testing\mock_metric_tag;
+use tool_monitoring\local\managed_metric_tag;
+use tool_monitoring\local\testing\mock_managed_metric_tag;
 use tool_monitoring\local\testing\test_metric;
-use tool_monitoring\metric_tag;
 
 /**
  * Unit tests for the {@see overview} class.
@@ -64,7 +63,7 @@ final class overview_test extends advanced_testcase {
      * Also implicitly tests the {@see overview::__construct} method.
      *
      * @param array<string, managed_metric> $metrics Metrics to pass to the constructor, indexed by qualified name.
-     * @param array<string, mock_metric_tag> $tags Mock-tags to pass to the constructor, indexed by normalized tag name.
+     * @param array<string, mock_managed_metric_tag> $tags Mock-tags to pass to the constructor, indexed by normalized tag name.
      * @throws moodle_exception
      */
     #[DataProvider('provider_test_export_for_template')]
@@ -130,7 +129,7 @@ final class overview_test extends advanced_testcase {
             }
         }
         self::assertEquals($tagsenabled, $output['is_tagging_enabled']);
-        self::assertEquals(metric_tag::get_manage_url(), $output['manage_tags_url']);
+        self::assertEquals(managed_metric_tag::get_manage_url(), $output['manage_tags_url']);
         $hastags = !empty($tags) && $tagsenabled;
         self::assertEquals($hastags, $output['has_tags']);
         if ($hastags) {
@@ -170,9 +169,9 @@ final class overview_test extends advanced_testcase {
         $metricfoo = test_metric::create('foo');
         $metricbar = test_metric::create('bar');
         $metricbaz = test_metric::create('baz');
-        $tagspam = new mock_metric_tag(1, 'spam');
-        $tageggs = new mock_metric_tag(2, 'eggs');
-        $tagbeans = new mock_metric_tag(3, 'beans');
+        $tagspam = new mock_managed_metric_tag(1, 'spam');
+        $tageggs = new mock_managed_metric_tag(2, 'eggs');
+        $tagbeans = new mock_managed_metric_tag(3, 'beans');
         return [
             'Tagging disabled, metrics with tags and tag filter set' => [
                 'metrics' => [

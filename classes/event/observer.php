@@ -38,8 +38,8 @@ use core\exception\coding_exception;
 use core_cache\cache;
 use dml_exception;
 use tool_monitoring\local\metric_record;
+use tool_monitoring\local\managed_metric_tag;
 use tool_monitoring\local\metrics_cache;
-use tool_monitoring\metric_tag;
 
 /**
  * Provides callbacks for events observed by the plugin.
@@ -67,7 +67,7 @@ final class observer {
      */
     public static function tag_instance_added_or_removed(tag_added|tag_removed $event): void {
         global $DB;
-        if ($event->other['itemtype'] !== metric_tag::ITEM_TYPE) {
+        if ($event->other['itemtype'] !== managed_metric_tag::ITEM_TYPE) {
             return;
         }
         $sqlqname = metric_record::get_qualified_name_sql($DB);
@@ -79,7 +79,7 @@ final class observer {
      * Ensures the referenced tag is removed from the cache.
      *
      * This invalidates a cache entry with the same name when a tag is deleted or updated, but also when a new tag is created
-     * because we are doing null-caching in {@see metric_tag::get_all_with_names}.
+     * because we are doing null-caching in {@see managed_metric_tag::get_all_with_names}.
      *
      * @param tag_created|tag_deleted|tag_updated $event Event object.
      * @throws coding_exception

@@ -30,8 +30,8 @@
  */
 
 use core\di;
+use tool_monitoring\local\managed_metric_tag;
 use tool_monitoring\local\metrics_manager;
-use tool_monitoring\metric_tag;
 use tool_monitoring\output\overview;
 
 require_once(__DIR__ . '/../../../config.php');
@@ -60,7 +60,7 @@ $PAGE->set_url('/admin/tool/monitoring/', $params);
 $manager = di::get(metrics_manager::class)->sync(delete: true);
 $overview = new overview(
     metrics: $manager->filter(tagnames: $tagnames),
-    tags: metric_tag::get_all_with_names(...$tagnames),
+    tags: managed_metric_tag::get_all_with_names(...$tagnames),
 );
 echo $OUTPUT->header();
 echo $OUTPUT->render($overview);

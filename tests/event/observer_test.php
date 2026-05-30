@@ -44,7 +44,7 @@ use dml_exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\metric_record;
-use tool_monitoring\metric_tag;
+use tool_monitoring\local\managed_metric_tag;
 
 /**
  * Unit tests for the {@see observer} class.
@@ -134,7 +134,7 @@ final class observer_test extends advanced_testcase {
                 'tagname'    => 'foo',
                 'tagrawname' => 'Foo',
                 'itemid'     => $metricid,
-                'itemtype'   => metric_tag::ITEM_TYPE,
+                'itemtype'   => managed_metric_tag::ITEM_TYPE,
             ],
         ]);
         // This should clear the sentinel cache entry.

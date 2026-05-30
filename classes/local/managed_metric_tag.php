@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_tag} class.
+ * Definition of the {@see managed_metric_tag} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,7 +27,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring;
+namespace tool_monitoring\local;
 
 use context_system;
 use core\exception\coding_exception;
@@ -40,8 +40,6 @@ use dml_exception;
 use moodle_url;
 use stdClass;
 use tool_monitoring\exceptions\tag_not_found;
-use tool_monitoring\local\managed_metric;
-use tool_monitoring\local\metric_record;
 use Traversable;
 
 /**
@@ -56,7 +54,7 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_tag extends core_tag_tag implements cacheable_object_interface {
+class managed_metric_tag extends core_tag_tag implements cacheable_object_interface {
     /** @var string Name of the associated tag area. */
     public const ITEM_TYPE = metric_record::TABLE;
 
@@ -274,18 +272,15 @@ class metric_tag extends core_tag_tag implements cacheable_object_interface {
         if ($data instanceof stdClass) {
             $data = (array) $data;
         } else if (!is_array($data) || array_is_list($data)) {
-            throw new coding_exception('Received unexpected data type for metric_tag from cache: ' . gettype($data));
+            throw new coding_exception('Received unexpected data type for metric tag from cache: ' . gettype($data));
         }
         $missing = array_diff_key(self::CACHE_FIELDS, $data);
         if (!empty($missing)) {
-            throw new coding_exception('Missing cache fields for metric_tag: ' . implode(', ', $missing));
+            throw new coding_exception('Missing cache fields for metric tag: ' . implode(', ', $missing));
         }
-        $extra = array_diff_key($data, self::CACHE_FIELDS);
+        $extra = array_keys(array_diff_key($data, self::CACHE_FIELDS));
         if (!empty($extra)) {
-            debugging(
-                "Unexpected cache fields for metric_tag {$data['id']}: " . implode(', ', array_keys($extra)),
-                DEBUG_DEVELOPER,
-            );
+            debugging("Unexpected cache fields for metric tag {$data['id']}: " . implode(', ', $extra), DEBUG_DEVELOPER);
         }
         $data['tagcollid'] = static::get_collection_id();
         $tag = new static((object) $data);

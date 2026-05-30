@@ -29,8 +29,6 @@
 
 namespace tool_monitoring\exceptions;
 
-use tool_monitoring\metric_tag;
-
 /**
  * The `usetags` setting is off or the specified tag area is disabled.
  *

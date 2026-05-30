@@ -45,7 +45,6 @@ use tool_monitoring\metric;
 use tool_monitoring\metric_config;
 use tool_monitoring\metric_config_form_aware;
 use tool_monitoring\metric_config_provider;
-use tool_monitoring\metric_tag;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\registered_metric;
@@ -68,7 +67,7 @@ use Traversable;
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
  * @property-read class-string<metric_config>|null $configclass Name of the associated metric config class, if any.
- * @property-read array<string, metric_tag> $tags Tags on the metric, indexed by their normalized name.
+ * @property-read array<string, managed_metric_tag> $tags Tags on the metric, indexed by their normalized name.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -91,7 +90,7 @@ final class managed_metric implements cacheable_object_interface, registered_met
      *
      * @param metric $metric Metric to wrap.
      * @param metric_record $record DB record to manage.
-     * @param array<string, metric_tag> $tags Tags to associate with the metric, indexed by their normalized name.
+     * @param array<string, managed_metric_tag> $tags Tags to associate with the metric, indexed by their normalized name.
      * @throws coding_exception Metric record has different component or name than the provided metric.
      */
     public function __construct(
@@ -99,7 +98,7 @@ final class managed_metric implements cacheable_object_interface, registered_met
         private readonly metric $metric,
         /** @var metric_record Managed DB record. */
         private readonly metric_record $record,
-        /** @var array<string, metric_tag> Tags on the metric, indexed by their normalized name. */
+        /** @var array<string, managed_metric_tag> Tags on the metric, indexed by their normalized name. */
         private array $tags = [],
     ) {
         if ($record->component !== $metric->get_component() || $record->name !== $metric->get_name()) {
@@ -152,7 +151,7 @@ final class managed_metric implements cacheable_object_interface, registered_met
      * Calls {@see metric_record::from_metric} to create corresponding record instance.
      *
      * @param metric $metric Metric to wrap in the new instance.
-     * @param array<string, metric_tag> $tags Tags to associate with the metric, indexed by their normalized name.
+     * @param array<string, managed_metric_tag> $tags Tags to associate with the metric, indexed by their normalized name.
      * @return self New instance from the provided metric.
      * @throws coding_exception Should never happen.
      */
@@ -237,9 +236,9 @@ final class managed_metric implements cacheable_object_interface, registered_met
                 $events[] = event\metric_config_updated::for_record($this->record);
             }
         }
-        metric_tag::set_for_metric($this, ...$formdata->tags);
-        if (metric_tag::normalize($formdata->tags) !== array_keys($this->tags)) {
-            $this->tags = metric_tag::get_for_metric_ids($this->record->id)[$this->record->id];
+        managed_metric_tag::set_for_metric($this, ...$formdata->tags);
+        if (managed_metric_tag::normalize($formdata->tags) !== array_keys($this->tags)) {
+            $this->tags = managed_metric_tag::get_for_metric_ids($this->record->id)[$this->record->id];
         }
         if (empty($events)) {
             return;
@@ -345,7 +344,7 @@ final class managed_metric implements cacheable_object_interface, registered_met
     #[\Override]
     public function prepare_to_cache(): array {
         $data = $this->record->to_array();
-        $data['tags'] = array_map(fn (metric_tag $tag): array => $tag->prepare_to_cache(), $this->tags);
+        $data['tags'] = array_map(fn (managed_metric_tag $tag): array => $tag->prepare_to_cache(), $this->tags);
         return $data;
     }
 
@@ -368,9 +367,9 @@ final class managed_metric implements cacheable_object_interface, registered_met
         if (!empty($missing)) {
             throw new coding_exception('Missing cache fields for metric: ' . implode(', ', $missing));
         }
-        $extra = array_diff_key($data, $fields);
+        $extra = array_keys(array_diff_key($data, $fields));
         if (!empty($extra)) {
-            debugging("Unexpected cache fields for metric {$data['id']}: " . implode(', ', array_keys($extra)), DEBUG_DEVELOPER);
+            debugging("Unexpected cache fields for metric {$data['id']}: " . implode(', ', $extra), DEBUG_DEVELOPER);
         }
         $record = metric_record::from_data($data);
         // Find the matching metric from the collection.
@@ -379,7 +378,7 @@ final class managed_metric implements cacheable_object_interface, registered_met
             throw new coding_exception("No metric collected for component '$record->component' and name '$record->name'");
         }
         // Wake the associated tag instances.
-        $tags = array_map(fn (array $tag): metric_tag => metric_tag::wake_from_cache($tag), $data['tags']);
+        $tags = array_map(fn (array $tag): managed_metric_tag => managed_metric_tag::wake_from_cache($tag), $data['tags']);
         return new self($metric, $record, $tags);
     }
 }

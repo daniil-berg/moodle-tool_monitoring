@@ -36,8 +36,8 @@ use JsonException;
 use moodleform;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\local\managed_metric;
+use tool_monitoring\local\managed_metric_tag;
 use tool_monitoring\metric_config_form_aware;
-use tool_monitoring\metric_tag;
 
 // @codeCoverageIgnoreStart
 defined('MOODLE_INTERNAL') || die();
@@ -105,7 +105,7 @@ class config extends moodleform {
             label: new lang_string('settings:metric_enabled', 'tool_monitoring'),
         );
         $this->add_tags_field(
-            itemtype: metric_tag::ITEM_TYPE,
+            itemtype: managed_metric_tag::ITEM_TYPE,
             component: 'tool_monitoring',
         );
         if (is_a($this->metric->configclass, metric_config_form_aware::class, allow_string: true)) {

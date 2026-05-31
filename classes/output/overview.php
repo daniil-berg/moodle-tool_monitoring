@@ -34,8 +34,9 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
-use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\managed_metric_tag;
+use tool_monitoring\metric_tag;
+use tool_monitoring\registered_metric;
 
 /**
  * Provides information about all available metrics and links to their configuration pages.
@@ -53,15 +54,15 @@ final readonly class overview implements renderable, templatable {
     /**
      * Constructor without additional logic.
      *
-     * @param iterable<string, managed_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
-     * @param array<string, managed_metric_tag> $tags Tags used to filter the metrics by, indexed by normalized tag name.
+     * @param iterable<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     * @param array<string, metric_tag> $tags Tags used to filter the metrics by, indexed by normalized tag name.
      *
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
-        /** @var iterable<string, managed_metric> Metrics for which to render the overview, indexed by qualified name. */
+        /** @var iterable<string, registered_metric> Metrics for which to render the overview, indexed by qualified name. */
         private iterable $metrics,
-        /** @var array<string, managed_metric_tag> Tags used to filter the metrics by, indexed by normalized tag name. */
+        /** @var array<string, metric_tag> Tags used to filter the metrics by, indexed by normalized tag name. */
         private array $tags
     ) {}
 
@@ -89,7 +90,7 @@ final readonly class overview implements renderable, templatable {
             ];
             if ($tagsenabled) {
                 $line['tags'] = array_map(
-                    fn (managed_metric_tag $tag): array => [
+                    fn (metric_tag $tag): array => [
                         'id' => $tag->id,
                         'name' => $tag->rawname,
                         'view_url' => $this->add_tag_url($tag)->out(escaped: false),
@@ -114,7 +115,7 @@ final readonly class overview implements renderable, templatable {
                 $data['tags'][] = [
                     'name' => $tag->rawname,
                     'remove_url' => $this->remove_tag_url($tag)->out(escaped: false),
-                    'edit_url' => $tag->get_edit_url()->out(escaped: false),
+                    'edit_url' => $tag->editurl->out(escaped: false),
                 ];
             }
         }
@@ -124,11 +125,11 @@ final readonly class overview implements renderable, templatable {
     /**
      * Generates a URL to the current overview with an additional tag in the filter.
      *
-     * @param managed_metric_tag $tag New tag.
+     * @param metric_tag $tag New tag.
      * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} and the new `$tag`.
      * @throws moodle_exception
      */
-    private function add_tag_url(managed_metric_tag $tag): moodle_url {
+    private function add_tag_url(metric_tag $tag): moodle_url {
         $tags = $this->tags;
         if (!array_key_exists($tag->name, $tags)) {
             $tags[$tag->name] = $tag;
@@ -139,11 +140,11 @@ final readonly class overview implements renderable, templatable {
     /**
      * Generates a URL to the current overview with one tag removed from the filter.
      *
-     * @param managed_metric_tag $tag Tag to remove.
+     * @param metric_tag $tag Tag to remove.
      * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} minus the `$tag`.
      * @throws moodle_exception
      */
-    private function remove_tag_url(managed_metric_tag $tag): moodle_url {
+    private function remove_tag_url(metric_tag $tag): moodle_url {
         $tags = $this->tags;
         unset($tags[$tag->name]);
         $params = [];

@@ -62,6 +62,38 @@ use tool_monitoring\local\testing\test_metric_with_config;
 #[CoversClass(managed_metric_tag::class)]
 final class managed_metric_tag_test extends advanced_testcase {
     /**
+     * Tests the {@see managed_metric_tag::__get} and {@see managed_metric_tag::__isset} methods.
+     *
+     * @throws moodle_exception
+     */
+    public function test_magic_methods(): void {
+        $mockrecord = (object) [
+            'id' => 1,
+            'name' => 'foo',
+            'rawname' => 'Foo',
+            'taginstanceid' => 42,
+        ];
+        $tag = $this->getMockBuilder(managed_metric_tag::class)->setConstructorArgs([$mockrecord])->onlyMethods([])->getMock();
+        // These should delegate to the parent implementations.
+        self::assertTrue(isset($tag->id));
+        self::assertSame(1, $tag->id);
+        self::assertTrue(isset($tag->name));
+        self::assertSame('foo', $tag->name);
+        self::assertTrue(isset($tag->rawname));
+        self::assertSame('Foo', $tag->rawname);
+        self::assertTrue(isset($tag->taginstanceid));
+        self::assertSame(42, $tag->taginstanceid);
+        // These should be our own.
+        self::assertTrue(isset($tag->editurl));
+        self::assertEquals(new moodle_url('/tag/edit.php', ['id' => $tag->id]), $tag->editurl);
+        // Test that tag instance ID is returned as `null` if missing from record.
+        $mockrecord = (object) ['id' => 1, 'name' => 'foo'];
+        $tag = $this->getMockBuilder(managed_metric_tag::class)->setConstructorArgs([$mockrecord])->onlyMethods([])->getMock();
+        self::assertFalse(isset($tag->taginstanceid));
+        self::assertNull($tag->taginstanceid);
+    }
+
+    /**
      * Tests the {@see managed_metric_tag::get_collection_id} method.
      *
      * @throws coding_exception
@@ -159,7 +191,12 @@ final class managed_metric_tag_test extends advanced_testcase {
     }
 
     /**
-     * Tests {@see managed_metric_tag::get_for_metric_ids}, {@see managed_metric_tag::set_for_metric}, and {@see managed_metric_tag::remove_all_for_metric}.
+     * Tests tag getting, setting, and removing.
+     *
+     * Methods being tested:
+     * - {@see managed_metric_tag::get_for_metric_ids}
+     * - {@see managed_metric_tag::set_for_metric}
+     * - {@see managed_metric_tag::remove_all_for_metric}
      *
      * @throws coding_exception
      * @throws dml_exception
@@ -217,19 +254,12 @@ final class managed_metric_tag_test extends advanced_testcase {
     }
 
     /**
-     * Tests {@see managed_metric_tag::get_edit_url} and {@see managed_metric_tag::get_manage_url}.
+     * Tests the {@see managed_metric_tag::get_manage_url} method.
      *
      * @throws moodle_exception
      */
-    public function test_urls(): void {
-        $this->resetAfterTest();
+    public function test_get_manage_url(): void {
         $tagarea = core_tag_area::get_areas()[managed_metric_tag::ITEM_TYPE]['tool_monitoring'];
-        ['foo' => $tag] = managed_metric_tag::create_if_missing($tagarea->tagcollid, ['foo']);
-        self::assertInstanceOf(managed_metric_tag::class, $tag);
-        self::assertEquals(
-            new moodle_url('/tag/edit.php', ['id' => $tag->id]),
-            $tag->get_edit_url(),
-        );
         self::assertEquals(
             new moodle_url('/tag/manage.php', ['tc' => $tagarea->tagcollid]),
             managed_metric_tag::get_manage_url(),

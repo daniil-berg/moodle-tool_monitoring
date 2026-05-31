@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see mock_managed_metric_tag} class.
+ * Definition of the {@see test_metric_tag} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,11 +29,12 @@
 
 namespace tool_monitoring\local\testing;
 
-use coding_exception;
-use tool_monitoring\local\managed_metric_tag;
+use core\exception\moodle_exception;
+use moodle_url;
+use tool_monitoring\metric_tag;
 
 /**
- * Subclass of {@see managed_metric_tag} for testing purposes.
+ * Implementation of {@see metric_tag} for testing purposes.
  *
  * **TESTING ONLY: This exists purely to run unit tests.**
  *
@@ -48,17 +49,35 @@ use tool_monitoring\local\managed_metric_tag;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class mock_managed_metric_tag extends managed_metric_tag {
+final readonly class test_metric_tag implements metric_tag {
+    /** @var string Tag name as set by the user. */
+    public string $rawname;
+
+    /** @var moodle_url URL to the tag editing page. */
+    public moodle_url $editurl;
+
     /**
-     * Constructor without additional logic.
+     * Convenience constructor.
      *
-     * @param int $id
-     * @param string $name
-     * @throws coding_exception
+     * Sets the {@see self::$rawname} property equal to {@see self::$name} by default.
+     * Sets {@see self::$editurl} using the given ID.
      *
-     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
+     * @param string $name Normalized tag name.
+     * @param string|null $rawname Tag name as set by the user; passing `null` sets {@see self::$rawname} to {@see self::$name}.
+     * @param int $id Tag ID.
+     * @param int|null $taginstanceid Tag instance ID (link between tag and metric).
+     * @throws moodle_exception
      */
-    public function __construct(int $id, string $name) {
-        parent::__construct((object) ['id' => $id, 'name' => $name, 'rawname' => $name]);
+    public function __construct(
+        /** @var string Normalized tag name. */
+        public string $name,
+        string|null $rawname = null,
+        /** @var int Tag ID. */
+        public int $id = 0,
+        /** @var int|null Tag instance ID (link between tag and metric). */
+        public int|null $taginstanceid = null,
+    ) {
+        $this->rawname = $rawname ?? $name;
+        $this->editurl = new moodle_url('/tag/edit.php', ['id' => $this->id]);
     }
 }

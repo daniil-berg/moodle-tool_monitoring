@@ -390,7 +390,7 @@ final class metrics_manager_test extends advanced_testcase {
     }
 
     /**
-     * Tests that the {@see metrics_manager::filter} method throws when the {@see managed_metric_tag::ITEM_TYPE} tag area is disabled.
+     * Tests that {@see metrics_manager::filter} throws when the {@see managed_metric_tag::ITEM_TYPE} tag area is disabled.
      *
      * @throws coding_exception
      * @throws dml_exception

@@ -40,10 +40,14 @@ use dml_exception;
 use moodle_url;
 use stdClass;
 use tool_monitoring\exceptions\tag_not_found;
+use tool_monitoring\metric_tag;
 use Traversable;
 
 /**
  * Convenience class that maps instances to records in the `tag` table, but only those related to the monitoring tag collection.
+ *
+ * @property-read int|null $taginstanceid Tag instance ID (link between tag and metric).
+ * @property-read moodle_url $editurl URL to the tag editing page.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -54,7 +58,7 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class managed_metric_tag extends core_tag_tag implements cacheable_object_interface {
+class managed_metric_tag extends core_tag_tag implements cacheable_object_interface, metric_tag {
     /** @var string Name of the associated tag area. */
     public const ITEM_TYPE = metric_record::TABLE;
 
@@ -78,6 +82,38 @@ class managed_metric_tag extends core_tag_tag implements cacheable_object_interf
         'taginstanceid' => 'taginstanceid',
         'taginstancecontextid' => 'taginstancecontextid',
     ];
+
+    /**
+     * Special-case getter for public-read-only properties.
+     *
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to return.
+     * @return mixed Property value.
+     * @throws moodle_exception
+     */
+    public function __get($name): mixed {
+        return match ($name) {
+            'editurl'       => new moodle_url('/tag/edit.php', ['id' => $this->id]),
+            'taginstanceid' => parent::__isset($name) ? parent::__get($name) : null,
+            default         => parent::__get($name),
+        };
+    }
+
+    /**
+     * Special-case {@see isset} check for public-read-only properties.
+     *
+     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
+     *
+     * @param string $name Name of the property to check.
+     * @return bool `true` if the property is set and not `null`, `false` otherwise.
+     */
+    public function __isset($name): bool {
+        return match ($name) {
+            'editurl' => true,
+            default   => parent::__isset($name),
+        };
+    }
 
     /**
      * Returns all tags with the given names.
@@ -206,16 +242,6 @@ class managed_metric_tag extends core_tag_tag implements cacheable_object_interf
             itemtype: self::ITEM_TYPE,
             itemid: $metric,
         );
-    }
-
-    /**
-     * Returns the URL to edit the tag.
-     *
-     * @return moodle_url URL to the tag editing page.
-     * @throws moodle_exception
-     */
-    public function get_edit_url(): moodle_url {
-        return new moodle_url('/tag/edit.php', ['id' => $this->id]);
     }
 
     /**

@@ -32,7 +32,6 @@
 namespace tool_monitoring\output;
 
 use advanced_testcase;
-use core\exception\coding_exception;
 use core\exception\moodle_exception;
 use core\output\renderer_base;
 use moodle_url;
@@ -40,7 +39,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\managed_metric_tag;
-use tool_monitoring\local\testing\mock_managed_metric_tag;
+use tool_monitoring\local\testing\test_metric_tag;
 use tool_monitoring\local\testing\test_metric;
 
 /**
@@ -63,7 +62,7 @@ final class overview_test extends advanced_testcase {
      * Also implicitly tests the {@see overview::__construct} method.
      *
      * @param array<string, managed_metric> $metrics Metrics to pass to the constructor, indexed by qualified name.
-     * @param array<string, mock_managed_metric_tag> $tags Mock-tags to pass to the constructor, indexed by normalized tag name.
+     * @param array<string, test_metric_tag> $tags Tags to pass to the constructor, indexed by normalized tag name.
      * @throws moodle_exception
      */
     #[DataProvider('provider_test_export_for_template')]
@@ -143,7 +142,7 @@ final class overview_test extends advanced_testcase {
                 self::assertArrayHasKey($tagname, $tags);
                 $tag = $tags[$tagname];
                 self::assertSame($tag->rawname, $tagname);
-                self::assertSame($tag->get_edit_url()->out(escaped: false), $tagediturl);
+                self::assertSame($tag->editurl->out(escaped: false), $tagediturl);
                 $parsedremoveurl = new moodle_url($tagremoveurl);
                 // Extract the set of tags from the query parameter.
                 // That set must be exactly the filter-tags minus the matching tag.
@@ -163,15 +162,15 @@ final class overview_test extends advanced_testcase {
      * Provides test data for the {@see test_export_for_template} method.
      *
      * @return array[] Arguments for the test method.
-     * @throws coding_exception
+     * @throws moodle_exception
      */
     public static function provider_test_export_for_template(): array {
         $metricfoo = test_metric::create('foo');
         $metricbar = test_metric::create('bar');
         $metricbaz = test_metric::create('baz');
-        $tagspam = new mock_managed_metric_tag(1, 'spam');
-        $tageggs = new mock_managed_metric_tag(2, 'eggs');
-        $tagbeans = new mock_managed_metric_tag(3, 'beans');
+        $tagspam = new test_metric_tag('spam', id: 1);
+        $tageggs = new test_metric_tag('eggs', id: 2);
+        $tagbeans = new test_metric_tag('beans', id: 3);
         return [
             'Tagging disabled, metrics with tags and tag filter set' => [
                 'metrics' => [

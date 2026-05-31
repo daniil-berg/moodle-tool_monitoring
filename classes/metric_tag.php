@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see registered_metric} interface.
+ * Definition of the {@see metric_tag} interface.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -29,13 +29,10 @@
 
 namespace tool_monitoring;
 
-use core\lang_string;
-use IteratorAggregate;
-use tool_monitoring\exceptions\metric_config_invalid;
-use Traversable;
+use moodle_url;
 
 /**
- * Encapsulates the interface that a registered metric exposes to exporters and other consumers.
+ * Interface of a tag associated with a registered metric.
  *
  * **This interface is a consumer-only contract.**
  * Plugins and sub-plugins should use it for annotation but are discouraged from implementing it.
@@ -43,13 +40,11 @@ use Traversable;
  *
  * TODO Readonly-property PHPDoc annotations will be replaced by property `get`-hooks, once PHP 8.4 becomes the minimum requirement.
  *
- * @property-read string $qualifiedname Qualified name of the metric.
- * @property-read string $component Component defining the metric.
- * @property-read string $name Name of the metric.
- * @property-read lang_string $description Localized description of the metric.
- * @property-read metric_type $type Type of the metric.
- * @property-read bool $enabled If `false` the metric is currently not supposed to be calculated/exported.
- * @property-read array<string, metric_tag> $tags Tags on the metric, indexed by their normalized name.
+ * @property-read int $id Tag ID.
+ * @property-read string $rawname Tag name as set by the user.
+ * @property-read string $name Normalized tag name.
+ * @property-read int|null $taginstanceid Tag instance ID (link between tag and metric).
+ * @property-read moodle_url $editurl URL to the tag editing page.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -59,24 +54,7 @@ use Traversable;
  *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
  */
-interface registered_metric extends IteratorAggregate {
-    /**
-     * Produces the current {@see metric_value}s.
-     *
-     * This allows the instance to be iterated over in a `foreach` loop.
-     *
-     * @return Traversable<metric_value> Values of the metric.
-     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
-     */
-    #[\Override]
-    public function getIterator(): Traversable;
-
-    /**
-     * Returns the current config.
-     *
-     * @return metric_config|null Metric config object or `null` if the metric is not configurable.
-     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
-     */
-    public function get_config(): metric_config|null;
-}
+interface metric_tag {}

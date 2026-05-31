@@ -1,4 +1,4 @@
-/.phpunit.cache/
+.phpunit.cache/
 phpunit.xml
 /.idea/
 /.vscode/

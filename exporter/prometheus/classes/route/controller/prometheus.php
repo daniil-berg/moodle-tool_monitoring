@@ -114,9 +114,11 @@ class prometheus {
         // Ensure the config is valid.
         try {
             $expectedtoken = get_config('monitoringexporter_prometheus', 'prometheus_token');
+            // @codeCoverageIgnoreStart
         } catch (dml_exception $e) {
             debugging("Failed to get `prometheus_token` from config: {$e->getMessage()}");
             return $makeresponse('Error in Prometheus exporter', 500);
+            // @codeCoverageIgnoreEnd
         }
         // Check auth.
         if ($expectedtoken !== '') {

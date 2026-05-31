@@ -34,9 +34,9 @@ namespace monitoringexporter_prometheus;
 use advanced_testcase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\testing\test_lang_string;
 use tool_monitoring\local\testing\test_metric;
+use tool_monitoring\local\testing\test_registered_metric;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
@@ -56,7 +56,7 @@ use tool_monitoring\metric_value;
 final class exporter_test extends advanced_testcase {
     #[DataProvider('provider_test_export')]
     public function test_export(array $metrics, string $expected): void {
-        $arguments = array_map([managed_metric::class, 'from_metric'], $metrics);
+        $arguments = array_map(test_registered_metric::from_metric(...), $metrics);
         $output = exporter::export(...$arguments);
         self::assertSame($expected, $output);
     }

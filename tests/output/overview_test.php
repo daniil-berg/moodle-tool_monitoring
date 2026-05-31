@@ -37,10 +37,11 @@ use core\output\renderer_base;
 use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use tool_monitoring\local\managed_metric;
 use tool_monitoring\local\managed_metric_tag;
 use tool_monitoring\local\testing\test_metric_tag;
 use tool_monitoring\local\testing\test_metric;
+use tool_monitoring\local\testing\test_registered_metric;
+use tool_monitoring\registered_metric;
 
 /**
  * Unit tests for the {@see overview} class.
@@ -61,7 +62,7 @@ final class overview_test extends advanced_testcase {
      *
      * Also implicitly tests the {@see overview::__construct} method.
      *
-     * @param array<string, managed_metric> $metrics Metrics to pass to the constructor, indexed by qualified name.
+     * @param array<string, registered_metric> $metrics Metrics to pass to the constructor, indexed by qualified name.
      * @param array<string, test_metric_tag> $tags Tags to pass to the constructor, indexed by normalized tag name.
      * @throws moodle_exception
      */
@@ -165,18 +166,18 @@ final class overview_test extends advanced_testcase {
      * @throws moodle_exception
      */
     public static function provider_test_export_for_template(): array {
-        $metricfoo = test_metric::create('foo');
-        $metricbar = test_metric::create('bar');
-        $metricbaz = test_metric::create('baz');
+        $foo = test_metric::create('foo');
+        $bar = test_metric::create('bar');
+        $baz = test_metric::create('baz');
         $tagspam = new test_metric_tag('spam', id: 1);
         $tageggs = new test_metric_tag('eggs', id: 2);
         $tagbeans = new test_metric_tag('beans', id: 3);
         return [
             'Tagging disabled, metrics with tags and tag filter set' => [
                 'metrics' => [
-                    'tool_monitoring_foo' => managed_metric::from_metric($metricfoo),
-                    'tool_monitoring_bar' => managed_metric::from_metric($metricbar, ['spam' => $tagspam, 'eggs' => $tageggs]),
-                    'tool_monitoring_baz' => managed_metric::from_metric($metricbaz, ['beans' => $tagbeans]),
+                    'tool_monitoring_foo' => test_registered_metric::from_metric($foo),
+                    'tool_monitoring_bar' => test_registered_metric::from_metric($bar, ['spam' => $tagspam, 'eggs' => $tageggs]),
+                    'tool_monitoring_baz' => test_registered_metric::from_metric($baz, ['beans' => $tagbeans]),
                 ],
                 'tags' => [
                     'spam' => $tagspam,
@@ -186,9 +187,9 @@ final class overview_test extends advanced_testcase {
             ],
             'Tagging enabled, metrics with tags and tag filter set' => [
                 'metrics' => [
-                    'tool_monitoring_foo' => managed_metric::from_metric($metricfoo),
-                    'tool_monitoring_bar' => managed_metric::from_metric($metricbar, ['spam' => $tagspam, 'eggs' => $tageggs]),
-                    'tool_monitoring_baz' => managed_metric::from_metric($metricbaz, ['beans' => $tagbeans]),
+                    'tool_monitoring_foo' => test_registered_metric::from_metric($foo),
+                    'tool_monitoring_bar' => test_registered_metric::from_metric($bar, ['spam' => $tagspam, 'eggs' => $tageggs]),
+                    'tool_monitoring_baz' => test_registered_metric::from_metric($baz, ['beans' => $tagbeans]),
                 ],
                 'tags' => [
                     'spam' => $tagspam,
@@ -198,9 +199,9 @@ final class overview_test extends advanced_testcase {
             ],
             'Tagging enabled, metrics with tags, but no tag filter set' => [
                 'metrics' => [
-                    'tool_monitoring_foo' => managed_metric::from_metric($metricfoo),
-                    'tool_monitoring_bar' => managed_metric::from_metric($metricbar, ['spam' => $tagspam, 'eggs' => $tageggs]),
-                    'tool_monitoring_baz' => managed_metric::from_metric($metricbaz, ['beans' => $tagbeans]),
+                    'tool_monitoring_foo' => test_registered_metric::from_metric($foo),
+                    'tool_monitoring_bar' => test_registered_metric::from_metric($bar, ['spam' => $tagspam, 'eggs' => $tageggs]),
+                    'tool_monitoring_baz' => test_registered_metric::from_metric($baz, ['beans' => $tagbeans]),
                 ],
                 'tags' => [],
                 'tagsenabled' => true,

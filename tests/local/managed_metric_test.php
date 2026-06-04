@@ -47,6 +47,7 @@ use ReflectionException;
 use ReflectionMethod;
 use ReflectionProperty;
 use tool_monitoring\event;
+use tool_monitoring\exceptions\metric_calculation_failed;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\testing\test_metric;
@@ -262,6 +263,24 @@ final class managed_metric_test extends advanced_testcase {
                 'testvalues' => new ArrayIterator([new metric_value(-1), new metric_value(-2), new metric_value(-3)]),
             ],
         ];
+    }
+
+    /**
+     * Tests exception wrapping in {@see managed_metric::getIterator}.
+     *
+     * @throws coding_exception
+     */
+    public function test_iterator_exception(): void {
+        $exception = new coding_exception('test');
+        $metric = test_metric::create(name: 'throws', values: $exception);
+        $instance = managed_metric::from_metric($metric);
+        try {
+            iterator_to_array($instance);
+            self::fail('Expected metric_calculation_failed not thrown.');
+        } catch (metric_calculation_failed $e) {
+            self::assertSame($exception, $e->getPrevious());
+            self::assertSame('tool_monitoring_throws', $e->qualifiedname);
+        }
     }
 
     /**

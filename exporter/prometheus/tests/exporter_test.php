@@ -32,11 +32,17 @@
 namespace monitoringexporter_prometheus;
 
 use advanced_testcase;
+use core\exception\coding_exception;
+use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use tool_monitoring\exceptions\json_invalid;
+use tool_monitoring\exceptions\json_key_missing;
+use tool_monitoring\exceptions\metric_calculation_failed;
 use tool_monitoring\local\testing\test_lang_string;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_registered_metric;
+use tool_monitoring\metric;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
@@ -54,10 +60,36 @@ use tool_monitoring\metric_value;
  */
 #[CoversClass(exporter::class)]
 final class exporter_test extends advanced_testcase {
+    /**
+     * Tests the {@see exporter::export} method.
+     *
+     * @param array<metric|Exception> $metrics List of metrics/exceptions. For every metric a {@see test_registered_metric} instance
+     *                                         is constructed normally. For every exception a mock is constructed that wraps the
+     *                                         exception in a {@see metric_calculation_failed} instance and throws that in
+     *                                         {@see test_registered_metric::getIterator}.
+     * @param string $expected Expected output.
+     * @throws coding_exception
+     */
     #[DataProvider('provider_test_export')]
     public function test_export(array $metrics, string $expected): void {
-        $arguments = array_map(test_registered_metric::from_metric(...), $metrics);
+        $arguments = [];
+        $debugging = [];
+        foreach ($metrics as $i => $metric) {
+            if ($metric instanceof Exception) {
+                $mockmetric = $this->getMockBuilder(test_registered_metric::class)
+                    ->onlyMethods(['getIterator'])
+                    ->setConstructorArgs(['name' => "throws_error_$i"])
+                    ->getMock();
+                $exception = new metric_calculation_failed(qualifiedname: $mockmetric->qualifiedname, previous: $metric);
+                $mockmetric->expects($this->once())->method('getIterator')->willThrowException($exception);
+                $debugging[] = "Skipping metric '$mockmetric->qualifiedname': {$metric->getMessage()}";
+                $arguments[] = $mockmetric;
+            } else {
+                $arguments[] = test_registered_metric::from_metric($metric);
+            }
+        }
         $output = exporter::export(...$arguments);
+        self::assertdebuggingcalledcount(count($debugging), $debugging);
         self::assertSame($expected, $output);
     }
 
@@ -203,6 +235,30 @@ final class exporter_test extends advanced_testcase {
                     tool_monitoring_bar -Inf
                     # TYPE tool_monitoring_baz gauge
                     tool_monitoring_baz NaN
+                    
+                    TEXT,
+            ],
+            'Some metrics fail to calculate and throw errors instead' => [
+                'metrics' => [
+                    test_metric::create(
+                        name: 'foo',
+                        description: new test_lang_string('Lorem ipsum dolor sit amet...'),
+                        values: [new metric_value(1)],
+                    ),
+                    new json_invalid(),
+                    test_metric::create(
+                        name: 'bar',
+                        type: metric_type::GAUGE,
+                        values: [new metric_value(3.14)],
+                    ),
+                    new json_key_missing('name'),
+                ],
+                'expected' => <<<'TEXT'
+                    # HELP tool_monitoring_foo Lorem ipsum dolor sit amet...
+                    # TYPE tool_monitoring_foo counter
+                    tool_monitoring_foo 1
+                    # TYPE tool_monitoring_bar gauge
+                    tool_monitoring_bar 3.14
                     
                     TEXT,
             ],

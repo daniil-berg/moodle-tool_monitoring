@@ -34,10 +34,12 @@ use core\exception\coding_exception;
 use core\lang_string;
 use core_cache\cacheable_object_interface;
 use dml_exception;
+use Exception;
 use JsonException;
 use moodleform;
 use stdClass;
 use tool_monitoring\event;
+use tool_monitoring\exceptions\metric_calculation_failed;
 use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\form\config as config_form;
 use tool_monitoring\hook\metric_collection;
@@ -286,11 +288,15 @@ final class managed_metric implements cacheable_object_interface, registered_met
 
     #[\Override]
     public function getIterator(): Traversable {
-        $values = $this->metric->calculate($this->get_config());
-        if ($values instanceof metric_value) {
-            yield $values;
-        } else {
-            yield from $values;
+        try {
+            $values = $this->metric->calculate($this->get_config());
+            if ($values instanceof metric_value) {
+                yield $values;
+            } else {
+                yield from $values;
+            }
+        } catch (Exception $e) {
+            throw new metric_calculation_failed($this->qualifiedname, $e);
         }
     }
 

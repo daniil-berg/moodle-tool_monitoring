@@ -33,6 +33,7 @@ namespace tool_monitoring\exceptions;
 
 use advanced_testcase;
 use core\exception\moodle_exception;
+use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 

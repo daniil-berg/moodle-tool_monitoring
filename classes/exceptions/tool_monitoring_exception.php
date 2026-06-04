@@ -31,6 +31,9 @@ namespace tool_monitoring\exceptions;
 
 use core\component;
 use core\exception\moodle_exception;
+use Exception;
+use ReflectionProperty;
+use Throwable;
 
 /**
  * Base exception class for the plugin.
@@ -58,6 +61,7 @@ abstract class tool_monitoring_exception extends moodle_exception {
      *                     the site index page.
      * @param mixed $a Extra words and phrases that might be required in the error string.
      * @param string|null $debuginfo Optional debugging information.
+     * @param null|Throwable $previous The previous throwable used for the exception chaining.
      */
     public function __construct(
         string|null $errorcode = null,
@@ -65,6 +69,7 @@ abstract class tool_monitoring_exception extends moodle_exception {
         string $link = '',
         mixed $a = null,
         string|null $debuginfo = null,
+        Throwable|null $previous = null,
     ) {
         if (is_null($errorcode)) {
             $classname = static::class;
@@ -83,5 +88,10 @@ abstract class tool_monitoring_exception extends moodle_exception {
             a: $a ?? [],
             debuginfo: $debuginfo,
         );
+        if (!is_null($previous)) {
+            // Since the `moodle_exception` constructor doesn't accept `$previous`, we patch it in directly as an ugly compromise.
+            // That way the `getPrevious` method works as expected for subclasses that wrap an exception.
+            (new ReflectionProperty(Exception::class, 'previous'))->setValue($this, $previous);
+        }
     }
 }

@@ -34,6 +34,7 @@ defined('MOODLE_INTERNAL') || die();
 $string['error:form_data_value_missing'] = 'Form data is missing a value for the "{$a->fieldname}" field.';
 $string['error:json_invalid'] = 'Invalid JSON encountered or the top-level type in that JSON is wrong.';
 $string['error:json_key_missing'] = 'JSON object is missing the "{$a->key}" key.';
+$string['error:metric_calculation_failed'] = 'Could not calculate metric "{$a->qualifiedname}".';
 $string['error:metric_name_invalid'] = 'Metric from component "{$a->component}" has an invalid name: "{$a->name}"';
 $string['error:metric_not_found'] = 'No metric with the qualified name "{$a->qualifiedname}" is registered.';
 $string['error:quiz_attempts_in_progress_config:input_invalid'] = 'Invalid input';

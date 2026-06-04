@@ -30,7 +30,9 @@
 namespace tool_monitoring;
 
 use core\lang_string;
+use Exception;
 use IteratorAggregate;
+use tool_monitoring\exceptions\metric_calculation_failed;
 use tool_monitoring\exceptions\metric_config_invalid;
 use Traversable;
 
@@ -67,7 +69,7 @@ interface registered_metric extends IteratorAggregate {
      * This allows the instance to be iterated over in a `foreach` loop.
      *
      * @return Traversable<metric_value> Values of the metric.
-     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
+     * @throws metric_calculation_failed An {@see Exception} occurred trying to produce the metric values.
      */
     #[\Override]
     public function getIterator(): Traversable;

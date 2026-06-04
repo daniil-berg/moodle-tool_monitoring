@@ -30,6 +30,7 @@
 namespace tool_monitoring\local\testing;
 
 use core\lang_string;
+use Exception;
 use tool_monitoring\metric;
 use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
@@ -52,8 +53,11 @@ use tool_monitoring\metric_value;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class test_metric extends metric {
-    /** @var iterable<metric_value>|metric_value Metric values produced by the {@see self::calculate `calculate`} method. */
-    private iterable|metric_value $values;
+    /**
+     * @var iterable<metric_value>|metric_value|Exception Values produced by the {@see self::calculate `calculate`} method or
+     *                                                    exception thrown in the method.
+     */
+    private iterable|metric_value|Exception $values;
 
     /** @var metric_type Type returned from the {@see self::get_type `get_type`} method. */
     private metric_type $type;
@@ -70,14 +74,15 @@ class test_metric extends metric {
      * @param string|null $name String to return from {@see metric::get_name `get_name`}.
      * @param lang_string|null $description Language string to return from {@see self::get_description `get_description`}.
      * @param metric_type|null $type Type to return from {@see metric::get_type `get_type`}.
-     * @param iterable|metric_value|null $values Values to produce from {@see metric::calculate `calculate`}.
+     * @param iterable<metric_value>|metric_value|Exception|null $values Values to produce from {@see metric::calculate `calculate`}
+     *                                                                   or exception to throw in the method.
      * @return static New configured instance.
      */
     public static function create(
         string|null $name = null,
         lang_string|null $description = null,
         metric_type|null $type = null,
-        iterable|metric_value|null $values = null,
+        iterable|metric_value|Exception|null $values = null,
     ): static {
         $metric = new static();
         if (!is_null($values)) {
@@ -95,9 +100,20 @@ class test_metric extends metric {
         return $metric;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param metric_config|null $config Ignored.
+     * @return iterable<metric_value>|metric_value Metric values passed to {@see self::create `create`} during construction.
+     * @throws Exception If one was passed to {@see self::create `create`} during construction.
+     */
     #[\Override]
     public function calculate(metric_config|null $config = null): iterable|metric_value {
-        return $this->values ?? [];
+        $values = $this->values ?? [];
+        if ($values instanceof Exception) {
+            throw $values;
+        }
+        return $values;
     }
 
     #[\Override]

@@ -29,7 +29,7 @@
 
 namespace monitoringexporter_prometheus;
 
-use tool_monitoring\exceptions\metric_config_invalid;
+use tool_monitoring\exceptions\metric_calculation_failed;
 use tool_monitoring\metric_value;
 use tool_monitoring\registered_metric;
 
@@ -87,10 +87,10 @@ class exporter {
             foreach ($metric as $metricvalue) {
                 $output .= "\n" . self::get_metric_value_line($metricvalue, $name);
             }
-        } catch (metric_config_invalid $e) {
+        } catch (metric_calculation_failed $e) {
             debugging(
-                message: "Skipping metric '$metric->qualifiedname' due to invalid config: {$e->getMessage()}",
-                backtrace: $e->getTrace(),
+                message: "Skipping metric '$e->qualifiedname': {$e->getPrevious()?->getMessage()}",
+                backtrace: $e->getPrevious()?->getTrace(),
             );
             return '';
         }

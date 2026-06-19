@@ -125,7 +125,13 @@ So if your Moodle web root is `https://example.com`, the full URL will look like
 > See the relevant [Moodle documentation][moodle docs routing config] for details.
 
 That endpoint can be secured by specifying an access token (shared secret) in the `monitoringexporter_prometheus | prometheus_token` setting.
-The route handler expects the token to be present in the `Authorization` header of the request in the conventional `Authorization: Bearer <token>` format.
+
+> [!WARNING]
+> **The endpoint is unauthenticated by default.**
+> Until a `prometheus_token` is set, anyone who can reach the URL can see _all enabled metrics_ with no credentials.
+> Even though by default all new metrics are _disabled_, a token should be set before exposing the endpoint to any untrusted network.
+
+When a token is set, the route handler expects it in the `Authorization` header in the conventional `Authorization: Bearer <token>` format.
 If no matching header line is found, it falls back to the `token` query parameter.
 
 > [!CAUTION]

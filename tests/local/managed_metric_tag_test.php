@@ -29,7 +29,7 @@
  * {@noinspection PhpIllegalPsrClassPathInspection}
  */
 
-namespace local;
+namespace tool_monitoring\local;
 
 use advanced_testcase;
 use core\exception\coding_exception;
@@ -41,9 +41,6 @@ use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use tool_monitoring\exceptions\tag_not_found;
-use tool_monitoring\local\managed_metric;
-use tool_monitoring\local\managed_metric_tag;
-use tool_monitoring\local\metric_record;
 use tool_monitoring\local\testing\test_metric;
 use tool_monitoring\local\testing\test_metric_with_config;
 

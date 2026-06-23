@@ -33,7 +33,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'monitoringexporter_prometheus';
-$plugin->release   = '0.2.1';
-$plugin->version   = 2025090305;
+$plugin->release   = '1.0.0';
+$plugin->version   = 2026062300;
 $plugin->requires  = 2025041400; // Moodle 5.0.
-$plugin->maturity  = MATURITY_ALPHA;
+$plugin->maturity  = MATURITY_STABLE;

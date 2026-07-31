@@ -48,7 +48,7 @@ use tool_monitoring\metrics_manager;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class meta_metrics_count extends metric {
+class meta_metrics_samples extends metric {
     #[\Override]
     public static function get_type(): metric_type {
         return metric_type::GAUGE;
@@ -61,13 +61,13 @@ class meta_metrics_count extends metric {
      * @throws dml_exception
      */
     #[\Override]
-    public function calculate(): array {
+    public function calculate(): iterable {
         $stats = metric_statistics::get();
 
-        $metrics_count = count($stats);
-
-        return [
-                new metric_value($metrics_count),
-        ];
+        foreach ($stats as $metric_name => $metric_stats) {
+            yield new metric_value($metric_stats['sample_count'], [
+                    'metric_name' => $metric_name,
+            ]);
+        }
     }
 }

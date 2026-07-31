@@ -34,6 +34,6 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'monitoringexporter_prometheus';
 $plugin->release   = '0.2.1';
-$plugin->version   = 2025090309;
+$plugin->version   = 2025090310;
 $plugin->requires  = 2025041400; // Moodle 5.0.
 $plugin->maturity  = MATURITY_ALPHA;

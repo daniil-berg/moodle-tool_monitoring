@@ -41,5 +41,6 @@ $callbacks = [
     ['hook' => metric_collection::class, 'callback' => [metrics\user_accounts::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\users_online::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\meta\meta_metrics_count::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\meta\meta_metrics_samples::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\meta\meta_metrics_timings::class, 'collect']],
 ];

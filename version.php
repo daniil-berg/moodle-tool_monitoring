@@ -35,4 +35,5 @@ $plugin->component = 'tool_monitoring';
 $plugin->release   = '1.0.0';
 $plugin->version   = 2026062300;
 $plugin->requires  = 2025041400; // Moodle 5.0.
+$plugin->supported = [500, 502];
 $plugin->maturity  = MATURITY_STABLE;

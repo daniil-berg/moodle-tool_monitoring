@@ -45,6 +45,8 @@ $string['event:metric_disabled'] = 'Metric disabled';
 $string['event:metric_enabled'] = 'Metric enabled';
 
 $string['metric:courses_desc'] = 'Current number of courses';
+$string['metric:meta_metrics_count_desc'] = 'Current number of monitored metrics';
+$string['metric:meta_metrics_timings_desc'] = 'Timings of monitored metrics';
 $string['metric:overdue_tasks_desc'] = 'Number of tasks (excluding disabled ones) for which the next runtime is not in the future';
 $string['metric:quiz_attempts_in_progress_config:maxdeadlineseconds'] = 'Maximum deadline time';
 $string['metric:quiz_attempts_in_progress_config:maxdeadlineseconds_help'] = 'Do not count attempts that have a deadline in more than this number of seconds.';
@@ -75,6 +77,7 @@ $string['settings:name'] = 'Name';
 $string['settings:tag_filter'] = 'Filter:';
 $string['settings:type'] = 'Type';
 
+$string['subplugintype_monitoringexporter'] = 'Exporter type';
 $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
 
 $string['tagarea_tool_monitoring_metrics'] = 'Metrics';

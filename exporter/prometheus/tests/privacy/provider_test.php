@@ -15,9 +15,28 @@
 // along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * English language strings for the component.
+ * Definition of the {@see provider_test} class.
  *
- * @link https://docs.moodle.org/dev/String_API Moodle docs String API
+ * @package    monitoringexporter_prometheus
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * {@noinspection PhpIllegalPsrClassPathInspection}
+ */
+
+namespace monitoringexporter_prometheus\privacy;
+
+use advanced_testcase;
+use core_privacy\local\metadata\null_provider;
+use PHPUnit\Framework\Attributes\CoversClass;
+
+/**
+ * Unit tests for the {@see provider} class.
  *
  * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
@@ -28,8 +47,11 @@
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-$string['pluginname'] = 'Prometheus Exporter';
-$string['privacy:metadata'] = 'The Prometheus Exporter plugin does not store any personal data.';
-$string['settings:token'] = 'Token';
-$string['settings:token_desc'] = 'The token which has to be passed when the endpoint is called.';
+#[CoversClass(provider::class)]
+final class provider_test extends advanced_testcase {
+    public function test_get_reason(): void {
+        self::assertTrue(is_subclass_of(provider::class, null_provider::class));
+        $stringid = provider::get_reason();
+        self::assertTrue(get_string_manager()->string_exists($stringid, 'monitoringexporter_prometheus'));
+    }
+}

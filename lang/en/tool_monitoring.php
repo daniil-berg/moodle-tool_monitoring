@@ -67,7 +67,8 @@ $string['monitoring:manage_metrics'] = 'Manage and configure monitoring metrics'
 
 $string['pluginname'] = 'Monitoring';
 
-$string['privacy:metadata'] = 'The Monitoring plugin does not store any personal data.';
+$string['privacy:metadata:tool_monitoring_metrics'] = 'Registered monitoring metrics and their site-wide configuration.';
+$string['privacy:metadata:tool_monitoring_metrics:usermodified'] = 'The ID of the user who last enabled, disabled or configured the metric.';
 
 $string['settings:actions'] = 'Actions';
 $string['settings:component'] = 'Component';

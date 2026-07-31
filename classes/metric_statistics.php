@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metaMetrics_count} metric class.
+ * Definition of the {@see metric_statistics} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,17 +27,25 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\local\metrics\meta;
+namespace tool_monitoring;
 
+use context_system;
+use core\exception\coding_exception;
+use core\lang_string;
+use core_tag_tag;
 use dml_exception;
-use tool_monitoring\metric_statistics;
-use tool_monitoring\metric_type;
-use tool_monitoring\metric;
-use tool_monitoring\metric_value;
-use tool_monitoring\metrics_manager;
+use IteratorAggregate;
+use JsonException;
+use moodleform;
+use stdClass;
+use tool_monitoring\form\config as config_form;
+use Traversable;
 
 /**
- * Gauges the current number of metrics monitored by tool_monitoring.
+ * Stores some stats for {@see metric}s that will be used for meta metrics.
+ *
+ * This class is static and the contained values are for the last calculation of the metrics.
+ * Metric stat values can be retrieved by iterating over the instance of this class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -48,33 +56,17 @@ use tool_monitoring\metrics_manager;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class meta_metrics_timings extends metric {
-    #[\Override]
-    public static function get_type(): metric_type {
-        return metric_type::GAUGE;
+final class metric_statistics {
+    private static array $stats = [];
+
+    public static function record(string $metric_name, int $duration, int $sample_count): void {
+        self::$stats[$metric_name] = [
+            'duration_ms' => $duration,
+            'sample_count' => $sample_count,
+        ];
     }
 
-    /**
-     * Produces the current metric values.
-     *
-     * @return metric_value[] Two metric values, one for visible courses and one for hidden courses.
-     * @throws dml_exception
-     */
-    #[\Override]
-    public function calculate(): iterable|metric_value {
-        $stats = metric_statistics::get();
-        $timing_total = 0;
-
-        foreach ($stats as $metric => $stats) {
-            $duration = $stats['duration_ms'];
-            yield new metric_value($duration,
-                [
-                    "metric" => $metric,
-                ]
-            );
-            $timing_total += $duration;
-        }
-
-        yield new metric_value($timing_total);
+    public static function get(): array {
+        return self::$stats;
     }
 }

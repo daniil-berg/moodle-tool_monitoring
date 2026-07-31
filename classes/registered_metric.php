@@ -336,10 +336,16 @@ final class registered_metric implements IteratorAggregate {
         fwrite($myfile, intval($duration_ms));
         fwrite($myfile, "ms) \n");
         $this->timing_duration = intval($duration_ms);
+        $sample_count = 0;
         if ($values instanceof metric_value) {
+            $sample_count = 1;
             yield $values;
         } else {
-            yield from $values;
+            foreach ($values as $value) {
+                $sample_count++;
+                yield $value;
+            }
         }
+        metric_statistics::record($this->qualifiedname, intval($duration_ms), $sample_count);
     }
 }

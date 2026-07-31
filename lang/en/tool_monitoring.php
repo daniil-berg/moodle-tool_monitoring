@@ -31,6 +31,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['cachedef_metric_tags'] = 'Tags that can be attached to managed metrics';
+$string['cachedef_metrics'] = 'Managed metrics (including associated tag instances)';
+
 $string['error:form_data_value_missing'] = 'Form data is missing a value for the "{$a->fieldname}" field.';
 $string['error:json_invalid'] = 'Invalid JSON encountered or the top-level type in that JSON is wrong.';
 $string['error:json_key_missing'] = 'JSON object is missing the "{$a->key}" key.';

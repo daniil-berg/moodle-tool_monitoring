@@ -15,10 +15,9 @@
 // along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Plugin version and other metadata are defined here.
  *
  * @package    monitoringexporter_prometheus
- * @subpackage tool_monitoring
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -33,8 +32,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'monitoringexporter_prometheus';
-$plugin->release   = '1.0.0';
-$plugin->version   = 2026062300;
+$plugin->release   = '1.1.0';
+$plugin->version   = 2026073100;
 $plugin->requires  = 2025041400; // Moodle 5.0.
 $plugin->supported = [500, 502];
 $plugin->maturity  = MATURITY_STABLE;

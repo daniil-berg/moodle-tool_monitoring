@@ -14,21 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
-/**
- * Definition of the {@see metric_collection} hook class.
- *
- * @link https://moodledev.io/docs/apis/core/hooks Documentation: Hooks API
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace tool_monitoring\hook;
 
 use core\di;
@@ -46,6 +31,7 @@ use Traversable;
  *
  * An instance of this hook is dispatched automatically when injected as a dependency by the DI container.
  *
+ * @link https://moodledev.io/docs/apis/core/hooks Documentation: Hooks API
  * @link https://moodledev.io/docs/apis/core/hooks#hook-instance Documentation: Hook instance
  *
  * @package    tool_monitoring

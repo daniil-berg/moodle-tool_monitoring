@@ -14,19 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
-/**
- * Definition of the {@see metric_type} enum.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace tool_monitoring;
 
 /**

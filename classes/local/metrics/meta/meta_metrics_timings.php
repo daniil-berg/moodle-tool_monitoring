@@ -63,18 +63,19 @@ class meta_metrics_timings extends metric {
     #[\Override]
     public function calculate(): iterable|metric_value {
         $stats = metric_statistics::get();
-        $timing_total = 0;
+        $totaltiming = 0;
 
         foreach ($stats as $metric => $stats) {
             $duration = $stats['duration_ms'];
-            yield new metric_value($duration,
+            yield new metric_value(
+                $duration,
                 [
                     "metric" => $metric,
                 ]
             );
-            $timing_total += $duration;
+            $totaltiming += $duration;
         }
 
-        yield new metric_value($timing_total);
+        yield new metric_value($totaltiming);
     }
 }

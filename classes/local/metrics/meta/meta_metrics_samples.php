@@ -64,9 +64,9 @@ class meta_metrics_samples extends metric {
     public function calculate(): iterable {
         $stats = metric_statistics::get();
 
-        foreach ($stats as $metric_name => $metric_stats) {
-            yield new metric_value($metric_stats['sample_count'], [
-                    'metric_name' => $metric_name,
+        foreach ($stats as $metricname => $metricstats) {
+            yield new metric_value($metricstats['sample_count'], [
+                    'metric_name' => $metricname,
             ]);
         }
     }

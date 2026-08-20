@@ -57,15 +57,30 @@ use Traversable;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class metric_statistics {
+    /**
+     * @var array $stats stores the metric statistics, organized by metric name
+     */
     private static array $stats = [];
 
-    public static function record(string $metric_name, int $duration, int $sample_count): void {
-        self::$stats[$metric_name] = [
+    /**
+     * Saves statistics for a given metric name.
+     *
+     * @param string $metricname name of the metric to save the stats for
+     * @param int $duration the duration of the metric calculation
+     * @param int $samplecount the number of samples produced by the metric
+     */
+    public static function record(string $metricname, int $duration, int $samplecount): void {
+        self::$stats[$metricname] = [
             'duration_ms' => $duration,
-            'sample_count' => $sample_count,
+            'sample_count' => $samplecount,
         ];
     }
 
+    /**
+     * Gets the saved metric stats, organized by metric name.
+     *
+     * @return array of metric stats
+     */
     public static function get(): array {
         return self::$stats;
     }

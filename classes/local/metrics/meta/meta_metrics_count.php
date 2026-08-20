@@ -64,10 +64,10 @@ class meta_metrics_count extends metric {
     public function calculate(): array {
         $stats = metric_statistics::get();
 
-        $metrics_count = count($stats);
+        $metricscount = count($stats);
 
         return [
-                new metric_value($metrics_count),
+                new metric_value($metricscount),
         ];
     }
 }

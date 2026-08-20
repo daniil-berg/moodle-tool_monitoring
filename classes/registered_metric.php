@@ -320,18 +320,18 @@ final class registered_metric implements IteratorAggregate {
         $start = hrtime(true);
         $values = $this->metric->calculate();
         $end = hrtime(true);
-        $duration_ns = ($end - $start);
-        $duration_ms = $duration_ns / 1000000;
-        $sample_count = 0;
+        $durationns = ($end - $start);
+        $durationms = $durationns / 1000000;
+        $samplecount = 0;
         if ($values instanceof metric_value) {
-            $sample_count = 1;
+            $samplecount = 1;
             yield $values;
         } else {
             foreach ($values as $value) {
-                $sample_count++;
+                $samplecount++;
                 yield $value;
             }
         }
-        metric_statistics::record($this->qualifiedname, intval($duration_ms), $sample_count);
+        metric_statistics::record($this->qualifiedname, intval($durationms), $samplecount);
     }
 }

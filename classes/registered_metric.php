@@ -114,8 +114,6 @@ final class registered_metric implements IteratorAggregate {
         public int|null $usermodified = null,
         /** @var int|null Primary key of the corresponding DB table row; `null` if not (yet) saved. */
         public int|null $id = null,
-
-        public int|null $timing_duration = 0,
     ) {}
 
     /**
@@ -324,18 +322,6 @@ final class registered_metric implements IteratorAggregate {
         $end = hrtime(true);
         $duration_ns = ($end - $start);
         $duration_ms = $duration_ns / 1000000;
-        $myfile = fopen("/tmp/moodle_timing_log.txt", "a") or die("Unable to open file!");
-        fwrite($myfile, $this->metric->get_description());
-        fwrite($myfile, "\n");
-        fwrite($myfile, $start);
-        fwrite($myfile, "\n");
-        fwrite($myfile, $end);
-        fwrite($myfile, "\n");
-        fwrite($myfile, $duration_ns);
-        fwrite($myfile, "ns \n(");
-        fwrite($myfile, intval($duration_ms));
-        fwrite($myfile, "ms) \n");
-        $this->timing_duration = intval($duration_ms);
         $sample_count = 0;
         if ($values instanceof metric_value) {
             $sample_count = 1;

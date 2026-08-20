@@ -28,7 +28,7 @@ Development started at the 2025 [Moodle Moot DACH][moodlemootdach home] DevCamp,
 - [Architecture](#architecture)
   - [Base `metric` class](#base-metric-class)
   - [Hook `metric_collection`](#hook-metric_collection)
-  - [DB table and `registered_metric` wrapper](#db-table-and-registered_metric-wrapper)
+  - [DB table and `registered_metric` interface](#db-table-and-registered_metric-interface)
   - [Central `metrics_manager`](#central-metrics_manager)
   - [Configurable metrics (advanced)](#configurable-metrics-advanced)
   - [Exporter sub-plugins](#exporter-sub-plugins)
@@ -94,27 +94,82 @@ Out of the box, `tool_monitoring` comes with the following metrics:
 #### Metric configuration
 
 Some metrics have their own specific configuration options.
-🚧 TODO
+As an example, the pre-installed `users_online` metric has configurable time windows for counting users' most recent access.
+
+To configure it, click on the gear icon next to it on the [dashboard](#dashboard).
+A config page for that metric will open that looks like this:
+
+![Metric Config users_online](docs/img/screenshot_metric_config_users_online.png)
+
+All metrics share basic settings, namely the enabled/disabled state and associated tags.
+But for [configurable metrics](#configurable-metrics-advanced) there can be arbitrary additional form fields.
+
+In this example, the `users_online` metric has an input field for the time windows in seconds.
+The form validates the input to be a comma-separated list of positive integers.
+During export a separate labeled metric value will be produced for every specified time window.
+
+After modifying the form data, clicking the "Save changes" button redirects you back to the dashboard.
 
 #### Exporters
 
 The pre-installed Prometheus exporter has its own settings under _Site administration_ > _Plugins_ > _Admin tools_ > _Monitoring_ > _Available Exporters_ > _Prometheus Exporter_.
 
 The actual Prometheus endpoint is immediately accessible and can be reached at the route `/monitoringexporter_prometheus/metrics`.
+So if your Moodle web root is `https://example.com`, the full URL will look like this:
 
-That endpoint can be secured by specifying an access token in the `monitoringexporter_prometheus | prometheus_token` setting, which then must be provided in the `token` query parameter.
-So if your Moodle web root is `https://example.com` and you set the `prometheus_token` to be `super-secure-secret`, the full URL will look like this:
-
-`https://example.com/monitoringexporter_prometheus/metrics?token=super-secure-secret`
+`https://example.com/monitoringexporter_prometheus/metrics`
 
 > [!IMPORTANT]
 > This relies on the router and your webserver being properly configured.
 > If not, the endpoint is reached at `/r.php/monitoringexporter_prometheus/metrics`.
 > See the relevant [Moodle documentation][moodle docs routing config] for details.
 
+That endpoint can be secured by specifying an access token (shared secret) in the `monitoringexporter_prometheus | prometheus_token` setting.
+
+> [!WARNING]
+> **The endpoint is unauthenticated by default.**
+> Until a `prometheus_token` is set, anyone who can reach the URL can see _all enabled metrics_ with no credentials.
+> Even though by default all new metrics are _disabled_, a token should be set before exposing the endpoint to any untrusted network.
+
+When a token is set, the route handler expects it in the `Authorization` header in the conventional `Authorization: Bearer <token>` format.
+If no matching header line is found, it falls back to the `token` query parameter.
+
+> [!CAUTION]
+> Secrets passed via query parameter can leak into server logs.
+> We strongly advise passing the access token via the `Authorization` header.
+> See the [Prometheus configuration](#prometheus-configuration) section for an example.
+
 ### Grouping metrics with tags (optional)
 
-🚧 TODO
+Sometimes it is useful to not export all available metrics at the same time.
+Perhaps some of your metrics are cheap and quick to calculate, allowing tight scrape intervals, while others would impact performance too much if the exporter were called too often.
+Or maybe you have different export destinations for some metrics.
+
+Whatever the use case, `tool_monitoring` allows you to easily group metrics by leveraging [Moodle's Tag API][moodle docs tag api].
+You can assign arbitrary tags (scoped to their own distinct "metrics" tag area) to any metric.
+Exporters can then provide a parameter to filter the produced metrics by the tags they carry.
+For example, the included Prometheus exporter accepts a `tag` query parameter in the URL.
+Passing a single tag name will filter out all metrics that do not carry that tag.
+Passing a comma-separated **list of tags** will ensure only metrics that carry **all** of those tags will be exported.
+(Note the **AND**-condition being applied here.)
+For implementation details, take a look at the Prometheus [`exporter`][. exporter] class.
+
+To assign tags to a metric, go to its [configuration page](#metric-configuration).
+Then simply enter the tag names in the "Tags" field.
+
+![Metric Config Tags users_online](docs/img/screenshot_metric_config_tags_users_online.png)
+
+You can add multiple tags at once by putting a comma after each one.
+Clicking the "Save changes" button redirects you back to the dashboard.
+You'll notice the tags you just added show up in the list there.
+
+![Metrics Overview Tags](docs/img/screenshot_metrics_overview_tags.png)
+
+Clicking on one of them will filter the list of metrics accordingly.
+
+![Metrics Overview Tags filtered](docs/img/screenshot_metrics_overview_tags_filtered.png)
+
+The "Manage tags" button will bring you Moodle's usual tag overview/management page for the monitoring tag collection.
 
 ### Prometheus configuration
 
@@ -123,13 +178,13 @@ All you need to do is to add a job to the `scrape_configs` section in your `prom
 
 ```yaml
 scrape_configs:
-   # Choose whatever unique job name you like.
+  # Choose whatever unique job name you like.
   - job_name: moodle
     # The default scheme is HTTP.
     scheme: https
-    # If you have set an access token, provide it here as a query parameter.
-    params:
-      - token: ['super-secure-secret']
+    # If you have set an access token, provide it here.
+    authorization:
+      credentials: 'super-secure-secret'
     # Specify the full endpoint path. The default is just '/metrics'.
     # If Moodle routing is not fully configured, you have to prepend '/r.php' to the path.
     metrics_path: /monitoringexporter_prometheus/metrics
@@ -140,12 +195,14 @@ scrape_configs:
 
 If you are making use of tags to group specific metrics, you can filter for them by also specifying the `tag` query parameter.
 Multiple tags can be specified by separating them with a comma.
-For example, to only scrape metrics that have both the `hello` and the `world` tag, your `params` section would have look like this:
+For example, to only scrape metrics that have both the `hello` and the `world` tag, you would add a `params` section like this:
 
 ```yaml
+scrape_configs:
+  - job_name: moodle-hello-world
     params:
-      - token: ['super-secure-secret']
       - tag: ['hello,world']
+    # Same config as above...
 ```
 
 For exhaustive details about the various config options, see the official [Prometheus documentation][prometheus docs config].
@@ -180,6 +237,7 @@ Let's say we have our own `local_example` plugin and the metric class is suppose
 namespace local_example\metrics;
 
 use tool_monitoring\metric;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
@@ -187,11 +245,11 @@ use tool_monitoring\metric_value;
  * Measures the current number of blocks used on the site.
  */
 class blocks_used extends metric {
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
-    public function calculate(): array {
+    public function calculate(metric_config|null $config = null): array {
         global $DB;
         [$insql, $params] = $DB->get_in_or_equal(['course_list', 'course_summary']);
         $sql = "SELECT b.name,
@@ -363,22 +421,26 @@ And the `calculate` method now also relies on an instance of our config class.
 namespace local_example\metrics;
 
 use core\lang_string;
-use tool_monitoring\metric;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
 
 /**
  * Measures the current number of blocks used on the site.
+ *
+ * @extends metric_with_config<blocks_used_config>
  */
 class blocks_used extends metric_with_config {
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
-    public function calculate(): metric_value {
+    /**
+     * @param blocks_used_config|null $config Metric configuration.
+     */
+    public function calculate(metric_config|null $config = null): metric_value {
         global $DB;
-        $config = $this->parse_config(blocks_used_config::class);
         $sql = "SELECT COUNT(*)
                   FROM {block_instances} AS binst
                   JOIN {block} AS b ON b.name = binst.blockname
@@ -390,7 +452,7 @@ class blocks_used extends metric_with_config {
         return new metric_value($DB->count_records_sql($sql, $params));
     }
 
-    public static function get_default_config(): blocks_used_config {
+    public function get_default_config(): blocks_used_config {
         return new blocks_used_config();
     }
 }
@@ -398,9 +460,10 @@ class blocks_used extends metric_with_config {
 
 </details>
 
-Using the helper method `parse_config` we get an instance of our config class constructed with the data from the database.
-The return type is _guaranteed_ to be an instance of the supplied config class.
-We use it to construct the necessary SQL query.
+Notice that unlike before, we are actually using the `$config` object here for our calculation of the metric value.
+The stored configuration JSON will be deserialized into an instance of the config class and passed to `calculate`.
+
+<sub>The parameter type cannot be narrowed in the signature, so the concrete config class is declared twice: `@extends metric_with_config<blocks_used_config>` (static analysis) and `@param blocks_used_config|null $config` on `calculate` (IDE autocompletion).</sub>
 
 Lastly, since we defined default values for the config parameters in the `blocks_used_config` constructor, the implementation of the `get_default_config` method is trivial.
 
@@ -465,16 +528,16 @@ There is no common exporter interface, so you have maximum flexibility in the re
 If you have admin settings to configure, a `settings.php` script placed in the plugin directory will have access to a dedicated `admin_settingpage` via the `$settings` variable.
 That page will be added under _Plugins_ > _Admin tools_ > _Monitoring_ > _Available Exporters_ and named the same as the sub-plugin.
 
-Since any exporter will need access to the actual metrics available in the system, at some point it should probably make use of the [`metrics_manager`][. metrics_manager].
-Instantiating it and calling its `fetch` method will be enough in most cases.
-That will store all [`registered_metric`][. registered_metric] instances in its `metrics` property.
+Since any exporter will need access to the actual metrics available in the system, at some point it will probably query the [`registered_metrics`][. registered_metrics] interface.
+Getting an instance via `di::get(registered_metrics::class)` and calling its `filter` method will be enough in most cases.
+That returns an array of [`registered_metric`][. registered_metric] objects (indexed by their qualified names).
 
 To calculate and retrieve the current value(s) of a given metric, the associated `registered_metric` instance just needs to be iterated over.
 Iteration will yield the [`metric_value`][. metric_value] objects.
 
 > [!TIP]
-> You can look at how the Prometheus exporter does this in its [`exporter`][. exporter] class.
-> Its `export` method receives the `metrics_manager::$metrics` array as an argument after the route controller called `fetch` on the manager.
+> You can look at how the Prometheus exporter does this in its [`route\controller\prometheus`][. route/controller/prometheus] and [`exporter`][. exporter] classes.
+> The `registered_metrics::filter` is called to get all **enabled** metrics that match the **tags** specified in the request.
 
 ## Terminology
 
@@ -506,7 +569,7 @@ There are currently only two types of metrics that `tool_monitoring` supports, *
 - A **gauge** is a metric with values that can increase or decrease over time.
 - A **counter** is a special kind of gauge that must only ever increase.
 
-The metric type is static and encapsulated by the [`metric_type`][. metric_type] enum.
+The metric type is encapsulated by the [`metric_type`][. metric_type] enum.
 
 ### Label
 
@@ -573,18 +636,18 @@ For a `metric` subclass to find its way into the monitoring toolchain, it needs 
 It only allows `metric` instances to be _added_ and already collected ones to be _iterated_ over.
 For convenience, the static `metric::collect` method can be used as the [hook callback][moodle docs hook callback], but you can use the `metric_collection` just like any other [hook instance][moodle docs hook instance].
 
-### DB table and `registered_metric` wrapper
+### DB table and `registered_metric` interface
 
 To allow all metrics to be individually enabled/disabled and more [advanced metrics](#configurable-metrics-advanced) to have their own persistent configuration, each concrete metric is associated with a row in the `tool_monitoring_metrics` database table.
 
-The [`registered_metric`][. registered_metric] class is a wrapper for metrics managed by `tool_monitoring` and maps instances to rows in the database table.
+The [`registered_metric`][. registered_metric] interface represents metrics managed by `tool_monitoring` and maps instances to rows in the database table.
 It implements the `IteratorAggregate` interface and iterating over an instance will call the `calculate` method of the underlying `metric` and pass through the value(s).
 
 ### Central `metrics_manager`
 
-The linchpin of the monitoring toolchain is the [`metrics_manager`][. metrics_manager].
+The linchpin of the monitoring toolchain is the internal [`metrics_manager`][. local/metrics_manager] that implements the [`registered_metrics`][. registered_metrics] interface.
 It [emits][moodle docs hook emitter] the `metric_collection` hook and synchronizes the internal metrics registry in the database.
-Outside code can use the `metrics_manager` to retrieve and filter all currently registered metrics.
+Outside code can use `registered_metrics` via DI to retrieve and filter all currently registered metrics.
 
 ### Configurable metrics (advanced)
 
@@ -631,8 +694,10 @@ You should have received a copy of the GNU General Public License along with `to
 [. metric_type]: classes/metric_type.php
 [. metric_value]: classes/metric_value.php
 [. metric_with_config]: classes/metric_with_config.php
-[. metrics_manager]: classes/metrics_manager.php
+[. local/metrics_manager]: classes/local/metrics_manager.php
 [. registered_metric]: classes/registered_metric.php
+[. registered_metrics]: classes/registered_metrics.php
+[. route/controller/prometheus]: exporter/prometheus/classes/route/controller/prometheus.php
 [. simple_metric_config]: classes/simple_metric_config.php
 [grafana oss home]: https://grafana.com/oss/grafana
 [moodle docs blocks]: https://docs.moodle.org/en/Blocks

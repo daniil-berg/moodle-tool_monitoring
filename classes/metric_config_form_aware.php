@@ -1,0 +1,89 @@
+<?php
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
+//
+// tool_monitoring is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// tool_monitoring is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
+
+namespace tool_monitoring;
+
+use moodleform;
+use MoodleQuickForm;
+use stdClass;
+use tool_monitoring\form\config as config_form;
+
+/**
+ * Adds {@see moodleform} interactions to the {@see metric_config} interface.
+ *
+ * This is facilitated by these methods:
+ * - {@see self::with_form_data, `with_form_data`} constructs a new instance from form data.
+ * - {@see self::to_form_data `to_form_data`} transforms an instance into form data.
+ * - {@see self::extend_form_definition `extend_form_definition`} adds form fields to the metric configuration form.
+ * - {@see self::extend_form_validation `extend_form_validation`} adds validation rules to the metric configuration form.
+ *
+ * @package    tool_monitoring
+ * @copyright  2025 MootDACH DevCamp
+ *             Daniel Fainberg <d.fainberg@tu-berlin.de>
+ *             Martin Gauk <martin.gauk@tu-berlin.de>
+ *             Sebastian Rupp <sr@artcodix.com>
+ *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
+ *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+interface metric_config_form_aware extends metric_config {
+    /**
+     * Constructs a new instance from the (non-empty) output of {@see moodleform::get_data}.
+     *
+     * @param stdClass $formdata Form data to use for construction.
+     * @return static New instance of the config class.
+     */
+    public static function with_form_data(stdClass $formdata): static;
+
+    /**
+     * Transforms an instance into an associative array of data that can be passed to {@see moodleform::set_data}.
+     *
+     * @return array<string, mixed> Data to set on the config form.
+     */
+    public function to_form_data(): array;
+
+    /**
+     * Extends the definition of the configuration form.
+     *
+     * Called at the end of the {@see config_form::definition} method.
+     *
+     * Implementations _should_ ensure that any added form fields are compatible with both the
+     * {@see static::with_form_data `with_form_data`} and the {@see static::to_form_data `to_form_data`} methods.
+     *
+     * @param config_form $configform Metric configuration form being defined.
+     * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
+     *
+     * @link https://docs.moodle.org/dev/lib/formslib.php_Form_Definition Moodle docs on form definition
+     */
+    public static function extend_form_definition(config_form $configform, MoodleQuickForm $mform): void;
+
+    /**
+     * Extends the validation of the configuration form and returns an array of error messages.
+     *
+     * Called at the end of the {@see config_form::validation} method.
+     *
+     * Implementations _should_ only return error messages for fields defined through their own implementation of the
+     * {@see static::extend_form_definition `extend_form_definition`} method.
+     *
+     * @param array<string, mixed> $data Form data to validate, indexed by field name.
+     * @param config_form $configform Metric configuration form being validated.
+     * @param MoodleQuickForm $mform Underlying/wrapped Moodle form instance.
+     * @return array<string, string> If something is not valid, an array of error messages, indexed by field name; empty otherwise.
+     *
+     * @link https://docs.moodle.org/dev/lib/formslib.php_Validation Moodle docs on form validation
+     */
+    public static function extend_form_validation(array $data, config_form $configform, MoodleQuickForm $mform): array;
+}

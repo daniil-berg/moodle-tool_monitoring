@@ -28,7 +28,7 @@ Feature: Securing the exporter endpoint.
     # Verify the endpoint no longer returns the metric. Assume the 403 code is displayed somewhere.
     When I call the Prometheus endpoint
     Then I should not see "tool_monitoring"
-    And I should see "403"
+    And I should see "Invalid auth token"
 
     # Passing the access token should grant access and the endpoint should return the metric again.
     When I call the Prometheus endpoint with the following query parameters:

@@ -1,31 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the abstract {@see simple_metric_config} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring;
 
@@ -45,7 +32,7 @@ use tool_monitoring\exceptions\simple_metric_config_constructor_missing;
 use tool_monitoring\form\config as config_form;
 
 /**
- * Helper base class for simple metric configurations; fully implements the **{@see metric_config}** interface.
+ * Helper base class for simple metric configurations; fully implements the **{@see metric_config_form_aware}** interface.
  *
  * During JSON serialization, the **public** properties of an instance are turned into the JSON object (saved in the DB).
  * See the {@see self::jsonSerialize `jsonSerialize`} method for details.
@@ -111,34 +98,9 @@ use tool_monitoring\form\config as config_form;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class simple_metric_config implements metric_config {
+abstract class simple_metric_config implements metric_config_form_aware {
     /** @var array<string, array<string, ReflectionParameter>> Cache for constructor parameters indexed by config class name. */
     private static array $constructorparameters = [];
-
-    /**
-     * Reflects the calling class, analyzes its constructor, and returns all parameters indexed by name.
-     *
-     * Caches the result after the first call.
-     *
-     * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
-     * @throws simple_metric_config_constructor_missing
-     */
-    private static function get_constructor_parameters(): array {
-        if (isset(self::$constructorparameters[static::class])) {
-            return self::$constructorparameters[static::class];
-        }
-        $class = new ReflectionClass(static::class);
-        if (is_null($constructor = $class->getConstructor())) {
-            throw new simple_metric_config_constructor_missing($class->getName());
-        }
-        $parameters = array_column(
-            array:      $constructor->getParameters(),
-            column_key: null,
-            index_key:  'name',
-        );
-        self::$constructorparameters[static::class] = $parameters;
-        return $parameters;
-    }
 
     /**
      * Returns the instance as is, in effect turning every public property into a key-value-pair in the resulting JSON object.
@@ -357,5 +319,30 @@ abstract class simple_metric_config implements metric_config {
     #[\Override]
     public static function extend_form_validation(array $data, config_form $configform, MoodleQuickForm $mform): array {
         return [];
+    }
+
+    /**
+     * Reflects the calling class, analyzes its constructor, and returns all parameters indexed by name.
+     *
+     * Caches the result after the first call.
+     *
+     * @return array<string, ReflectionParameter> Constructor parameters indexed by name.
+     * @throws simple_metric_config_constructor_missing
+     */
+    private static function get_constructor_parameters(): array {
+        if (isset(self::$constructorparameters[static::class])) {
+            return self::$constructorparameters[static::class];
+        }
+        $class = new ReflectionClass(static::class);
+        if (is_null($constructor = $class->getConstructor())) {
+            throw new simple_metric_config_constructor_missing($class->getName());
+        }
+        $parameters = array_column(
+            array:      $constructor->getParameters(),
+            column_key: null,
+            index_key:  'name',
+        );
+        self::$constructorparameters[static::class] = $parameters;
+        return $parameters;
     }
 }

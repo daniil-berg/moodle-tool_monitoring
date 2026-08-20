@@ -30,11 +30,11 @@
 namespace tool_monitoring\local\metrics\meta;
 
 use dml_exception;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_statistics;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric;
 use tool_monitoring\metric_value;
-use tool_monitoring\metrics_manager;
 
 /**
  * Gauges the current number of metrics monitored by tool_monitoring.
@@ -50,7 +50,7 @@ use tool_monitoring\metrics_manager;
  */
 class meta_metrics_samples extends metric {
     #[\Override]
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
@@ -61,7 +61,7 @@ class meta_metrics_samples extends metric {
      * @throws dml_exception
      */
     #[\Override]
-    public function calculate(): iterable {
+    public function calculate(metric_config|null $config = null): iterable {
         $stats = metric_statistics::get();
 
         foreach ($stats as $metricname => $metricstats) {

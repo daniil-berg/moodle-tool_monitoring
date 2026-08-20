@@ -1,56 +1,44 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the {@see registered_metric} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring;
 
-use context_system;
-use core\exception\coding_exception;
 use core\lang_string;
-use core_tag_tag;
-use dml_exception;
+use Exception;
 use IteratorAggregate;
-use JsonException;
-use moodleform;
-use stdClass;
-use tool_monitoring\form\config as config_form;
+use tool_monitoring\exceptions\metric_calculation_failed;
+use tool_monitoring\exceptions\metric_config_invalid;
 use Traversable;
 
 /**
- * Represents a {@see metric} that is managed by the plugin and thus has a corresponding entry in the database.
+ * Encapsulates the interface that a registered metric exposes to exporters and other consumers.
  *
- * An instance of this class maps to a row in the {@see self::TABLE `TABLE`} database table.
- * Metric values can be retrieved by iterating over an instance of this class.
+ * **This interface is a consumer-only contract.**
+ * Plugins and sub-plugins should use it for annotation but are discouraged from implementing it.
+ * Implementations risk source-breaking changes whenever methods or properties are added to the interface.
+ *
+ * TODO Readonly-property PHPDoc annotations will be replaced by property `get`-hooks, once PHP 8.4 becomes the minimum requirement.
  *
  * @property-read string $qualifiedname Qualified name of the metric.
+ * @property-read string $component Component defining the metric.
+ * @property-read string $name Name of the metric.
  * @property-read lang_string $description Localized description of the metric.
  * @property-read metric_type $type Type of the metric.
- * @property-read class-string<metric_config>|null $configclass Name of the associated metric config class, if any.
+ * @property-read bool $enabled If `false` the metric is currently not supposed to be calculated/exported.
+ * @property-read array<string, metric_tag> $tags Tags on the metric, indexed by their normalized name.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -61,277 +49,23 @@ use Traversable;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class registered_metric implements IteratorAggregate {
-    /** @var string Name of the mapped DB table. */
-    public const TABLE = 'tool_monitoring_metrics';
-
-    /** @var string[] Names of all fields in the DB table; matches all constructor parameters. */
-    private const FIELDS = [
-        'component',
-        'name',
-        'enabled',
-        'config',
-        'timecreated',
-        'timemodified',
-        'usermodified',
-        'id',
-    ];
-
-    /** @var metric Underlying metric that the instance wraps. */
-    private metric $metric;
-
-    /** @var class-string<metric_config>|null Name of the associated metric config class; `null` if not configurable. */
-    private string|null $configclass = null;
-
-    /**
-     * Constructor without additional logic.
-     *
-     * @param string $component Component defining the metric.
-     * @param string $name Name of the metric.
-     * @param bool $enabled If `false` the metric is currently not supposed to be calculated/exported.
-     * @param string|null $config Metric-specific config as a JSON object; `null` if no specific config is defined for the metric.
-     * @param int|null $timecreated Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet).
-     * @param int|null $timemodified Timestamp when the DB table entry was last modified; `null` if not (yet) saved.
-     * @param int|null $usermodified ID of the user that last modified the DB table entry; `null` if not (yet) saved.
-     * @param int|null $id Primary key of the corresponding DB table row; `null` if not (yet) saved.
-     *
-     * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
-     */
-    private function __construct(
-        /** @var string Component defining the metric. */
-        public string $component,
-        /** @var string Name of the metric. */
-        public string $name,
-        /** @var bool If `false` the metric is currently not supposed to be calculated/exported. */
-        public bool $enabled = false,
-        /** @var string|null Metric-specific config as a JSON object; `null` if no specific config is defined for the metric. */
-        public string|null $config = null,
-        /** @var int|null Timestamp when the DB table entry for the metric was inserted; `null` if none exists (yet). */
-        public int|null $timecreated = null,
-        /** @var int|null Timestamp when the DB table entry was last modified; `null` if not (yet) saved. */
-        public int|null $timemodified = null,
-        /** @var int|null ID of the user that last modified the DB table entry; `null` if not (yet) saved. */
-        public int|null $usermodified = null,
-        /** @var int|null Primary key of the corresponding DB table row; `null` if not (yet) saved. */
-        public int|null $id = null,
-    ) {}
-
-    /**
-     * Constructs a new instance from the specified metric.
-     *
-     * @param metric $metric Metric to wrap in the new instance; unless passed via `...$properties`, the `component`, `name`,
-     *                       and `config` properties are derived from the {@see metric::get_component}, {@see metric::get_name},
-     *                       and {@see metric::get_default_config} methods respectively.
-     * @param mixed ...$properties Properties to set/overwrite on the new instance; non-property names are ignored.
-     * @return self New instance from the provided metric and optional properties.
-     */
-    public static function from_metric(metric $metric, mixed ...$properties): self {
-        $arguments = [
-            'component' => $metric::get_component(),
-            'name'      => $metric::get_name(),
-        ];
-        foreach (self::FIELDS as $name) {
-            if (!array_key_exists($name, $properties)) {
-                continue;
-            }
-            $arguments[$name] = $properties[$name];
-        }
-        $instance = new self(...$arguments);
-        if ($metric instanceof metric_with_config) {
-            $defaultconfig = $metric::get_default_config();
-            $instance->configclass = $defaultconfig::class;
-            if (!array_key_exists('config', $arguments)) {
-                // No config was passed to the constructor; fall back to the default.
-                $instance->config = json_encode($defaultconfig);
-            }
-            $metric->configjson = $instance->config;
-        }
-        $instance->metric = $metric;
-        return $instance;
-    }
-
-    /**
-     * Transforms an instance of the mapped class into an associative array of data that can be used in DB queries.
-     *
-     * The data can then be passed as an argument to functions such as e.g. {@see \moodle_database::update_record}.
-     *
-     * @param string[]|null $fields The output array will only have entries that are properties of the object **and** that are
-     *                              specified in this argument. An exception is the {@see id} property; if its value is not `null`
-     *                              on the instance, it will always be included in the output. If this argument is `null`, all
-     *                              properties will be included in the output array.
-     * @return array<string, mixed> DB-friendly data taken from the instance.
-     */
-    private function to_db(array|null $fields = null): array {
-        $data = [];
-        if (!is_null($this->id)) {
-            $data['id'] = $this->id;
-        }
-        $returnfields = self::FIELDS;
-        if (!is_null($fields)) {
-            $returnfields = array_intersect($returnfields, $fields);
-        }
-        foreach ($returnfields as $field) {
-            $data[$field] = $this->$field;
-        }
-        return $data;
-    }
-
-    /**
-     * Updates the corresponding row in the database table with data from the object.
-     *
-     * The {@see timemodified} and {@see usermodified} are set to the current time and user respectively before the update.
-     *
-     * @param string[]|null $fields If specified, only these fields will be updated.
-     * @throws dml_exception
-     */
-    private function update(array|null $fields = null): void {
-        global $DB, $USER;
-        $this->timemodified = time();
-        $this->usermodified = $USER->id;
-        $DB->update_record(self::TABLE, $this->to_db($fields));
-    }
-
-    /**
-     * Enables or disables the metric and persists the change.
-     *
-     * Does nothing if the metric already has the desired state.
-     *
-     * @param bool $enabled Desired enabled state.
-     * @throws coding_exception
-     * @throws dml_exception
-     */
-    public function persist_enabled_state(bool $enabled): void {
-        global $DB;
-        if ($this->enabled === $enabled) {
-            return;
-        }
-        $this->enabled = $enabled;
-        $event = $enabled ? event\metric_enabled::for_metric($this) : event\metric_disabled::for_metric($this);
-        $transaction = $DB->start_delegated_transaction();
-        $this->update(['enabled', 'timemodified', 'usermodified']);
-        $event->trigger();
-        $transaction->allow_commit();
-    }
-
-    /**
-     * Derives a qualified name from the provided component and name.
-     *
-     * @param string $component Moodle component.
-     * @param string $name Entity name.
-     * @return string Qualified name.
-     */
-    public static function get_qualified_name(string $component, string $name): string {
-        return "{$component}_$name";
-    }
-
-    /**
-     * Special-case getter for some public-read-only properties of the metric.
-     *
-     * TODO Remove this method in favor of nice property `get`-hooks, once PHP 8.4+ becomes the minimum requirement.
-     *
-     * @param string $name Name of the property to return.
-     * @return mixed Property value.
-     * @throws coding_exception Invalid property name passed.
-     */
-    public function __get(string $name): mixed {
-        return match ($name) {
-            'qualifiedname' => self::get_qualified_name($this->component, $this->name),
-            'description'   => $this->metric::get_description(),
-            'type'          => $this->metric::get_type(),
-            'configclass'   => $this->configclass,
-            default         => throw new coding_exception('Undefined property: ' . self::class . '::$' . $name),
-        };
-    }
-
-    /**
-     * Returns config form data from the instance to set via {@see config_form::set_data}.
-     *
-     * @return array<string, mixed> Associative array of form data.
-     */
-    public function to_form_data(): array {
-        if (!is_null($this->configclass) && !is_null($this->config)) {
-            $formdata = $this->configclass::from_json($this->config)->to_form_data();
-        } else {
-            $formdata = [];
-        }
-        $formdata['enabled'] = $this->enabled;
-        $formdata['tags'] = core_tag_tag::get_item_tags_array('tool_monitoring', self::TABLE, $this->id);
-        return $formdata;
-    }
-
-    /**
-     * Updates the instance with the (non-empty) output of {@see moodleform::get_data} and saves it to the database.
-     *
-     * Only performs an actual update, if {@see self::enabled `enabled`} or {@see self::config `config`} is different from the
-     * provided form data; no-op otherwise. Individual events are triggered, depending on what is updated.
-     *
-     * @param stdClass $formdata Config form data to use for updating.
-     * @throws coding_exception Should never happen.
-     * @throws dml_exception
-     * @throws JsonException The {@see self::config `config`} object could not be serialized.
-     */
-    public function update_with_form_data(stdClass $formdata): void {
-        global $DB;
-        $events = [];
-        if (isset($formdata->enabled)) {
-            if ($formdata->enabled && !$this->enabled) {
-                $this->enabled = true;
-                $events[] = event\metric_enabled::for_metric($this);
-            } else if (!$formdata->enabled && $this->enabled) {
-                $this->enabled = false;
-                $events[] = event\metric_disabled::for_metric($this);
-            }
-        }
-        if (!is_null($this->configclass)) {
-            $config = json_encode($this->configclass::with_form_data($formdata), JSON_THROW_ON_ERROR);
-            if ($config !== $this->config) {
-                $this->config = $config;
-                $events[] = event\metric_config_updated::for_metric($this);
-            }
-        }
-        // This only actually performs DB queries if tags were either added, removed, or their order changed.
-        core_tag_tag::set_item_tags(
-            component: 'tool_monitoring',
-            itemtype: self::TABLE,
-            itemid: $this->id,
-            context: context_system::instance(),
-            tagnames: $formdata->tags
-        );
-        if (empty($events)) {
-            return;
-        }
-        $transaction = $DB->start_delegated_transaction();
-        $this->update(['enabled', 'config', 'timemodified', 'usermodified']);
-        foreach ($events as $event) {
-            $event->trigger();
-        }
-        $transaction->allow_commit();
-    }
-
+interface registered_metric extends IteratorAggregate {
     /**
      * Produces the current {@see metric_value}s.
      *
      * This allows the instance to be iterated over in a `foreach` loop.
      *
      * @return Traversable<metric_value> Values of the metric.
+     * @throws metric_calculation_failed An {@see Exception} occurred trying to produce the metric values.
      */
     #[\Override]
-    public function getIterator(): Traversable {
-        $start = hrtime(true);
-        $values = $this->metric->calculate();
-        $end = hrtime(true);
-        $durationns = ($end - $start);
-        $durationms = $durationns / 1000000;
-        $samplecount = 0;
-        if ($values instanceof metric_value) {
-            $samplecount = 1;
-            yield $values;
-        } else {
-            foreach ($values as $value) {
-                $samplecount++;
-                yield $value;
-            }
-        }
-        metric_statistics::record($this->qualifiedname, intval($durationms), $samplecount);
-    }
+    public function getIterator(): Traversable;
+
+    /**
+     * Returns the current config.
+     *
+     * @return metric_config|null Metric config object or `null` if the metric is not configurable.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
+     */
+    public function get_config(): metric_config|null;
 }

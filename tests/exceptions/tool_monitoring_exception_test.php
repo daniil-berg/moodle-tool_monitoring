@@ -1,18 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Definition of the {@see tool_monitoring_exception_test} class.
@@ -33,6 +33,7 @@ namespace tool_monitoring\exceptions;
 
 use advanced_testcase;
 use core\exception\moodle_exception;
+use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -51,9 +52,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(form_data_value_missing::class)]
 #[CoversClass(json_invalid::class)]
 #[CoversClass(json_key_missing::class)]
-#[CoversClass(metric_config_not_implemented::class)]
+#[CoversClass(metric_name_invalid::class)]
+#[CoversClass(metric_not_found::class)]
 #[CoversClass(simple_metric_config_constructor_missing::class)]
 #[CoversClass(tag_not_found::class)]
+#[CoversClass(tags_disabled::class)]
 #[CoversClass(tool_monitoring_exception::class)]
 final class tool_monitoring_exception_test extends advanced_testcase {
     /**
@@ -115,11 +118,18 @@ final class tool_monitoring_exception_test extends advanced_testcase {
                 'message' => 'JSON object is missing the "bar" key.',
             ],
             [
-                'exceptionclass' => metric_config_not_implemented::class,
-                'properties' => ['classname' => 'baz'],
-                'errorcode' => 'error:metric_config_not_implemented',
+                'exceptionclass' => metric_name_invalid::class,
+                'properties' => ['component' => 'local_example', 'name' => 'my_metric'],
+                'errorcode' => 'error:metric_name_invalid',
                 'module' => 'tool_monitoring',
-                'message' => 'The "baz" class does not implement the "metric_config" interface.',
+                'message' => 'Metric from component "local_example" has an invalid name: "my_metric"',
+            ],
+            [
+                'exceptionclass' => metric_not_found::class,
+                'properties' => ['qualifiedname' => 'quux'],
+                'errorcode' => 'error:metric_not_found',
+                'module' => 'tool_monitoring',
+                'message' => 'No metric with the qualified name "quux" is registered.',
             ],
             [
                 'exceptionclass' => simple_metric_config_constructor_missing::class,
@@ -134,6 +144,13 @@ final class tool_monitoring_exception_test extends advanced_testcase {
                 'errorcode' => 'error:tag_not_found',
                 'module' => 'tool_monitoring',
                 'message' => 'No tag named "eggs" exists in the "beans" collection.',
+            ],
+            [
+                'exceptionclass' => tags_disabled::class,
+                'properties' => ['itemtype' => 'toast'],
+                'errorcode' => 'error:tags_disabled',
+                'module' => 'tool_monitoring',
+                'message' => 'Tags are turned off globally or the "toast" tag area is disabled.',
             ],
         ];
     }

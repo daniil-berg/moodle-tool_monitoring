@@ -1,18 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Definition of the {@see prometheus} class.
@@ -29,6 +29,7 @@
 
 namespace monitoringexporter_prometheus;
 
+use tool_monitoring\exceptions\metric_calculation_failed;
 use tool_monitoring\metric_value;
 use tool_monitoring\registered_metric;
 
@@ -48,17 +49,26 @@ use tool_monitoring\registered_metric;
  */
 class exporter {
     /**
-     * Exports the provided metrics in the Prometheus text format.
+     * Calculates and exports the provided metrics in the Prometheus text format.
      *
-     * @param registered_metric[] $metrics Array of metric instances to export.
+     * Preserves the order of the provided metrics in the output.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#details Documentation
+     *
+     * @param registered_metric ...$metrics Metrics to export.
      * @return string Prometheus text format.
      */
-    public static function export(array $metrics): string {
-        return implode("\n", array_map([self::class, 'export_metric'], $metrics));
+    public static function export(registered_metric ...$metrics): string {
+        $parts = array_filter(array_map([self::class, 'export_metric'], $metrics));
+        if (!$parts) {
+            return '';
+        }
+        // The Prometheus spec explicitly calls for a trailing line feed character. (See documentation link.)
+        return implode("\n", $parts) . "\n";
     }
 
     /**
-     * Exports the provided metric in the Prometheus text format, including `HELP` and `TYPE` comments.
+     * Calculates and exports a single metric in the Prometheus text format, including `HELP` and `TYPE` comments.
      *
      * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
      *
@@ -67,10 +77,22 @@ class exporter {
      */
     private static function export_metric(registered_metric $metric): string {
         $name = $metric->qualifiedname;
-        $output = "# HELP $name {$metric->description->out()}\n";
+        $output = '';
+        $help = self::escape_help($metric->description->out());
+        if ($help !== '') {
+            $output = "# HELP $name $help\n";
+        }
         $output .= "# TYPE $name {$metric->type->value}";
-        foreach ($metric as $metricvalue) {
-            $output .= "\n" . self::get_metric_value_line($metricvalue, $name);
+        try {
+            foreach ($metric as $metricvalue) {
+                $output .= "\n" . self::get_metric_value_line($metricvalue, $name);
+            }
+        } catch (metric_calculation_failed $e) {
+            debugging(
+                message: "Skipping metric '$e->qualifiedname': {$e->getPrevious()?->getMessage()}",
+                backtrace: $e->getPrevious()?->getTrace(),
+            );
+            return '';
         }
         return $output;
     }
@@ -78,18 +100,58 @@ class exporter {
     /**
      * Generates a metric value line in the Prometheus format.
      *
+     * The metric value is simply cast to a string assuming locale-independent representation.
+     * Exceptions are made for `NAN`, `INF`, and `-INF` values, which are represented as `NaN`, `+Inf`, and `-Inf`, respectively.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
+     *
      * @param metric_value $metricvalue Potentially labeled metric value.
      * @param string $metricname Name of the metric.
      * @return string Line for exporting the metric value.
      */
     private static function get_metric_value_line(metric_value $metricvalue, string $metricname): string {
+        // NOTE: `match` uses strict comparison and `NAN !== NAN`, so that must be detected via `is_nan`.
+        $value = match (true) {
+            is_nan($metricvalue->value) => 'NaN',
+            $metricvalue->value === INF => '+Inf',
+            $metricvalue->value === -INF => '-Inf',
+            default => $metricvalue->value,
+        };
         if (!$metricvalue->label) {
-            return "$metricname $metricvalue->value";
+            return "$metricname $value";
         }
         $pairs = [];
         foreach ($metricvalue->label as $labelname => $labelvalue) {
-            $pairs[] = "$labelname=\"$labelvalue\"";
+            $pairs[] = $labelname . '="' . self::escape_label_value($labelvalue) . '"';
         }
-        return "$metricname{" . implode(', ', $pairs) . "} $metricvalue->value";
+        return "$metricname{" . implode(', ', $pairs) . "} $value";
+    }
+
+    /**
+     * Escapes a string for use as the `HELP` text in the Prometheus text exposition format.
+     *
+     * Backslash and line feed characters must be escaped as `\\` and `\n`.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
+     *
+     * @param string $help Raw help text.
+     * @return string Escaped help text.
+     */
+    private static function escape_help(string $help): string {
+        return strtr($help, ['\\' => '\\\\', "\n" => '\\n']);
+    }
+
+    /**
+     * Escapes a string for use as a label value in the Prometheus text exposition format.
+     *
+     * Backslash, double-quote, and line feed characters must be escaped as `\\`, `\"`, and `\n` respectively.
+     *
+     * @link https://prometheus.io/docs/instrumenting/exposition_formats/#comments-help-text-and-type-information Documentation
+     *
+     * @param string $value Raw label value.
+     * @return string Escaped label value (without the surrounding double-quotes).
+     */
+    private static function escape_label_value(string $value): string {
+        return strtr($value, ['\\' => '\\\\', '"' => '\\"', "\n" => '\\n']);
     }
 }

@@ -1,18 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Definition of the {@see users_online_test} class.
@@ -58,8 +58,8 @@ final class users_online_test extends advanced_testcase {
     public function test_calculate(): void {
         $this->resetAfterTest();
         $metric = new users_online();
-        // Simulate the default config being applied here.
-        $metric->configjson = '{"timewindows": [60, 300, 900, 3600]}';
+        // Emulate the default config.
+        $config = new users_online_config(60, 300, 900, 3600);
         // Generate some users with different last access times.
         $now = time();
         $generator = $this->getDataGenerator();
@@ -71,7 +71,7 @@ final class users_online_test extends advanced_testcase {
         $generator->create_user(['lastaccess' => $now - 20]);
         $generator->create_user(['lastaccess' => $now - 10]);
         $generator->create_user(['lastaccess' => $now]);
-        $values = $metric->calculate();
+        $values = $metric->calculate($config);
         self::assertCount(4, $values);
         self::assertEquals(
             [
@@ -85,7 +85,8 @@ final class users_online_test extends advanced_testcase {
     }
 
     public function test_get_default_config(): void {
-        $defaultconfig = users_online::get_default_config();
+        $metric = new users_online();
+        $defaultconfig = $metric->get_default_config();
         self::assertSame([60, 300, 900, 3600], $defaultconfig->timewindows);
     }
 }

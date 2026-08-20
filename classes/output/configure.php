@@ -1,31 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the renderable {@see configure} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\output;
 
@@ -34,8 +21,9 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use JsonException;
+use tool_monitoring\exceptions\metric_config_invalid;
 use tool_monitoring\form\config as config_form;
-use tool_monitoring\registered_metric;
+use tool_monitoring\local\managed_metric;
 
 /**
  * Provides a configuration form for a specified metric.
@@ -56,9 +44,10 @@ final readonly class configure implements renderable, templatable {
     /**
      * Instantiates the underlying {@see config_form} for the specified metric.
      *
-     * @param registered_metric $metric Metric for which to render the config form.
+     * @param managed_metric $metric Metric for which to render the config form.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
      */
-    public function __construct(registered_metric $metric) {
+    public function __construct(managed_metric $metric) {
         $this->form = config_form::for_metric($metric);
     }
 
@@ -70,14 +59,17 @@ final readonly class configure implements renderable, templatable {
      * @return bool `true` if the form was processed (either submitted or canceled); `false` otherwise.
      *
      * @throws moodle_exception
-     * @throws JsonException The {@see registered_metric::config} could not be serialized.
+     * @throws JsonException The {@see managed_metric::config} could not be serialized.
      */
     public function process_form(): bool {
         if ($this->form->is_cancelled()) {
-            return true;
+            // Since this implies proper POST data, session token, and so on, covering this with a unit test would be too clumsy.
+            // There are Behat acceptance tests for actually configuring metrics.
+            return true; // @codeCoverageIgnore
         } else if ($this->form->is_submitted() && $this->form->is_validated()) {
-            $this->form->save();
-            return true;
+            // Same as above, Behat tests exist for this.
+            $this->form->save(); // @codeCoverageIgnore
+            return true; // @codeCoverageIgnore
         }
         return false;
     }

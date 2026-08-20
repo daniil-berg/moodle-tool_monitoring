@@ -1,18 +1,18 @@
 <?php
-// This file is part of Moodle - https://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * English language strings for the component.
@@ -31,16 +31,23 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['cachedef_metric_tags'] = 'Tags that can be attached to managed metrics';
+$string['cachedef_metrics'] = 'Managed metrics (including associated tag instances)';
+
 $string['error:form_data_value_missing'] = 'Form data is missing a value for the "{$a->fieldname}" field.';
 $string['error:json_invalid'] = 'Invalid JSON encountered or the top-level type in that JSON is wrong.';
 $string['error:json_key_missing'] = 'JSON object is missing the "{$a->key}" key.';
-$string['error:metric_config_not_implemented'] = 'The "{$a->classname}" class does not implement the "metric_config" interface.';
+$string['error:metric_calculation_failed'] = 'Could not calculate metric "{$a->qualifiedname}".';
+$string['error:metric_name_invalid'] = 'Metric from component "{$a->component}" has an invalid name: "{$a->name}"';
+$string['error:metric_not_found'] = 'No metric with the qualified name "{$a->qualifiedname}" is registered.';
 $string['error:quiz_attempts_in_progress_config:input_invalid'] = 'Invalid input';
 $string['error:simple_metric_config_constructor_missing'] = 'The "{$a->classname}" class does not have a constructor.';
 $string['error:tag_not_found'] = 'No tag named "{$a->tagname}" exists in the "{$a->collectionname}" collection.';
+$string['error:tags_disabled'] = 'Tags are turned off globally or the "{$a->itemtype}" tag area is disabled.';
 $string['error:users_online_config:timewindows_invalid'] = 'Invalid time window(s) provided: {$a}';
 
 $string['event:metric_config_updated'] = 'Metric configuration updated';
+$string['event:metric_deleted'] = 'Metric deleted';
 $string['event:metric_disabled'] = 'Metric disabled';
 $string['event:metric_enabled'] = 'Metric enabled';
 
@@ -63,6 +70,9 @@ $string['monitoring:manage_metrics'] = 'Manage and configure monitoring metrics'
 
 $string['pluginname'] = 'Monitoring';
 
+$string['privacy:metadata:tool_monitoring_metrics'] = 'Registered monitoring metrics and their site-wide configuration.';
+$string['privacy:metadata:tool_monitoring_metrics:usermodified'] = 'The ID of the user who last enabled, disabled or configured the metric.';
+
 $string['settings:actions'] = 'Actions';
 $string['settings:component'] = 'Component';
 $string['settings:configure'] = 'Configure';
@@ -84,11 +94,11 @@ $string['subplugintype_monitoringexporter_plural'] = 'Exporter types';
 $string['tagarea_tool_monitoring_metrics'] = 'Metrics';
 $string['tagcollection_monitoring'] = 'Monitoring';
 
-$string['testing:metric:testing_simple_metric_config:notpromotedstring'] = 'String with a default; not promoted to any property.';
-$string['testing:metric:testing_simple_metric_config:privatereadonlyfloat'] = 'Float with a default; promoted to private property.';
-$string['testing:metric:testing_simple_metric_config:protectedint'] = 'Integer with a default; promoted to protected property.';
-$string['testing:metric:testing_simple_metric_config:publicbool'] = 'Boolean with a default; promoted to public property.';
-$string['testing:metric:testing_simple_metric_config:publicobj'] = 'Object with a default; promoted to public property.';
-$string['testing:metric:testing_simple_metric_config:publicstringrequired'] = 'Required string; promoted to public property.';
-$string['testing:metric:testing_simple_metric_config:publicstringrequired_help'] = 'Help text for the above.';
-$string['testing:metric:testing_simple_metric_config:publicunion'] = 'Union of types with a default; promoted to public property.';
+$string['testing:metric:test_simple_metric_config:notpromotedstring'] = 'String with a default; not promoted to any property.';
+$string['testing:metric:test_simple_metric_config:privatereadonlyfloat'] = 'Float with a default; promoted to private property.';
+$string['testing:metric:test_simple_metric_config:protectedint'] = 'Integer with a default; promoted to protected property.';
+$string['testing:metric:test_simple_metric_config:publicbool'] = 'Boolean with a default; promoted to public property.';
+$string['testing:metric:test_simple_metric_config:publicobj'] = 'Object with a default; promoted to public property.';
+$string['testing:metric:test_simple_metric_config:publicstringrequired'] = 'Required string; promoted to public property.';
+$string['testing:metric:test_simple_metric_config:publicstringrequired_help'] = 'Help text for the above.';
+$string['testing:metric:test_simple_metric_config:publicunion'] = 'Union of types with a default; promoted to public property.';

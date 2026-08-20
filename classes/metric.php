@@ -1,31 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the abstract {@see metric} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring;
 
@@ -38,9 +25,11 @@ use Traversable;
 /**
  * Base class for all metrics.
  *
- * Concrete subclasses only **need** to implement the {@see calculate}, {@see get_description} and {@see get_type} methods.
+ * Concrete subclasses _must_ implement the {@see self::get_type `get_type`} and {@see self::calculate `calculate`} methods.
+ * They _may_ also override the {@see self::get_description `get_description`} and {@see self::get_name `get_name`} methods.
  *
- * Inheriting classes _may_ also override the {@see get_name} method to provide a custom identifier.
+ * @phpcs:disable moodle.Commenting.ValidTags.Invalid
+ * @template TConf of metric_config
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -76,6 +65,13 @@ abstract class metric {
     }
 
     /**
+     * Returns the type of the metric.
+     *
+     * @return metric_type
+     */
+    abstract public function get_type(): metric_type;
+
+    /**
      * Produces the current metric value(s).
      *
      * If the implementing metric only ever has a single value, this method can return just a single {@see metric_value} instance.
@@ -84,44 +80,38 @@ abstract class metric {
      *
      * This method will be called to export values to the configured monitoring service(s).
      *
+     * @param TConf|null $config Metric configuration, if any.
      * @return iterable<metric_value>|metric_value Singular metric value or an array or traversable object of metric values.
      */
-    abstract public function calculate(): iterable|metric_value;
-
-    /**
-     * Returns the type of the metric.
-     *
-     * @return metric_type
-     */
-    abstract public static function get_type(): metric_type;
+    abstract public function calculate(metric_config|null $config = null): iterable|metric_value;
 
     /**
      * Returns the localized description of the metric.
      *
      * Subclasses may override this. Defaults to a language string with the ID `"metric:{$name}_desc"` where `$name` is the
-     * metric's name as returned by the {@see static::get_name `get_name`} method, residing in the language file of the defining
-     * component as returned by the {@see static::get_component `get_component`} method.
+     * metric's name as returned by the {@see self::get_name `get_name`} method, residing in the language file of the defining
+     * component as returned by the {@see self::get_component `get_component`} method.
      *
      * @return lang_string Metric description/help text.
      * @throws coding_exception
      */
-    public static function get_description(): lang_string {
-        $name = static::get_name();
-        return new lang_string("metric:{$name}_desc", static::get_component());
+    public function get_description(): lang_string {
+        return new lang_string("metric:{$this->get_name()}_desc", $this->get_component());
     }
 
     /**
      * Returns the name of the metric to be used as an identifier.
      *
-     * Subclasses may override this. It _should_ be descriptive and only consist of letters and underscores; it _must_ be unique for
-     * the defining component as returned by the {@see static::get_component `get_component`} method; it _must_ be no longer than
-     * 100 characters.
-     *
-     * Defaults to the unqualified class name.
+     * Subclasses may override this. Defaults to the unqualified class name. The name
+     * - _should_ be descriptive,
+     * - _must_ only consist of lowercase letters, digits, and underscores,
+     * - _must not_ start with a digit,
+     * - _must_ be unique for the defining component as returned by the {@see self::get_component `get_component`} method,
+     * - _must_ be no longer than 100 characters.
      *
      * @return string Unique metric name/identifier.
      */
-    public static function get_name(): string {
+    public function get_name(): string {
         $name = static::class;
         if (($pos = strrpos($name, '\\')) === false) {
             return $name; // @codeCoverageIgnore
@@ -134,7 +124,7 @@ abstract class metric {
      *
      * @return string Moodle component name.
      */
-    final public static function get_component(): string {
+    final public function get_component(): string {
         return component::get_component_from_classname(static::class);
     }
 }

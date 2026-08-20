@@ -1,35 +1,22 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the {@see monitoringexporter} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\plugininfo;
 
-use admin_root;
+use admin_category;
 use admin_settingpage;
 use coding_exception;
 use core\plugininfo\base;
@@ -62,15 +49,13 @@ class monitoringexporter extends base {
      * Sub-plugins can immediately add settings to their dedicated {@see admin_settingpage} via the `$settings` variable in their
      * own `settings.php` file. The file will be automatically included if the user has the `moodle/site:config` capability.
      *
-     * @param part_of_admin_tree $adminroot Admin tree root.
+     * @param admin_category $adminroot **Must be an actual admin category**, not just any {@see part_of_admin_tree} instance.
      * @param string $parentnodename Name of the parent node in the tree.
      * @param bool $hassiteconfig Whether the current user has the `moodle/site:config` capability.
      * @throws coding_exception
      */
     #[\Override]
     public function load_settings(part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig): void {
-        global $ADMIN;
-
         if (!$this->is_installed_and_upgraded()) {
             return;
         }
@@ -81,13 +66,12 @@ class monitoringexporter extends base {
             name: $this->get_settings_section_name(),
             visiblename: $this->displayname,
             req_capability: 'moodle/site:config',
-            hidden: $this->is_enabled() === false, // Can be `null`, therefore the identity comparison.
+            hidden: $this->is_enabled() === false, // Can be `null`, hence the identity comparison.
         );
-        include($this->full_path('settings.php'));
+        include($this->full_path('settings.php')); // This may modify the `$settings` variable.
         if ($settings->settings != new stdClass()) {
             // Only if settings were actually added to the page, do we want to add it to the tree.
-            /** @var admin_root $ADMIN */
-            $ADMIN->add($parentnodename, $settings);
+            $adminroot->add($parentnodename, $settings);
         }
     }
 }

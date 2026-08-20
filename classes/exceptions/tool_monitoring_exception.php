@@ -1,36 +1,26 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the {@see tool_monitoring_exception} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\exceptions;
 
 use core\component;
 use core\exception\moodle_exception;
+use Exception;
+use ReflectionProperty;
+use Throwable;
 
 /**
  * Base exception class for the plugin.
@@ -58,6 +48,7 @@ abstract class tool_monitoring_exception extends moodle_exception {
      *                     the site index page.
      * @param mixed $a Extra words and phrases that might be required in the error string.
      * @param string|null $debuginfo Optional debugging information.
+     * @param null|Throwable $previous The previous throwable used for the exception chaining.
      */
     public function __construct(
         string|null $errorcode = null,
@@ -65,6 +56,7 @@ abstract class tool_monitoring_exception extends moodle_exception {
         string $link = '',
         mixed $a = null,
         string|null $debuginfo = null,
+        Throwable|null $previous = null,
     ) {
         if (is_null($errorcode)) {
             $classname = static::class;
@@ -83,5 +75,10 @@ abstract class tool_monitoring_exception extends moodle_exception {
             a: $a ?? [],
             debuginfo: $debuginfo,
         );
+        if (!is_null($previous)) {
+            // Since the `moodle_exception` constructor doesn't accept `$previous`, we patch it in directly as an ugly compromise.
+            // That way the `getPrevious` method works as expected for subclasses that wrap an exception.
+            (new ReflectionProperty(Exception::class, 'previous'))->setValue($this, $previous);
+        }
     }
 }

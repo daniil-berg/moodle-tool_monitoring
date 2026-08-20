@@ -1,31 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the {@see users_online_config} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\local\metrics;
 
@@ -34,7 +21,7 @@ use core\lang_string;
 use MoodleQuickForm;
 use stdClass;
 use tool_monitoring\form\config as config_form;
-use tool_monitoring\metric_config;
+use tool_monitoring\metric_config_form_aware;
 
 /**
  * Defines the config for the {@see users_online} metric.
@@ -48,7 +35,7 @@ use tool_monitoring\metric_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final readonly class users_online_config implements metric_config {
+final readonly class users_online_config implements metric_config_form_aware {
     /**
      * @var array<float|int> Maximum number of seconds since the last user access for it to be counted.
      *                       A separate (labeled) metric value shall be produced for each value in this array.
@@ -93,7 +80,7 @@ final readonly class users_online_config implements metric_config {
      * @throws coding_exception JSON is not valid or not an object or missing config parameters.
      */
     #[\Override]
-    public static function from_json(string $json): self {
+    public static function from_json(string $json): static {
         $data = json_decode($json, associative: true);
         if (empty($data) || !is_array($data) || array_is_list($data)) {
             throw new coding_exception('Invalid JSON');
@@ -105,7 +92,7 @@ final readonly class users_online_config implements metric_config {
         if (!is_array($timewindows) || !array_is_list($timewindows)) {
             throw new coding_exception("JSON value 'timewindows' is not an array");
         }
-        return new self(...$timewindows);
+        return new static(...$timewindows);
     }
 
     /**
@@ -116,7 +103,7 @@ final readonly class users_online_config implements metric_config {
      * @throws coding_exception
      */
     #[\Override]
-    public static function with_form_data(stdClass $formdata): self {
+    public static function with_form_data(stdClass $formdata): static {
         $timewindowsstring = $formdata->timewindows ?? null;
         if (!is_string($timewindowsstring)) {
             throw new coding_exception("No 'timewindows' string in form data");
@@ -127,7 +114,7 @@ final readonly class users_online_config implements metric_config {
                 throw new coding_exception("Form data 'timewindows' contains non-numeric value: $value");
             }
         }
-        return new self(...$timewindows);
+        return new static(...$timewindows);
     }
 
     #[\Override]

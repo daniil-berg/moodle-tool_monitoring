@@ -1,23 +1,23 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_config_not_implemented} class.
+ * Definition of the {@see provider} class.
  *
- * @package    tool_monitoring
+ * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -27,14 +27,16 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring\exceptions;
+namespace monitoringexporter_prometheus\privacy;
 
-use tool_monitoring\metric_config;
+use core_privacy\local\metadata\null_provider;
 
 /**
- * A class that should implement the {@see metric_config} interface does not.
+ * Privacy subsystem provider.
  *
- * @package    tool_monitoring
+ * @link https://moodledev.io/docs/apis/subsystems/privacy
+ *
+ * @package    monitoringexporter_prometheus
  * @copyright  2025 MootDACH DevCamp
  *             Daniel Fainberg <d.fainberg@tu-berlin.de>
  *             Martin Gauk <martin.gauk@tu-berlin.de>
@@ -43,16 +45,9 @@ use tool_monitoring\metric_config;
  *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metric_config_not_implemented extends tool_monitoring_exception {
-    /**
-     * Passes the arguments through to the parent constructor as the {@see parent::$a `a`} context.
-     *
-     * @param string $classname Name of the offending class.
-     */
-    public function __construct(
-        /** @var string Name of the offending class. */
-        public readonly string $classname,
-    ) {
-        parent::__construct(a: ['classname' => $classname]);
+class provider implements null_provider {
+    #[\Override]
+    public static function get_reason(): string {
+        return 'privacy:metadata';
     }
 }

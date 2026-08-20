@@ -1,18 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Definition of the {@see quiz_attempts_in_progress_test} class.
@@ -59,8 +59,7 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $metric = new quiz_attempts_in_progress();
-        // Simulate the default config being applied here.
-        $metric->configjson = '{"maxdeadlineseconds": 10800, "maxidleseconds": 1200}';
+        $config = new quiz_attempts_in_progress_config();
         // Generate some quiz attempts.
         $now = time();
         $generator = $this->getDataGenerator();
@@ -109,13 +108,14 @@ final class quiz_attempts_in_progress_test extends advanced_testcase {
             'quiz_attempts',
             ['id' => $attempt23->id, 'timecheckstate' => $now, 'state' => 'finished'], // Finished.
         );
-        $output = $metric->calculate();
+        $output = $metric->calculate($config);
         self::assertEquals(2, $output->value);
         self::assertSame(['deadline_within' => '10800s', 'idle_within' => '1200s'], $output->label);
     }
 
     public function test_get_default_config(): void {
-        $defaultconfig = quiz_attempts_in_progress::get_default_config();
+        $metric = new quiz_attempts_in_progress();
+        $defaultconfig = $metric->get_default_config();
         self::assertSame(10800, $defaultconfig->maxdeadlineseconds);
         self::assertSame(1200, $defaultconfig->maxidleseconds);
     }

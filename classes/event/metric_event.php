@@ -1,31 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the {@see metric_event} abstract event class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\event;
 
@@ -35,12 +22,12 @@ use core\event\base;
 use core\exception\moodle_exception;
 use dml_exception;
 use moodle_url;
-use tool_monitoring\registered_metric;
+use tool_monitoring\local\metric_record;
 
 /**
  * Metric-related event base class for convenience.
  *
- * @property-read string $metric Qualified name of the {@see registered_metric} that the even relates to.
+ * @property-read string $metric Qualified name of the {@see metric_record} that the even relates to.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -61,14 +48,28 @@ abstract class metric_event extends base {
     }
 
     /**
-     * Initialises event properties.
+     * Constructs a new instance of the event for the given metric.
+     *
+     * @param metric_record $record Metric record that the event relates to.
+     * @return static New event object.
+     * @throws coding_exception
+     */
+    public static function for_record(metric_record $record): static {
+        return static::create([
+            'objectid' => $record->id,
+            'other'    => ['metric' => $record->qualifiedname],
+        ]);
+    }
+
+    /**
+     * Initializes event properties.
      *
      * @throws dml_exception
      */
     #[\Override]
     protected function init(): void {
         $this->context = system::instance();
-        $this->data['objecttable'] = registered_metric::TABLE;
+        $this->data['objecttable'] = metric_record::TABLE;
         $this->data['crud'] = 'u';
         $this->data['edulevel'] = self::LEVEL_OTHER;
     }
@@ -94,19 +95,5 @@ abstract class metric_event extends base {
         if (!isset($this->other['metric'])) {
             throw new coding_exception('Metric name is required.');
         }
-    }
-
-    /**
-     * Constructs a new instance of the event for the given metric.
-     *
-     * @param registered_metric $metric Metric that the event relates to.
-     * @return static New event object.
-     * @throws coding_exception
-     */
-    public static function for_metric(registered_metric $metric): static {
-        return static::create([
-            'objectid' => $metric->id,
-            'other'    => ['metric' => $metric->qualifiedname],
-        ]);
     }
 }

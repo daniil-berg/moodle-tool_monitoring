@@ -1,31 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the {@see config} form class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\form;
 
@@ -34,12 +21,17 @@ use core\lang_string;
 use dml_exception;
 use JsonException;
 use moodleform;
-use tool_monitoring\registered_metric;
+use tool_monitoring\exceptions\metric_config_invalid;
+use tool_monitoring\local\managed_metric;
+use tool_monitoring\local\managed_metric_tag;
+use tool_monitoring\metric_config_form_aware;
 
+// @codeCoverageIgnoreStart
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once("$CFG->libdir/formslib.php");
+// @codeCoverageIgnoreEnd
 
 /**
  * Configuration form for a metric.
@@ -54,8 +46,22 @@ require_once("$CFG->libdir/formslib.php");
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class config extends moodleform {
-    /** @var registered_metric Metric for which this form is defined; set in the {@see definition} method. */
-    private registered_metric $metric;
+    /** @var managed_metric Metric for which this form is defined; set in the {@see definition} method. */
+    private managed_metric $metric;
+
+    /**
+     * Returns a new instance for configuring the specified metric.
+     *
+     * @param managed_metric $metric Metric for which to return the form.
+     * @return self New config form instance.
+     * @throws metric_config_invalid Failed to deserialize the config of a configurable metric from JSON.
+     */
+    public static function for_metric(managed_metric $metric): self {
+        global $PAGE;
+        $form = new self(action: $PAGE->url, customdata: ['metric' => $metric]);
+        $form->set_data($metric->to_form_data());
+        return $form;
+    }
 
     #[\Override]
     protected function definition(): void {
@@ -86,10 +92,10 @@ class config extends moodleform {
             label: new lang_string('settings:metric_enabled', 'tool_monitoring'),
         );
         $this->add_tags_field(
-            itemtype: registered_metric::TABLE,
+            itemtype: managed_metric_tag::ITEM_TYPE,
             component: 'tool_monitoring',
         );
-        if (!is_null($this->metric->configclass)) {
+        if (is_a($this->metric->configclass, metric_config_form_aware::class, allow_string: true)) {
             $this->metric->configclass::extend_form_definition($this, $this->_form);
         }
     }
@@ -134,23 +140,10 @@ class config extends moodleform {
     #[\Override]
     public function validation($data, $files): array {
         $errors = parent::validation($data, $files);
-        if (!is_null($this->metric->configclass)) {
+        if (is_a($this->metric->configclass, metric_config_form_aware::class, allow_string: true)) {
             $errors = array_merge($errors, $this->metric->configclass::extend_form_validation($data, $this, $this->_form));
         }
         return $errors;
-    }
-
-    /**
-     * Returns a new instance for configuring the specified metric.
-     *
-     * @param registered_metric $metric Metric for which to return the form.
-     * @return self New config form instance.
-     */
-    public static function for_metric(registered_metric $metric): self {
-        global $PAGE;
-        $form = new self(action: $PAGE->url, customdata: ['metric' => $metric]);
-        $form->set_data($metric->to_form_data());
-        return $form;
     }
 
     /**
@@ -166,6 +159,8 @@ class config extends moodleform {
         if (is_null($formdata = $this->get_data())) {
             return;
         }
-        $this->metric->update_with_form_data($formdata);
+        // Since this implies proper POST data, session token, and so on, covering this with a unit test would be too clumsy.
+        // There are Behat acceptance tests for actually configuring metrics.
+        $this->metric->update_with_form_data($formdata); // @codeCoverageIgnore
     }
 }

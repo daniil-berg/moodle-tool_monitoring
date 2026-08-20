@@ -1,31 +1,18 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the renderable {@see overview} class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\output;
 
@@ -34,8 +21,9 @@ use core\output\renderable;
 use core\output\renderer_base;
 use core\output\templatable;
 use moodle_url;
+use tool_monitoring\local\managed_metric_tag;
+use tool_monitoring\metric_tag;
 use tool_monitoring\registered_metric;
-use core_tag_tag;
 
 /**
  * Provides information about all available metrics and links to their configuration pages.
@@ -53,49 +41,17 @@ final readonly class overview implements renderable, templatable {
     /**
      * Constructor without additional logic.
      *
-     * @param array<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
-     * @param array<core_tag_tag> $tags Metrics were filtered with these tags.
+     * @param iterable<string, registered_metric> $metrics Metrics for which to render the overview, indexed by qualified name.
+     * @param array<string, metric_tag> $tags Tags used to filter the metrics by, indexed by normalized tag name.
      *
      * @phpcs:disable Squiz.WhiteSpace.ScopeClosingBrace
      */
     public function __construct(
-        /** @var array<string, registered_metric> Metrics for which to render the overview, indexed by qualified name. */
-        private array $metrics,
-        /** @var array<string, core_tag_tag> Metrics were filtered with these tags, indexed by normalized tag name. */
+        /** @var iterable<string, registered_metric> Metrics for which to render the overview, indexed by qualified name. */
+        private iterable $metrics,
+        /** @var array<string, metric_tag> Tags used to filter the metrics by, indexed by normalized tag name. */
         private array $tags
     ) {}
-
-    /**
-     * Generates a URL to the current overview with an additional tag in the filter.
-     *
-     * @param core_tag_tag $tag New tag.
-     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} and the new `$tag`.
-     * @throws moodle_exception
-     */
-    private function add_tag_url(core_tag_tag $tag): moodle_url {
-        $tags = $this->tags;
-        if (!array_key_exists($tag->name, $tags)) {
-            $tags[$tag->name] = $tag;
-        }
-        return new moodle_url('/admin/tool/monitoring/', ['tag' => implode(',', array_keys($tags))]);
-    }
-
-    /**
-     * Generates a URL to the current overview with one tag removed from the filter.
-     *
-     * @param core_tag_tag $tag Tag to remove.
-     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} minus the `$tag`.
-     * @throws moodle_exception
-     */
-    private function remove_tag_url(core_tag_tag $tag): moodle_url {
-        $tags = $this->tags;
-        unset($tags[$tag->name]);
-        $params = [];
-        if (!empty($tags)) {
-            $params['tag'] = implode(',', array_keys($tags));
-        }
-        return new moodle_url('/admin/tool/monitoring/', $params);
-    }
 
     /**
      * {@inheritDoc}
@@ -106,10 +62,7 @@ final readonly class overview implements renderable, templatable {
      */
     #[\Override]
     public function export_for_template(renderer_base $output): array {
-        global $DB;
-        $tagcollid = $DB->get_field('tag_coll', 'id', ['name' => 'monitoring', 'component' => 'tool_monitoring']);
-        $tagsenabled = core_tag_tag::is_enabled('tool_monitoring', registered_metric::TABLE);
-        $managetagsurl = new moodle_url('/tag/manage.php', ['tc' => $tagcollid]);
+        $tagsenabled = managed_metric_tag::is_enabled();
         $lines = [];
         foreach ($this->metrics as $qualifiedname => $metric) {
             $configurl = new moodle_url('/admin/tool/monitoring/configure.php', ['metric' => $qualifiedname]);
@@ -123,14 +76,13 @@ final readonly class overview implements renderable, templatable {
                 'config_url' => $configurl->out(escaped: false),
             ];
             if ($tagsenabled) {
-                $tags = core_tag_tag::get_item_tags('tool_monitoring', registered_metric::TABLE, $metric->id);
                 $line['tags'] = array_map(
-                    fn (core_tag_tag $tag): array => [
+                    fn (metric_tag $tag): array => [
                         'id' => $tag->id,
                         'name' => $tag->rawname,
                         'view_url' => $this->add_tag_url($tag)->out(escaped: false),
                     ],
-                    array_values($tags),
+                    array_values($metric->tags),
                 );
             }
             $lines[] = $line;
@@ -139,7 +91,7 @@ final readonly class overview implements renderable, templatable {
         $data = [
             'metrics' => $lines,
             'is_tagging_enabled' => $tagsenabled,
-            'manage_tags_url' => $managetagsurl,
+            'manage_tags_url' => managed_metric_tag::get_manage_url(),
             'has_tags' => $hastags,
         ];
         if ($hastags) {
@@ -147,14 +99,45 @@ final readonly class overview implements renderable, templatable {
             $data['all_metrics_url'] = $allmetricsurl->out(escaped: false);
             $data['tags'] = [];
             foreach ($this->tags as $tag) {
-                $editurl = new moodle_url('/tag/edit.php', ['id' => $tag->id]);
                 $data['tags'][] = [
                     'name' => $tag->rawname,
                     'remove_url' => $this->remove_tag_url($tag)->out(escaped: false),
-                    'edit_url' => $editurl->out(escaped: false),
+                    'edit_url' => $tag->editurl->out(escaped: false),
                 ];
             }
         }
         return $data;
+    }
+
+    /**
+     * Generates a URL to the current overview with an additional tag in the filter.
+     *
+     * @param metric_tag $tag New tag.
+     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} and the new `$tag`.
+     * @throws moodle_exception
+     */
+    private function add_tag_url(metric_tag $tag): moodle_url {
+        $tags = $this->tags;
+        if (!array_key_exists($tag->name, $tags)) {
+            $tags[$tag->name] = $tag;
+        }
+        return new moodle_url('/admin/tool/monitoring/', ['tag' => implode(',', array_keys($tags))]);
+    }
+
+    /**
+     * Generates a URL to the current overview with one tag removed from the filter.
+     *
+     * @param metric_tag $tag Tag to remove.
+     * @return moodle_url URL with the `tag` query parameter listing the current {@see self::$tags} minus the `$tag`.
+     * @throws moodle_exception
+     */
+    private function remove_tag_url(metric_tag $tag): moodle_url {
+        $tags = $this->tags;
+        unset($tags[$tag->name]);
+        $params = [];
+        if (!empty($tags)) {
+            $params['tag'] = implode(',', array_keys($tags));
+        }
+        return new moodle_url('/admin/tool/monitoring/', $params);
     }
 }

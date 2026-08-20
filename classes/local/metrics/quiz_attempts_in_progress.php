@@ -1,37 +1,23 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Definition of the {@see quiz_attempts_in_progress} metric class.
- *
- * @package    tool_monitoring
- * @copyright  2025 MootDACH DevCamp
- *             Daniel Fainberg <d.fainberg@tu-berlin.de>
- *             Martin Gauk <martin.gauk@tu-berlin.de>
- *             Sebastian Rupp <sr@artcodix.com>
- *             Malte Schmitz <mal.schmitz@uni-luebeck.de>
- *             Melanie Treitinger <melanie.treitinger@ruhr-uni-bochum.de>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_monitoring\local\metrics;
 
-use core\exception\coding_exception;
 use dml_exception;
-use tool_monitoring\exceptions\metric_config_not_implemented;
+use tool_monitoring\metric_config;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\metric_with_config;
@@ -41,6 +27,9 @@ use tool_monitoring\metric_with_config;
  *
  * Attempts in quizzes that have no deadline approaching are excluded. As are attempts that have been idle for too long.
  * Both time windows are configurable.
+ *
+ * @phpcs:disable moodle.Commenting.ValidTags.Invalid
+ * @extends metric_with_config<quiz_attempts_in_progress_config>
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -53,22 +42,20 @@ use tool_monitoring\metric_with_config;
  */
 class quiz_attempts_in_progress extends metric_with_config {
     #[\Override]
-    public static function get_type(): metric_type {
+    public function get_type(): metric_type {
         return metric_type::GAUGE;
     }
 
     /**
      * Produces the current metric value.
      *
+     * @param quiz_attempts_in_progress_config|null $config Metric configuration.
      * @return metric_value Number of ongoing quiz attempts within the configured time windows.
-     * @throws coding_exception
      * @throws dml_exception
-     * @throws metric_config_not_implemented
      */
     #[\Override]
-    public function calculate(): metric_value {
+    public function calculate(metric_config|null $config = null): metric_value {
         global $DB;
-        $config = $this->parse_config(quiz_attempts_in_progress_config::class);
         $now = time();
         $where = 'state = :state AND timemodified >= :min_time_modified AND timecheckstate <= :max_time_check_state';
         $params = [
@@ -86,7 +73,7 @@ class quiz_attempts_in_progress extends metric_with_config {
     }
 
     #[\Override]
-    public static function get_default_config(): quiz_attempts_in_progress_config {
+    public function get_default_config(): quiz_attempts_in_progress_config {
         return new quiz_attempts_in_progress_config();
     }
 }

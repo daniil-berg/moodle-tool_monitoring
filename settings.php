@@ -1,18 +1,18 @@
 <?php
-// This file is part of Moodle - https://moodle.org/
+// This file is part of the tool_monitoring plugin for Moodle - https://moodle.org/
 //
-// Moodle is free software: you can redistribute it and/or modify
+// tool_monitoring is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope that it will be useful,
+// tool_monitoring is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with tool_monitoring.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Declarations of admin settings for the plugin.
@@ -65,5 +65,9 @@ $ADMIN->add('tool_monitoring', $monitoringexportercategory);
 // Underneath the exporter category, add all exporter settings pages.
 /** @var monitoringexporter $subplugin */
 foreach (core_plugin_manager::instance()->get_plugins_of_type('monitoringexporter') as $subplugin) {
-    $subplugin->load_settings($ADMIN, 'tool_monitoring_exporters', $hassiteconfig);
+    $subplugin->load_settings(
+        adminroot: $ADMIN,
+        parentnodename: 'tool_monitoring_exporters',
+        hassiteconfig: $hassiteconfig,
+    );
 }

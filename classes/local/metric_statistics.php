@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of the {@see metric_statistics} class.
+ * Definition of the {@see \tool_monitoring\local\metric_statistics} class.
  *
  * @package    tool_monitoring
  * @copyright  2025 MootDACH DevCamp
@@ -27,19 +27,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_monitoring;
-
-use context_system;
-use core\exception\coding_exception;
-use core\lang_string;
-use core_tag_tag;
-use dml_exception;
-use IteratorAggregate;
-use JsonException;
-use moodleform;
-use stdClass;
-use tool_monitoring\form\config as config_form;
-use Traversable;
+namespace tool_monitoring\local;
 
 /**
  * Stores some stats for {@see metric}s that will be used for meta metrics.
@@ -63,6 +51,15 @@ final class metric_statistics {
     private static array $stats = [];
 
     /**
+     * @var array $metametricqualifiednames stores the names of meta metrics to filter those from statistics
+     */
+    private static array $metametricqualifiednames = [
+        "meta_metrics_count",
+        "meta_metrics_samples",
+        "meta_metrics_timings",
+    ];
+
+    /**
      * Saves statistics for a given metric name.
      *
      * @param string $metricname name of the metric to save the stats for
@@ -70,10 +67,12 @@ final class metric_statistics {
      * @param int $samplecount the number of samples produced by the metric
      */
     public static function record(string $metricname, int $duration, int $samplecount): void {
-        self::$stats[$metricname] = [
-            'duration_ms' => $duration,
-            'sample_count' => $samplecount,
-        ];
+        if (!in_array($metricname, self::$metametricqualifiednames)) {
+            self::$stats[$metricname] = [
+                'duration_ms' => $duration,
+                'sample_count' => $samplecount,
+            ];
+        }
     }
 
     /**

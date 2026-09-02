@@ -34,7 +34,6 @@ use tool_monitoring\metric;
 use tool_monitoring\metric_config;
 use tool_monitoring\metric_config_form_aware;
 use tool_monitoring\metric_config_provider;
-use tool_monitoring\metric_statistics;
 use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 use tool_monitoring\registered_metric;

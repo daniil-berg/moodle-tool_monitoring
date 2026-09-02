@@ -30,10 +30,10 @@
 namespace tool_monitoring\local\metrics\meta;
 
 use dml_exception;
-use tool_monitoring\metric_config;
-use tool_monitoring\metric_statistics;
-use tool_monitoring\metric_type;
+use tool_monitoring\local\metric_statistics;
 use tool_monitoring\metric;
+use tool_monitoring\metric_config;
+use tool_monitoring\metric_type;
 use tool_monitoring\metric_value;
 
 /**

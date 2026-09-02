@@ -29,7 +29,7 @@ use Traversable;
  *
  * A callback can use the {@see self::add} method to add a metric instance to the collection.
  *
- * An instance of this hook is dispatched automatically when injected as a dependency by the DI container.
+ * An instance of this hook is dispatched automatically when injecteregistered_metricsd as a dependency by the DI container.
  *
  * @link https://moodledev.io/docs/apis/core/hooks Documentation: Hooks API
  * @link https://moodledev.io/docs/apis/core/hooks#hook-instance Documentation: Hook instance

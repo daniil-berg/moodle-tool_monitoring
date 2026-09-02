@@ -30,6 +30,8 @@
 namespace tool_monitoring\local\metrics\meta;
 
 use dml_exception;
+use tool_monitoring\hook\after_metric_calculated;
+use tool_monitoring\hook\before_metric_calculated;
 use tool_monitoring\local\metric_statistics;
 use tool_monitoring\metric;
 use tool_monitoring\metric_config;
@@ -62,20 +64,44 @@ class meta_metrics_timings extends metric {
      */
     #[\Override]
     public function calculate(metric_config|null $config = null): iterable|metric_value {
-        $stats = metric_statistics::get();
+        $stats = metric_statistics::get_all();
         $totaltiming = 0;
 
-        foreach ($stats as $metric => $stats) {
-            $duration = $stats['duration_ms'];
+        foreach ($stats as $metric => $metricstats) {
+            $starttime = $metricstats['start_time'] ?? 0;
+            $endtime = $metricstats['end_time'] ?? 0;
+            $duration = $metricstats['duration'] ?? 0;
             yield new metric_value(
                 $duration,
                 [
                     "metric" => $metric,
+                    "start_time" => $starttime,
+                    "end_time" => $endtime,
                 ]
             );
             $totaltiming += $duration;
         }
 
         yield new metric_value($totaltiming);
+    }
+
+    /**
+     * pre metric calculation callback; saves the time the metric calculation finishes
+     */
+    public static function pre_calculate(before_metric_calculated $hook): void {
+        $starttime = intval(hrtime(true));
+        metric_statistics::record_statistic($hook->qualifiedname, 'start_time', $starttime);
+    }
+
+    /**
+     * post metric calculation callback; saves the time the metric calculation finishes
+     * and calculates the duration it to complete
+     */
+    public static function post_calculate(after_metric_calculated $hook): void {
+        $endtime = intval(hrtime(true));
+        $starttime = metric_statistics::get($hook->qualifiedname)['start_time'] ?? 0;
+        $duration = intval(($endtime - $starttime) / 1000000);
+        metric_statistics::record_statistic($hook->qualifiedname, 'end_time', $endtime);
+        metric_statistics::record_statistic($hook->qualifiedname, 'duration', $duration);
     }
 }

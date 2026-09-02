@@ -54,25 +54,22 @@ final class metric_statistics {
      * @var array $metametricqualifiednames stores the names of meta metrics to filter those from statistics
      */
     private static array $metametricqualifiednames = [
-        "meta_metrics_count",
-        "meta_metrics_samples",
-        "meta_metrics_timings",
+        "tool_monitoring_meta_metrics_count",
+        "tool_monitoring_meta_metrics_samples",
+        "tool_monitoring_meta_metrics_timings",
     ];
 
     /**
      * Saves statistics for a given metric name.
      *
      * @param string $metricname name of the metric to save the stats for
-     * @param int $duration the duration of the metric calculation
-     * @param int $samplecount the number of samples produced by the metric
+     * @param string $statisticname the name of the statistic to save
+     * @param int $value the value of the statistic to save
      */
-    public static function record(string $metricname, int $duration, int $samplecount): void {
+    public static function record_statistic(string $metricname, string $statisticname, int $value): void {
         if (!in_array($metricname, self::$metametricqualifiednames)) {
-            self::$stats[$metricname] = [
-                'duration_ms' => $duration,
-                'sample_count' => $samplecount,
-            ];
-        }
+            self::$stats[$metricname][$statisticname] = $value;
+        };
     }
 
     /**
@@ -80,7 +77,16 @@ final class metric_statistics {
      *
      * @return array of metric stats
      */
-    public static function get(): array {
+    public static function get_all(): array {
         return self::$stats;
+    }
+
+    /**
+     * Gets the saved metric stats for a specific metric.
+     *
+     * @return array of metric stats
+     */
+    public static function get(string $metricname): array {
+        return self::$stats[$metricname] ?? [];
     }
 }

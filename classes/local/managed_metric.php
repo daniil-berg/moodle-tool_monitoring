@@ -276,22 +276,19 @@ final class managed_metric implements cacheable_object_interface, registered_met
     #[\Override]
     public function getIterator(): Traversable {
         try {
-            $start = hrtime(true);
+            $prehook = new \tool_monitoring\hook\before_metric_calculated($this->qualifiedname);
+            \core\di::get(\core\hook\manager::class)->dispatch($prehook);
             $values = $this->metric->calculate($this->get_config());
-            $end = hrtime(true);
-            $durationns = ($end - $start);
-            $durationms = $durationns / 1000000;
-            $samplecount = 0;
+            if (!$values instanceof metric_value) {
+                $values = iterator_to_array($values);
+            }
+            $posthook = new \tool_monitoring\hook\after_metric_calculated($this->qualifiedname, $values);
+            \core\di::get(\core\hook\manager::class)->dispatch($posthook);
             if ($values instanceof metric_value) {
-                $samplecount = 1;
                 yield $values;
             } else {
-                foreach ($values as $value) {
-                    $samplecount++;
-                    yield $value;
-                }
+                yield from $values;
             }
-            metric_statistics::record($this->qualifiedname, intval($durationms), $samplecount);
         } catch (Exception $e) {
             throw new metric_calculation_failed($this->qualifiedname, $e);
         }

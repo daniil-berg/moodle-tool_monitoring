@@ -62,7 +62,7 @@ class meta_metrics_count extends metric {
      */
     #[\Override]
     public function calculate(metric_config|null $config = null): array {
-        $stats = metric_statistics::get();
+        $stats = metric_statistics::get_all();
 
         $metricscount = count($stats);
 

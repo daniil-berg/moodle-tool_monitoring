@@ -30,6 +30,7 @@
 namespace tool_monitoring\local\metrics\meta;
 
 use dml_exception;
+use tool_monitoring\hook\after_metric_calculated;
 use tool_monitoring\local\metric_statistics;
 use tool_monitoring\metric;
 use tool_monitoring\metric_config;
@@ -62,12 +63,27 @@ class meta_metrics_samples extends metric {
      */
     #[\Override]
     public function calculate(metric_config|null $config = null): iterable {
-        $stats = metric_statistics::get();
+        $stats = metric_statistics::get_all();
 
         foreach ($stats as $metricname => $metricstats) {
-            yield new metric_value($metricstats['sample_count'], [
+            yield new metric_value($metricstats['sample_count'] ?? 0, [
                     'metric_name' => $metricname,
             ]);
         }
+    }
+
+    /**
+     * post metric calculation callback; saves the number of samples (lines) a metric generates
+     */
+    public static function post_calculate(after_metric_calculated $hook): void {
+        $samplecount = 0;
+        if ($hook->values instanceof metric_value) {
+            $samplecount = 1;
+        } else {
+            foreach ($hook->values as $value) {
+                $samplecount++;
+            }
+        }
+        metric_statistics::record_statistic($hook->qualifiedname, 'sample_count', $samplecount);
     }
 }

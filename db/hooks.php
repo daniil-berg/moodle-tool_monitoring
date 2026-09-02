@@ -30,6 +30,8 @@
  */
 
 use core\hook\di_configuration;
+use tool_monitoring\hook\after_metric_calculated;
+use tool_monitoring\hook\before_metric_calculated;
 use tool_monitoring\hook\metric_collection;
 use tool_monitoring\local\metrics;
 use tool_monitoring\local\metrics_manager;
@@ -44,4 +46,10 @@ $callbacks = [
     ['hook' => metric_collection::class, 'callback' => [metrics\quiz_attempts_in_progress::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\user_accounts::class, 'collect']],
     ['hook' => metric_collection::class, 'callback' => [metrics\users_online::class, 'collect']],
+    ['hook' => metric_collection::class, 'callback' => [metrics\meta\meta_metrics_count::class, 'collect'], 'priority' => 0],
+    ['hook' => metric_collection::class, 'callback' => [metrics\meta\meta_metrics_samples::class, 'collect'], 'priority' => 0],
+    ['hook' => metric_collection::class, 'callback' => [metrics\meta\meta_metrics_timings::class, 'collect'], 'priority' => 0],
+    ['hook' => before_metric_calculated::class, 'callback' => [metrics\meta\meta_metrics_timings::class, 'pre_calculate']],
+    ['hook' => after_metric_calculated::class, 'callback' => [metrics\meta\meta_metrics_timings::class, 'post_calculate']],
+    ['hook' => after_metric_calculated::class, 'callback' => [metrics\meta\meta_metrics_samples::class, 'post_calculate']],
 ];

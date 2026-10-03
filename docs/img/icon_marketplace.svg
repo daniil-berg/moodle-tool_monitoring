@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Monitoring">
+  <circle cx="256" cy="256" r="216" fill="#0D4A55"/>
+  <g fill="#EAF3F1">
+    <rect x="140" y="288" width="56" height="96" rx="28"/>
+    <rect x="228" y="224" width="56" height="160" rx="28"/>
+  </g>
+  <rect x="316" y="24" width="56" height="360" rx="28" fill="#FF6A45"/>
+</svg>

@@ -73,6 +73,9 @@ final class metrics_manager_test extends advanced_testcase {
         $expected = [
             metrics\courses::class,
             metrics\overdue_tasks::class,
+            metrics\meta\meta_metrics_count::class,
+            metrics\meta\meta_metrics_samples::class,
+            metrics\meta\meta_metrics_timings::class,
             metrics\quiz_attempts_in_progress::class,
             metrics\user_accounts::class,
             metrics\users_online::class,
